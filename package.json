@@ -1,0 +1,33 @@
+{
+  "name": "taxflow-uk-monorepo",
+  "version": "1.0.0",
+  "private": true,
+  "description": "TaxFlow UK - High-assurance UK micro-entity tax filing and compliance platform",
+  "workspaces": [
+    "packages/*",
+    "apps/*"
+  ],
+  "scripts": {
+    "dev": "npm run dev --workspace=@taxflow/web",
+    "build": "npm run build --workspace=@taxflow/web",
+    "start": "npm run start --workspace=@taxflow/web",
+    "sidecar": "uvicorn services.validator-sidecar.app:app --port 8000",
+    "test": "npm run test --workspaces --if-present",
+    "test:all": "npm run test:ct-engine && npm run test:shield && npm run test:doc-engine && npm run test:ingestion && npm run test:sidecar",
+    "test:ct-engine": "node --experimental-strip-types packages/ct-engine/tests/engine.test.ts",
+    "test:shield": "node --experimental-strip-types packages/shield/tests/shield.test.ts",
+    "test:doc-engine": "node --experimental-strip-types packages/doc-engine/tests/doc_engine.test.ts",
+    "test:ingestion": "node --experimental-strip-types packages/ingestion/tests/ingestion.test.ts",
+    "test:sidecar": "python3 -m unittest discover services/validator-sidecar/tests"
+  },
+  "keywords": [
+    "uk-tax",
+    "ct600",
+    "frs105",
+    "ixbrl",
+    "hmrc",
+    "companies-house"
+  ],
+  "author": "Muhammad Bilal / Bilal Jabbar",
+  "license": "UNLICENSED"
+}

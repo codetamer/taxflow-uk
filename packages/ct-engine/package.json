@@ -1,0 +1,21 @@
+{
+  "name": "@taxflow/ct-engine",
+  "version": "1.0.0",
+  "description": "TaxFlow UK - Reference Corporation Tax Engine (Integer Pence)",
+  "main": "src/index.ts",
+  "types": "src/index.ts",
+  "type": "module",
+  "scripts": {
+    "test": "node --experimental-strip-types tests/engine.test.ts"
+  },
+  "keywords": [
+    "ct600",
+    "corporation-tax",
+    "marginal-relief",
+    "s455",
+    "uk-tax"
+  ],
+  "author": "Muhammad Bilal / Bilal Jabbar",
+  "license": "UNLICENSED"
+}
+

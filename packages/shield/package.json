@@ -1,0 +1,23 @@
+{
+  "name": "@taxflow/shield",
+  "version": "1.0.0",
+  "description": "TaxFlow UK - 40-Point Pre-Flight Rejection Shield & Error Translator",
+  "main": "src/index.ts",
+  "types": "src/index.ts",
+  "type": "module",
+  "scripts": {
+    "test": "node --experimental-strip-types tests/shield.test.ts"
+  },
+  "dependencies": {
+    "@taxflow/ct-engine": "*"
+  },
+  "keywords": [
+    "preflight-shield",
+    "validation",
+    "uk-tax",
+    "error-translator",
+    "ct600"
+  ],
+  "author": "Muhammad Bilal / Bilal Jabbar",
+  "license": "UNLICENSED"
+}

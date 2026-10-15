@@ -1,0 +1,25 @@
+{
+  "name": "@taxflow/doc-engine",
+  "version": "1.0.0",
+  "description": "TaxFlow UK - FRS 105 iXBRL Generator, React-PDF Suite & C14N IRmark Hasher",
+  "main": "src/index.ts",
+  "types": "src/index.ts",
+  "type": "module",
+  "scripts": {
+    "test": "node --experimental-strip-types tests/doc_engine.test.ts"
+  },
+  "dependencies": {
+    "@taxflow/ct-engine": "*",
+    "@taxflow/shield": "*"
+  },
+  "keywords": [
+    "ixbrl",
+    "frs105",
+    "irmark",
+    "c14n",
+    "pdf",
+    "ct600"
+  ],
+  "author": "Muhammad Bilal / Bilal Jabbar",
+  "license": "UNLICENSED"
+}
