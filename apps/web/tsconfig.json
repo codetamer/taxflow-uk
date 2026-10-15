@@ -20,7 +20,13 @@
       }
     ],
     "paths": {
-      "@/*": ["./src/*"]
+      "@/*": ["./src/*"],
+      "@taxflow/companies-house": ["../../packages/companies-house/src/index.ts"],
+      "@taxflow/db": ["../../packages/db/src/index.ts"],
+      "@taxflow/ct-engine": ["../../packages/ct-engine/src/index.ts"],
+      "@taxflow/shield": ["../../packages/shield/src/index.ts"],
+      "@taxflow/doc-engine": ["../../packages/doc-engine/src/index.ts"],
+      "@taxflow/ingestion": ["../../packages/ingestion/src/index.ts"]
     }
   },
   "include": ["next-env.d.ts", "**/*.ts", "**/*.tsx", ".next/types/**/*.ts"],

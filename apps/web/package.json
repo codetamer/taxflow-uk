@@ -14,6 +14,8 @@
     "@taxflow/shield": "*",
     "@taxflow/doc-engine": "*",
     "@taxflow/ingestion": "*",
+    "@taxflow/companies-house": "*",
+    "@taxflow/db": "*",
     "next": "^15.2.0",
     "react": "^19.0.0",
     "react-dom": "^19.0.0",

@@ -1,0 +1,14 @@
+{
+  "name": "@taxflow/companies-house",
+  "version": "1.0.0",
+  "type": "module",
+  "main": "src/index.ts",
+  "types": "src/index.ts",
+  "scripts": {
+    "test": "node --experimental-strip-types tests/client.test.ts"
+  },
+  "dependencies": {},
+  "devDependencies": {
+    "typescript": "^5.8.0"
+  }
+}
