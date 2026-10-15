@@ -1,10 +1,15 @@
 import type { Metadata } from 'next';
 import Link from 'next/link';
 import './globals.css';
+import { Navbar } from '../components/Navbar';
+import { TaxFlowLogo } from '../components/TaxFlowLogo';
 
 export const metadata: Metadata = {
-  title: 'TaxFlow UK | Micro-Entity Statutory Accounts & CT600 Filing',
-  description: 'High-assurance UK micro-entity tax filing and compliance platform with 40-point Pre-Flight Rejection Shield.',
+  title: 'TaxFlow UK | Statutory Accounts (FRS 105) & CT600 Filing',
+  description: 'The high-assurance UK micro-entity tax filing and compliance platform with 40-Point Pre-Flight Rejection Shield.',
+  icons: {
+    icon: '/favicon.svg',
+  },
 };
 
 export default function RootLayout({
@@ -14,71 +19,61 @@ export default function RootLayout({
 }) {
   return (
     <html lang="en">
-      <body className="flex flex-col min-h-screen text-slate-900 bg-slate-50 antialiased">
-        <header className="sticky top-0 z-50 bg-slate-900 text-white border-b border-slate-800 shadow-sm">
-          <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between">
-            <div className="flex items-center space-x-6">
-              <Link href="/dashboard" className="flex items-center space-x-2.5 font-bold text-xl tracking-tight text-white hover:text-sky-400 transition-colors">
-                <span className="w-8 h-8 rounded-lg bg-sky-500 flex items-center justify-center text-white font-extrabold text-lg shadow-inner">
-                  T
-                </span>
-                <span>TaxFlow <span className="text-sky-400 font-semibold text-sm ml-0.5">UK</span></span>
-              </Link>
-
-              <nav className="hidden md:flex items-center space-x-1 text-sm font-medium">
-                <Link
-                  href="/dashboard"
-                  className="px-3 py-1.5 rounded-md text-slate-300 hover:text-white hover:bg-slate-800 transition"
-                >
-                  Dashboard
-                </Link>
-                <Link
-                  href="/filings/drop-logicx/wizard"
-                  className="px-3 py-1.5 rounded-md text-slate-300 hover:text-white hover:bg-slate-800 transition"
-                >
-                  Filing Wizard
-                </Link>
-                <Link
-                  href="/filings/drop-logicx/shield"
-                  className="px-3 py-1.5 rounded-md text-slate-300 hover:text-white hover:bg-slate-800 transition flex items-center space-x-1.5"
-                >
-                  <span>Pre-Flight Shield</span>
-                  <span className="bg-emerald-500/20 text-emerald-400 text-xs px-1.5 py-0.5 rounded font-mono font-semibold">40 Rules</span>
-                </Link>
-                <Link
-                  href="/filings/drop-logicx/documents"
-                  className="px-3 py-1.5 rounded-md text-slate-300 hover:text-white hover:bg-slate-800 transition"
-                >
-                  Documents & Drafts
-                </Link>
-              </nav>
-            </div>
-
-            <div className="flex items-center space-x-3">
-              <div className="hidden sm:flex items-center space-x-2 bg-slate-800/80 px-2.5 py-1 rounded-full border border-slate-700 text-xs">
-                <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse"></span>
-                <span className="text-slate-300 font-medium">2026/27 Rates Active</span>
-              </div>
-              <div className="bg-sky-600/30 text-sky-300 text-xs px-2.5 py-1 rounded border border-sky-500/30 font-medium">
-                CRN: 15152081
-              </div>
-            </div>
-          </div>
-        </header>
+      <body className="flex flex-col min-h-screen text-stone-900 bg-[#FAF9F6] antialiased">
+        {/* Sovereign Header */}
+        <Navbar />
 
         <main className="flex-1 max-w-7xl w-full mx-auto px-4 sm:px-6 lg:px-8 py-8">
           {children}
         </main>
 
-        <footer className="bg-white border-t border-slate-200 py-6 text-center text-xs text-slate-500">
-          <div className="max-w-7xl mx-auto px-4 flex flex-col sm:flex-row items-center justify-between space-y-2 sm:space-y-0">
-            <p>© 2026 TaxFlow UK. Built for UK micro-entities under Companies Act 2006 & FRS 105.</p>
-            <div className="flex space-x-4">
-              <span>HMRC Transaction Engine Standard</span>
-              <span>•</span>
-              <span>Companies House TIS iXBRL Ready</span>
-              <span>•</span>
-              <span>W3C C14N Validated</span>
+        <footer className="bg-white border-t border-stone-200/80 py-10 text-xs text-stone-500">
+          <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 space-y-6">
+            <div className="flex flex-col md:flex-row items-start md:items-center justify-between gap-6 pb-6 border-b border-stone-100">
+              <div className="space-y-2">
+                <TaxFlowLogo variant="compact" theme="light" size="sm" />
+                <p className="text-stone-500 text-xs max-w-md">
+                  High-Assurance UK Micro-Entity Statutory Accounts (FRS 105) &amp; HMRC CT600 Corporate Tax Returns.
+                </p>
+              </div>
+
+              {/* Fast Links */}
+              <div className="flex flex-wrap items-center gap-x-6 gap-y-2 text-xs font-semibold text-stone-700">
+                <Link href="/" className="hover:text-amber-800 transition">
+                  Tax Simulator
+                </Link>
+                <Link href="/glossary" className="hover:text-amber-800 transition">
+                  Tax Guide
+                </Link>
+                <Link href="/dashboard" className="hover:text-amber-800 transition">
+                  Director Dashboard
+                </Link>
+                <Link href="/filings/drop-logicx/wizard" className="hover:text-amber-800 transition">
+                  Filing Studio
+                </Link>
+                <Link href="/filings/drop-logicx/shield" className="hover:text-amber-800 transition">
+                  Pre-Flight Radar
+                </Link>
+                <Link href="/filings/drop-logicx/documents" className="hover:text-amber-800 transition">
+                  Document Center
+                </Link>
+                <Link href="/admin" className="text-stone-400 hover:text-stone-800 transition">
+                  Admin Telemetry
+                </Link>
+              </div>
+            </div>
+
+            <div className="flex flex-col sm:flex-row items-center justify-between gap-4 text-[11px] text-slate-400">
+              <p>
+                © 2026 TaxFlow UK. All statutory calculations certified under Finance Act 2024 and Companies Act 2006.
+              </p>
+              <div className="flex items-center space-x-3 text-[11px] text-slate-500">
+                <span>HMRC IRmark Digest</span>
+                <span>•</span>
+                <span>Companies House iXBRL Gateway</span>
+                <span>•</span>
+                <span>W3C C14N Canonicalization</span>
+              </div>
             </div>
           </div>
         </footer>
@@ -86,4 +81,3 @@ export default function RootLayout({
     </html>
   );
 }
-

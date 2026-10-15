@@ -53,6 +53,16 @@ export function generateAccountsPdf(
   // Top header rule
   doc.drawRect(50, 790, 495, 2, { fillColor: [0.12, 0.23, 0.36] });
 
+  // Concept 5 Ledger Chevron Logo Mark (Header Top Right)
+  doc.drawRect(495, 756, 32, 4, { fillColor: [0.92, 0.35, 0.05] }); // Tier 1: Terracotta
+  doc.drawRect(503, 748, 24, 4, { fillColor: [0.96, 0.62, 0.04] }); // Tier 2: Amber
+  doc.drawRect(503, 740, 16, 4, { fillColor: [0.85, 0.47, 0.02] }); // Tier 3: Deep Amber
+  doc.drawText('TaxFlow UK', 480, 726, {
+    font: 'Helvetica-Bold',
+    size: 9,
+    color: [0.11, 0.10, 0.09]
+  });
+
   doc.drawText(data.companyName.toUpperCase(), 50, 750, {
     font: 'Helvetica-Bold',
     size: 20,

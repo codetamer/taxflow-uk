@@ -49,3 +49,4 @@ export function formatAddress(addr?: CompaniesHouseAddress): string {
 
   return parts.filter(Boolean).join(', ');
 }
+

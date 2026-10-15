@@ -37,3 +37,4 @@ export function closeDatabase(): void {
     defaultDbInstance = null;
   }
 }
+

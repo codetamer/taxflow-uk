@@ -69,3 +69,4 @@ export interface NormalizedCompanyDetails {
   directors: string[];
   isCloseCompany: boolean;
 }
+

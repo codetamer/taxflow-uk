@@ -61,3 +61,4 @@ test('@taxflow/companies-house: client operations in sandbox mode', async (t) =>
     assert.equal(details.periodEnd, '2026-03-31');
   });
 });
+

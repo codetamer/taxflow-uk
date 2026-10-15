@@ -13,6 +13,43 @@ CREATE TABLE IF NOT EXISTS companies (
 
 CREATE INDEX IF NOT EXISTS idx_companies_crn ON companies(crn);
 
+CREATE TABLE IF NOT EXISTS users (
+  id TEXT PRIMARY KEY,
+  email TEXT UNIQUE NOT NULL COLLATE NOCASE,
+  password_hash TEXT NOT NULL,
+  full_name TEXT NOT NULL,
+  role TEXT NOT NULL DEFAULT 'USER',
+  is_verified INTEGER NOT NULL DEFAULT 1,
+  created_at TEXT NOT NULL,
+  updated_at TEXT NOT NULL
+);
+
+CREATE INDEX IF NOT EXISTS idx_users_email ON users(email);
+
+CREATE TABLE IF NOT EXISTS sessions (
+  id TEXT PRIMARY KEY,
+  user_id TEXT NOT NULL,
+  token_hash TEXT UNIQUE NOT NULL,
+  expires_at TEXT NOT NULL,
+  created_at TEXT NOT NULL,
+  ip_address TEXT,
+  user_agent TEXT,
+  FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
+);
+
+CREATE INDEX IF NOT EXISTS idx_sessions_token ON sessions(token_hash);
+CREATE INDEX IF NOT EXISTS idx_sessions_user ON sessions(user_id);
+
+CREATE TABLE IF NOT EXISTS user_companies (
+  user_id TEXT NOT NULL,
+  company_id TEXT NOT NULL,
+  role TEXT NOT NULL DEFAULT 'OWNER',
+  created_at TEXT NOT NULL,
+  PRIMARY KEY (user_id, company_id),
+  FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE,
+  FOREIGN KEY (company_id) REFERENCES companies(id) ON DELETE CASCADE
+);
+
 CREATE TABLE IF NOT EXISTS filings (
   id TEXT PRIMARY KEY,
   company_id TEXT NOT NULL,
@@ -67,4 +104,23 @@ CREATE TABLE IF NOT EXISTS prior_year_accounts (
   FOREIGN KEY (company_id) REFERENCES companies(id) ON DELETE CASCADE,
   UNIQUE(company_id, period_end)
 );
+
+CREATE TABLE IF NOT EXISTS gateway_submissions (
+  id TEXT PRIMARY KEY,
+  filing_id TEXT NOT NULL,
+  gateway_type TEXT NOT NULL, -- 'HMRC' or 'COMPANIES_HOUSE'
+  correlation_id TEXT NOT NULL,
+  status TEXT NOT NULL DEFAULT 'PENDING', -- 'PENDING', 'ACCEPTED', 'REJECTED'
+  raw_request_xml TEXT,
+  raw_response_xml TEXT,
+  error_code TEXT,
+  error_message TEXT,
+  latency_ms INTEGER NOT NULL DEFAULT 0,
+  submitted_at TEXT NOT NULL,
+  completed_at TEXT,
+  FOREIGN KEY (filing_id) REFERENCES filings(id) ON DELETE CASCADE
+);
+
+CREATE INDEX IF NOT EXISTS idx_gateway_filing ON gateway_submissions(filing_id);
+CREATE INDEX IF NOT EXISTS idx_gateway_status ON gateway_submissions(status);
 `;

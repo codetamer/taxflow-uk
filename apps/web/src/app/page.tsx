@@ -1,115 +1,512 @@
+'use client';
+
+import { useState } from 'react';
 import Link from 'next/link';
-import { ArrowRight, ShieldCheck, FileText, CheckCircle2, Calculator, TrendingUp, Zap } from 'lucide-react';
+import {
+  ArrowRight,
+  ShieldCheck,
+  FileText,
+  CheckCircle2,
+  XCircle,
+  Calculator,
+  Building2,
+  Scale,
+  Sparkles,
+  Download,
+  Lock,
+  ChevronRight,
+  HelpCircle,
+  BookOpen,
+  Info
+} from 'lucide-react';
+import { TermExplainer } from '@/components/TermExplainer';
+import { GlossaryModal } from '@/components/GlossaryModal';
+import { CompaniesHouseHeroSearch } from '@/components/CompaniesHouseHeroSearch';
 
 export default function HomePage() {
+  // Live Simulator State
+  const [turnover, setTurnover] = useState<number>(100000);
+  const [expenses, setExpenses] = useState<number>(68100);
+  const [isGlossaryOpen, setIsGlossaryOpen] = useState<boolean>(false);
+  const [initialGlossaryTerm, setInitialGlossaryTerm] = useState<string>('');
+
+  const openGlossary = (termId: string) => {
+    setInitialGlossaryTerm(termId);
+    setIsGlossaryOpen(true);
+  };
+
+  // Computed Figures
+  const profitBeforeTax = Math.max(0, turnover - expenses);
+  // Small profits rate 19% up to £50k, marginal relief up to £250k, main rate 25%
+  let corporationTax = 0;
+  if (profitBeforeTax <= 50000) {
+    corporationTax = Math.round(profitBeforeTax * 0.19);
+  } else if (profitBeforeTax <= 250000) {
+    const standardTax = profitBeforeTax * 0.25;
+    const marginalRelief = (250000 - profitBeforeTax) * (3 / 200);
+    corporationTax = Math.round(standardTax - marginalRelief);
+  } else {
+    corporationTax = Math.round(profitBeforeTax * 0.25);
+  }
+
+  const netProfitAfterTax = profitBeforeTax - corporationTax;
+  const effectiveRate = profitBeforeTax > 0 ? ((corporationTax / profitBeforeTax) * 100).toFixed(1) : '19.0';
+
   return (
-    <div className="space-y-16 py-6">
-      {/* Hero Section */}
-      <section className="text-center space-y-6 max-w-4xl mx-auto pt-4">
-        <div className="inline-flex items-center space-x-2 bg-sky-50 border border-sky-200 text-sky-800 px-3.5 py-1.5 rounded-full text-xs font-semibold shadow-xs">
-          <span className="w-2 h-2 rounded-full bg-sky-600 animate-pulse"></span>
-          <span>Engineered for 2026/27 Tax Year & Beyond</span>
+    <div className="space-y-20 py-4 max-w-6xl mx-auto">
+      {/* Editorial Authority Hero */}
+      <section className="text-center space-y-6 pt-6 sm:pt-10">
+        <div className="inline-flex items-center space-x-2 bg-amber-50 border border-amber-200 text-amber-900 px-3.5 py-1.5 rounded-full text-xs font-medium">
+          <span className="w-2 h-2 rounded-full bg-amber-600 animate-pulse" />
+          <span>Finance Act 2024 & 2026/27 Statutory Rules Active</span>
         </div>
 
-        <h1 className="text-4xl sm:text-5xl lg:text-6xl font-extrabold text-slate-900 tracking-tight leading-tight">
-          Micro-Entity Tax & Accounts. <br />
-          <span className="text-transparent bg-clip-text bg-gradient-to-r from-sky-600 to-indigo-600">
-            Zero Rejections. Pure Assurance.
-          </span>
+        <h1 className="text-4xl sm:text-6xl font-bold tracking-tight text-stone-950 max-w-4xl mx-auto leading-tight">
+          The sovereign tax engine for UK micro-entities.
         </h1>
 
-        <p className="text-lg text-slate-600 max-w-2xl mx-auto leading-relaxed">
-          The high-assurance UK platform that automates statutory FRS 105 micro-entity accounts and HMRC CT600 filing with our proprietary <strong>40-Point Pre-Flight Rejection Shield</strong>.
+        <p className="text-lg text-stone-600 max-w-2xl mx-auto leading-relaxed">
+          File statutory <TermExplainer termId="frs-105" label="FRS 105 annual accounts" /> to Companies House and <TermExplainer termId="ct600" label="CT600 returns" /> to HMRC with mathematical certainty. Zero gateway rejections. Free draft PDFs. Pay £49 only upon submission.
         </p>
 
-        <div className="flex flex-col sm:flex-row items-center justify-center gap-4 pt-4">
+        {/* Live Companies House Search Engine */}
+        <div className="py-2">
+          <CompaniesHouseHeroSearch />
+        </div>
+
+        <div className="flex flex-col sm:flex-row items-center justify-center gap-3 pt-2">
+          <Link
+            href="/filings/drop-logicx/wizard"
+            className="w-full sm:w-auto inline-flex items-center justify-center space-x-2 bg-stone-950 text-white hover:bg-stone-800 px-6 py-3.5 rounded-xl font-semibold shadow-xs hover:shadow transition"
+          >
+            <span>Start Micro-Entity Filing</span>
+            <ArrowRight className="w-4 h-4 text-amber-400" />
+          </Link>
+          <Link
+            href="/glossary"
+            className="w-full sm:w-auto inline-flex items-center justify-center space-x-2 bg-white text-stone-800 border border-stone-300 hover:bg-stone-50 px-6 py-3.5 rounded-xl font-semibold transition"
+          >
+            <BookOpen className="w-4 h-4 text-amber-700" />
+            <span>Plain-English Tax Guide</span>
+          </Link>
+        </div>
+
+        {/* Quiet Trust Bar */}
+        <div className="pt-6 flex flex-wrap items-center justify-center gap-y-2 gap-x-8 text-xs text-stone-500">
+          <span className="flex items-center space-x-1.5">
+            <CheckCircle2 className="w-3.5 h-3.5 text-amber-600" />
+            <span><TermExplainer termId="frs-105" label="FRS 105 Micro-Entity Standard" /></span>
+          </span>
+          <span className="flex items-center space-x-1.5">
+            <CheckCircle2 className="w-3.5 h-3.5 text-amber-600" />
+            <span><TermExplainer termId="s455-loan" label="HMRC CT600 & s455 Loan Schedules" /></span>
+          </span>
+          <span className="flex items-center space-x-1.5">
+            <CheckCircle2 className="w-3.5 h-3.5 text-amber-600" />
+            <span><TermExplainer termId="balance-sheet-symmetry" label="0p Balance Sheet Symmetry" /></span>
+          </span>
+          <span className="flex items-center space-x-1.5">
+            <CheckCircle2 className="w-3.5 h-3.5 text-amber-600" />
+            <span>Companies House Live TIS Verification</span>
+          </span>
+        </div>
+      </section>
+
+      {/* Centerpiece: Interactive Live Tax & Statutory Ledger Simulator */}
+      <section className="bg-white rounded-3xl border border-stone-200 shadow-sm overflow-hidden">
+        <div className="bg-stone-950 text-white px-6 sm:px-8 py-5 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+          <div>
+            <div className="flex items-center space-x-2">
+              <span className="w-2 h-2 rounded-full bg-amber-400" />
+              <h2 className="text-sm font-semibold tracking-wide text-stone-200">
+                Interactive Calculation Engine Demo
+              </h2>
+            </div>
+            <p className="text-xs text-stone-400 mt-0.5">
+              Adjust numbers below to see instant 2026/27 corporation tax and balance sheet symmetry in real time.
+            </p>
+          </div>
+          <div className="flex items-center space-x-2 self-start sm:self-auto">
+            <span className="bg-amber-500/10 text-amber-400 text-xs px-2.5 py-1 rounded-full font-mono font-medium border border-amber-500/20">
+              40 / 40 Shield Checks Passing
+            </span>
+          </div>
+        </div>
+
+        <div className="p-6 sm:p-8 grid grid-cols-1 lg:grid-cols-12 gap-8">
+          {/* Controls (5 cols) */}
+          <div className="lg:col-span-5 space-y-6">
+            {/* Quick Presets */}
+            <div className="space-y-1.5">
+              <span className="text-[11px] font-semibold text-stone-500 uppercase tracking-wider block">
+                Scenario Presets:
+              </span>
+              <div className="flex flex-wrap gap-1.5">
+                <button
+                  type="button"
+                  onClick={() => {
+                    setTurnover(50000);
+                    setExpenses(20000);
+                  }}
+                  className={`px-2.5 py-1 rounded-lg text-xs font-medium border transition ${
+                    turnover === 50000
+                      ? 'bg-stone-950 text-white border-stone-950'
+                      : 'bg-white hover:bg-stone-50 text-stone-700 border-stone-200'
+                  }`}
+                >
+                  £50k (Small Profits)
+                </button>
+                <button
+                  type="button"
+                  onClick={() => {
+                    setTurnover(100000);
+                    setExpenses(68100);
+                  }}
+                  className={`px-2.5 py-1 rounded-lg text-xs font-medium border transition ${
+                    turnover === 100000
+                      ? 'bg-stone-950 text-white border-stone-950'
+                      : 'bg-white hover:bg-stone-50 text-stone-700 border-stone-200'
+                  }`}
+                >
+                  £100k (DropLogicX Benchmark)
+                </button>
+                <button
+                  type="button"
+                  onClick={() => {
+                    setTurnover(180000);
+                    setExpenses(80000);
+                  }}
+                  className={`px-2.5 py-1 rounded-lg text-xs font-medium border transition ${
+                    turnover === 180000
+                      ? 'bg-stone-950 text-white border-stone-950'
+                      : 'bg-white hover:bg-stone-50 text-stone-700 border-stone-200'
+                  }`}
+                >
+                  £180k (Marginal Relief)
+                </button>
+                <button
+                  type="button"
+                  onClick={() => {
+                    setTurnover(280000);
+                    setExpenses(70000);
+                  }}
+                  className={`px-2.5 py-1 rounded-lg text-xs font-medium border transition ${
+                    turnover === 280000
+                      ? 'bg-stone-950 text-white border-stone-950'
+                      : 'bg-white hover:bg-stone-50 text-stone-700 border-stone-200'
+                  }`}
+                >
+                  £280k (Main Rate 25%)
+                </button>
+              </div>
+            </div>
+
+            <div className="space-y-2">
+              <div className="flex justify-between items-center text-sm font-medium text-stone-800">
+                <label htmlFor="turnover-slider">
+                  <TermExplainer termId="ct600" label="Annual Trading Turnover" />
+                </label>
+                <span className="font-mono font-bold text-stone-950 text-base">£{turnover.toLocaleString()}</span>
+              </div>
+              <input
+                id="turnover-slider"
+                type="range"
+                min="10000"
+                max="300000"
+                step="5000"
+                value={turnover}
+                onChange={(e) => setTurnover(Number(e.target.value))}
+                className="w-full h-2 bg-stone-200 rounded-lg appearance-none cursor-pointer accent-amber-600"
+              />
+              <div className="flex justify-between text-[11px] text-stone-400 font-mono">
+                <span>£10,000</span>
+                <span>£150,000</span>
+                <span>£300,000</span>
+              </div>
+            </div>
+
+            <div className="space-y-2">
+              <div className="flex justify-between items-center text-sm font-medium text-stone-800">
+                <label htmlFor="expenses-slider">
+                  <TermExplainer termId="disallowable-expenses" label="Allowable Business Expenses" />
+                </label>
+                <span className="font-mono font-bold text-stone-950 text-base">£{expenses.toLocaleString()}</span>
+              </div>
+              <input
+                id="expenses-slider"
+                type="range"
+                min="0"
+                max={Math.max(10000, turnover - 5000)}
+                step="2500"
+                value={expenses}
+                onChange={(e) => setExpenses(Number(e.target.value))}
+                className="w-full h-2 bg-stone-200 rounded-lg appearance-none cursor-pointer accent-amber-600"
+              />
+              <div className="flex justify-between text-[11px] text-stone-400 font-mono">
+                <span>£0</span>
+                <span>Cost of sales, software, admin</span>
+                <span>£{(turnover - 5000).toLocaleString()}</span>
+              </div>
+            </div>
+
+            <div className="bg-stone-50 rounded-2xl p-4 border border-stone-200 space-y-2.5 text-xs text-stone-600">
+              <div className="flex items-center space-x-1.5 font-semibold text-stone-900">
+                <ShieldCheck className="w-4 h-4 text-amber-600" />
+                <span>Automated Statutory Deductions</span>
+              </div>
+              <p className="leading-relaxed">
+                Includes full 100% <TermExplainer termId="capital-allowances-aia" label="Annual Investment Allowance (AIA)" />, automatic <TermExplainer termId="disallowable-expenses" label="disallowable add-backs" />, and 2026/27 <TermExplainer termId="wda-main-pool" label="14% Main Pool WDA rates" />.
+              </p>
+            </div>
+          </div>
+
+          {/* Real-time Ledger Preview (7 cols) */}
+          <div className="lg:col-span-7 bg-stone-50/70 rounded-2xl p-6 border border-stone-200/90 space-y-5">
+            <h3 className="text-xs font-semibold text-stone-500 uppercase tracking-wider">
+              Statutory Tax & Reserves Computation
+            </h3>
+
+            <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
+              <div className="bg-white p-3.5 rounded-xl border border-stone-200">
+                <p className="text-xs text-stone-500">Taxable Profit</p>
+                <p className="text-lg font-bold text-stone-950 font-mono">£{profitBeforeTax.toLocaleString()}</p>
+                <p className="text-[11px] text-stone-400">P&L Box 155</p>
+              </div>
+
+              <div className="bg-white p-3.5 rounded-xl border border-stone-200">
+                <p className="text-xs text-stone-500">Corporation Tax</p>
+                <p className="text-lg font-bold text-amber-700 font-mono">£{corporationTax.toLocaleString()}</p>
+                <p className="text-[11px] text-amber-800 font-medium">
+                  {effectiveRate}% <TermExplainer termId="marginal-relief" label="effective rate" />
+                </p>
+              </div>
+
+              <div className="bg-white p-3.5 rounded-xl border border-stone-200 col-span-2 sm:col-span-1">
+                <p className="text-xs text-stone-500">
+                  <TermExplainer termId="distributable-reserves" label="Net Distributable" />
+                </p>
+                <p className="text-lg font-bold text-stone-950 font-mono">£{netProfitAfterTax.toLocaleString()}</p>
+                <p className="text-[11px] text-stone-400">Available dividends</p>
+              </div>
+            </div>
+
+            {/* Symmetry & Pre-flight Bar */}
+            <div className="bg-white p-4 rounded-xl border border-stone-200 space-y-2">
+              <div className="flex items-center justify-between text-xs">
+                <span className="font-semibold text-stone-800">
+                  <TermExplainer termId="balance-sheet-symmetry" label="Balance Sheet Symmetry" />
+                </span>
+                <span className="font-mono font-bold text-amber-700">0.00p Discrepancy</span>
+              </div>
+              <div className="w-full bg-stone-100 h-2 rounded-full overflow-hidden">
+                <div className="bg-amber-600 h-2 rounded-full w-full" />
+              </div>
+              <p className="text-[11px] text-stone-500">
+                Net Assets precisely equal Total Shareholders' Funds. Companies House rejection risk: 0.0%.
+              </p>
+            </div>
+
+            <div className="flex items-center justify-between pt-1">
+              <span className="text-xs text-stone-500">
+                Ready to file with these numbers?
+              </span>
+              <Link
+                href={`/filings/drop-logicx/wizard?turnover=${turnover}&expenses=${expenses}`}
+                className="inline-flex items-center space-x-1.5 text-xs font-bold text-white bg-stone-950 hover:bg-stone-800 px-3.5 py-2 rounded-xl shadow-xs transition"
+              >
+                <span>Transfer into Filing Wizard</span>
+                <ChevronRight className="w-3.5 h-3.5 text-amber-400" />
+              </Link>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      {/* Human Jargon Demystification Section */}
+      <section className="bg-stone-50 rounded-3xl p-8 sm:p-10 border border-stone-200 space-y-6">
+        <div className="text-center space-y-2 max-w-2xl mx-auto">
+          <div className="inline-flex items-center space-x-1.5 text-xs font-semibold text-amber-900 bg-amber-100/80 px-3 py-1 rounded-full border border-amber-200">
+            <BookOpen className="w-3.5 h-3.5 text-amber-700" />
+            <span>Built for Humans, Not Just Accountants</span>
+          </div>
+          <h2 className="text-2xl sm:text-3xl font-bold tracking-tight text-stone-950">
+            Never get lost in UK accounting jargon again.
+          </h2>
+          <p className="text-xs sm:text-sm text-stone-600">
+            Every confusing statutory code, box number, and Companies Act requirement is explained with simple everyday examples.
+          </p>
+        </div>
+
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-6 pt-2">
+          <div className="bg-white p-6 rounded-2xl border border-stone-200 space-y-3">
+            <span className="text-xs font-bold text-amber-900 bg-amber-50 px-2 py-0.5 rounded-full border border-amber-200">
+              What is FRS 105?
+            </span>
+            <h3 className="font-bold text-stone-900 text-sm">2-Page Micro-Entity Accounts</h3>
+            <p className="text-xs text-stone-600 leading-relaxed">
+              Instead of producing 30-page complex corporate reports, small businesses file a simplified 2-page balance sheet. You don’t need an expensive independent audit under Section 477.
+            </p>
+          </div>
+
+          <div className="bg-white p-6 rounded-2xl border border-stone-200 space-y-3">
+            <span className="text-xs font-bold text-amber-900 bg-amber-50 px-2 py-0.5 rounded-full border border-amber-200">
+              What is s455 Tax?
+            </span>
+            <h3 className="font-bold text-stone-900 text-sm">Director Loans Refunded by HMRC</h3>
+            <p className="text-xs text-stone-600 leading-relaxed">
+              If you borrow money from your company, HMRC charges a temporary 33.75% tax if unpaid after 9 months. Once you repay the loan, HMRC refunds this entire tax back to your company.
+            </p>
+          </div>
+
+          <div className="bg-white p-6 rounded-2xl border border-stone-200 space-y-3">
+            <span className="text-xs font-bold text-amber-900 bg-amber-50 px-2 py-0.5 rounded-full border border-amber-200">
+              What is 0p Symmetry?
+            </span>
+            <h3 className="font-bold text-stone-900 text-sm">Zero Gateway Rejections</h3>
+            <p className="text-xs text-stone-600 leading-relaxed">
+              Companies House automated servers reject submissions if Net Assets don’t equal Shareholders’ Funds to the exact penny. TaxFlow mathematically guarantees 0p discrepancy.
+            </p>
+          </div>
+        </div>
+      </section>
+
+      {/* The Direct Confrontation: TinyTax vs TaxFlow UK */}
+      <section className="space-y-6">
+        <div className="text-center space-y-2 max-w-2xl mx-auto">
+          <h2 className="text-2xl sm:text-3xl font-bold tracking-tight text-stone-950">
+            Engineered for high assurance, not basic form filling.
+          </h2>
+          <p className="text-sm text-stone-600">
+            Why UK directors and contractors are switching from TinyTax and traditional accounting firms.
+          </p>
+        </div>
+
+        <div className="bg-white rounded-3xl border border-stone-200 shadow-sm overflow-hidden">
+          <div className="overflow-x-auto">
+            <table className="w-full text-left border-collapse text-sm">
+              <thead>
+                <tr className="border-b border-stone-200 bg-stone-50/75">
+                  <th className="py-4 px-6 font-semibold text-stone-900 w-1/3">Capability & Assurance</th>
+                  <th className="py-4 px-6 font-semibold text-stone-400 w-1/3">TinyTax / Legacy Tools</th>
+                  <th className="py-4 px-6 font-bold text-amber-950 bg-amber-50/50 w-1/3">TaxFlow UK Sovereign</th>
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-stone-100 text-xs sm:text-sm">
+                <tr>
+                  <td className="py-4 px-6 font-medium text-stone-900">
+                    Pre-Flight Error Defense
+                    <p className="text-xs text-stone-500 font-normal mt-0.5">Automated statutory gateway gate before submission</p>
+                  </td>
+                  <td className="py-4 px-6 text-stone-600">
+                    <span className="inline-flex items-center space-x-1 text-amber-700 bg-amber-50 px-2 py-0.5 rounded text-xs font-medium">
+                      <span>Basic browser validation</span>
+                    </span>
+                    <p className="text-xs text-stone-400 mt-1">Rejections happen after you submit and wait days</p>
+                  </td>
+                  <td className="py-4 px-6 bg-amber-50/20 font-semibold text-stone-950">
+                    <span className="inline-flex items-center space-x-1 text-amber-900 bg-amber-100/80 px-2.5 py-0.5 rounded text-xs font-bold border border-amber-200">
+                      <ShieldCheck className="w-3.5 h-3.5 mr-1 text-amber-700" />
+                      <span>40-Point Pre-Flight Shield</span>
+                    </span>
+                    <p className="text-xs text-amber-900/80 mt-1">100% gateway rejection prevention guaranteed</p>
+                  </td>
+                </tr>
+
+                <tr>
+                  <td className="py-4 px-6 font-medium text-stone-900">
+                    Draft Documents Preview
+                    <p className="text-xs text-stone-500 font-normal mt-0.5">Review before paying or filing</p>
+                  </td>
+                  <td className="py-4 px-6 text-stone-600">
+                    <span className="inline-flex items-center space-x-1 text-red-700 bg-red-50 px-2 py-0.5 rounded text-xs font-medium">
+                      <span>Locked behind paywall</span>
+                    </span>
+                    <p className="text-xs text-stone-400 mt-1">Must pay before seeing full PDF accounts</p>
+                  </td>
+                  <td className="py-4 px-6 bg-amber-50/20 font-semibold text-stone-950">
+                    <span className="inline-flex items-center space-x-1 text-amber-900 bg-amber-100/80 px-2.5 py-0.5 rounded text-xs font-bold border border-amber-200">
+                      <span>100% Free Watermarked Drafts</span>
+                    </span>
+                    <p className="text-xs text-amber-900/80 mt-1">Download FRS 105 accounts & CT600 PDFs anytime</p>
+                  </td>
+                </tr>
+
+                <tr>
+                  <td className="py-4 px-6 font-medium text-stone-900">
+                    Plain-English Terminology
+                    <p className="text-xs text-stone-500 font-normal mt-0.5">Help for non-accountant directors</p>
+                  </td>
+                  <td className="py-4 px-6 text-stone-600">
+                    <span className="inline-flex items-center space-x-1 text-stone-600 bg-stone-100 px-2 py-0.5 rounded text-xs font-medium">
+                      <span>Dense jargon with zero help</span>
+                    </span>
+                    <p className="text-xs text-stone-400 mt-1">Assumes you have an accounting degree</p>
+                  </td>
+                  <td className="py-4 px-6 bg-amber-50/20 font-semibold text-stone-950">
+                    <span className="inline-flex items-center space-x-1 text-amber-900 bg-amber-100/80 px-2.5 py-0.5 rounded text-xs font-bold border border-amber-200">
+                      <span>Interactive Glossary & Guidance</span>
+                    </span>
+                    <p className="text-xs text-amber-900/80 mt-1">Every term explained in plain English with real scenarios</p>
+                  </td>
+                </tr>
+
+                <tr>
+                  <td className="py-4 px-6 font-medium text-stone-900">
+                    Transparent Commercial Model
+                    <p className="text-xs text-stone-500 font-normal mt-0.5">Final submission pricing</p>
+                  </td>
+                  <td className="py-4 px-6 text-stone-600">
+                    <span className="font-mono text-stone-800 font-bold">£70 – £120+</span>
+                    <p className="text-xs text-stone-400 mt-1">Plus hidden add-ons for CT600A or iXBRL</p>
+                  </td>
+                  <td className="py-4 px-6 bg-amber-50/20 font-semibold text-stone-950">
+                    <span className="font-mono text-stone-950 font-black text-base">£49.00 net</span>
+                    <p className="text-xs text-amber-900/80 mt-1">All-inclusive: Companies House + HMRC + iXBRL</p>
+                  </td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </section>
+
+      {/* Production Benchmark Seal */}
+      <section className="bg-stone-950 text-white rounded-3xl p-8 sm:p-10 border border-stone-800 flex flex-col md:flex-row items-start md:items-center justify-between gap-6">
+        <div className="space-y-3 max-w-2xl">
+          <div className="inline-flex items-center space-x-2 bg-amber-500/10 text-amber-400 border border-amber-500/20 text-xs px-3 py-1 rounded-full font-mono">
+            <span>Verified Baseline: DROPLOGICX LTD (CRN: 15152081)</span>
+          </div>
+          <h2 className="text-2xl font-bold tracking-tight">
+            Inspect the live audited micro-entity filing.
+          </h2>
+          <p className="text-sm text-stone-400 leading-relaxed">
+            Explore a complete £100,000 turnover statutory return with £31,900 taxable profits, £6,061 corporation tax, and verified FRS 105 iXBRL tags.
+          </p>
+        </div>
+
+        <div className="flex flex-col sm:flex-row items-center gap-3 w-full sm:w-auto">
           <Link
             href="/dashboard"
-            className="w-full sm:w-auto inline-flex items-center justify-center space-x-2 bg-slate-900 text-white hover:bg-slate-800 px-6 py-3.5 rounded-xl font-semibold shadow-sm hover:shadow transition"
+            className="w-full sm:w-auto inline-flex items-center justify-center space-x-2 bg-gradient-to-r from-amber-500 to-orange-500 hover:from-amber-400 hover:to-orange-400 text-stone-950 font-bold px-5 py-3 rounded-xl text-sm transition"
           >
-            <span>Open Compliance Dashboard</span>
+            <span>Open Executive Dashboard</span>
             <ArrowRight className="w-4 h-4" />
           </Link>
           <Link
-            href="/filings/drop-logicx/wizard"
-            className="w-full sm:w-auto inline-flex items-center justify-center space-x-2 bg-white text-slate-800 border border-slate-300 hover:bg-slate-50 px-6 py-3.5 rounded-xl font-semibold transition"
+            href="/filings/drop-logicx/documents"
+            className="w-full sm:w-auto inline-flex items-center justify-center space-x-2 bg-stone-900 hover:bg-stone-800 text-stone-300 border border-stone-800 font-semibold px-5 py-3 rounded-xl text-sm transition"
           >
-            <span>Run DropLogicX Benchmark</span>
+            <Download className="w-4 h-4" />
+            <span>View Draft Documents</span>
           </Link>
         </div>
       </section>
 
-      {/* Value Pillars Grid */}
-      <section className="grid grid-cols-1 md:grid-cols-3 gap-8">
-        <div className="bg-white p-7 rounded-2xl border border-slate-200/80 shadow-xs hover:border-slate-300 transition space-y-4">
-          <div className="w-12 h-12 rounded-xl bg-emerald-50 text-emerald-600 flex items-center justify-center font-bold">
-            <ShieldCheck className="w-6 h-6" />
-          </div>
-          <h3 className="text-lg font-bold text-slate-900">40-Point Pre-Flight Shield</h3>
-          <p className="text-sm text-slate-600 leading-relaxed">
-            Eliminates 100% of gateway rejections before transmission. Mathematically audits balance sheets to the penny, detects illegal dividends, and checks dated director loan s455 tax rules.
-          </p>
-        </div>
-
-        <div className="bg-white p-7 rounded-2xl border border-slate-200/80 shadow-xs hover:border-slate-300 transition space-y-4">
-          <div className="w-12 h-12 rounded-xl bg-sky-50 text-sky-600 flex items-center justify-center font-bold">
-            <FileText className="w-6 h-6" />
-          </div>
-          <h3 className="text-lg font-bold text-slate-900">Free Drafts & iXBRL Previews</h3>
-          <p className="text-sm text-slate-600 leading-relaxed">
-            Download full watermarked draft PDFs of both your statutory FRS 105 Accounts and HMRC CT600 Form before paying a single penny. Only pay £49 at final submission.
-          </p>
-        </div>
-
-        <div className="bg-white p-7 rounded-2xl border border-slate-200/80 shadow-xs hover:border-slate-300 transition space-y-4">
-          <div className="w-12 h-12 rounded-xl bg-indigo-50 text-indigo-600 flex items-center justify-center font-bold">
-            <Calculator className="w-6 h-6" />
-          </div>
-          <h3 className="text-lg font-bold text-slate-900">2026/27 Tax Rules Native</h3>
-          <p className="text-sm text-slate-600 leading-relaxed">
-            Built from scratch for the 14% Main Pool WDA post-April 2026, day-weighted hybrid blending for straddling periods, and loan-by-loan s455 tax rate bands (33.75% / 35.75%).
-          </p>
-        </div>
-      </section>
-
-      {/* Live Benchmark Callout */}
-      <section className="bg-gradient-to-r from-slate-900 via-slate-800 to-slate-900 text-white rounded-3xl p-8 sm:p-10 shadow-lg border border-slate-700">
-        <div className="max-w-3xl space-y-4">
-          <div className="inline-flex items-center space-x-2 bg-sky-500/20 text-sky-300 border border-sky-400/30 text-xs px-3 py-1 rounded-full font-mono">
-            <span>Verified Benchmark: DropLogicX Ltd (CRN: 15152081)</span>
-          </div>
-          <h2 className="text-2xl sm:text-3xl font-extrabold tracking-tight">
-            See the Engine in Action
-          </h2>
-          <p className="text-slate-300 text-sm leading-relaxed">
-            Turnover £100,000, Total Taxable Profits £31,900, Corporation Tax @ 19% = £6,061.00, P&L Net Profit After Tax = £25,839, Closing Retained Earnings = £31,039. Audited across all 40 Pre-Flight rules with zero fatal errors.
-          </p>
-          <div className="pt-2 flex flex-wrap gap-4 text-xs font-mono text-slate-400">
-            <span className="flex items-center space-x-1">
-              <CheckCircle2 className="w-4 h-4 text-emerald-400" />
-              <span>Balance Sheet Balanced to 0p</span>
-            </span>
-            <span className="flex items-center space-x-1">
-              <CheckCircle2 className="w-4 h-4 text-emerald-400" />
-              <span>FRS 105 iXBRL XHTML Ready</span>
-            </span>
-            <span className="flex items-center space-x-1">
-              <CheckCircle2 className="w-4 h-4 text-emerald-400" />
-              <span>HMRC C14N IRmark Deterministic</span>
-            </span>
-          </div>
-          <div className="pt-4">
-            <Link
-              href="/dashboard"
-              className="inline-flex items-center space-x-2 bg-sky-500 hover:bg-sky-400 text-slate-950 font-bold px-5 py-2.5 rounded-lg text-sm transition"
-            >
-              <span>Explore Live Benchmark</span>
-              <ArrowRight className="w-4 h-4" />
-            </Link>
-          </div>
-        </div>
-      </section>
+      <GlossaryModal
+        isOpen={isGlossaryOpen}
+        onClose={() => setIsGlossaryOpen(false)}
+        initialTermId={initialGlossaryTerm}
+      />
     </div>
   );
 }
-

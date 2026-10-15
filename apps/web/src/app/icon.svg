@@ -1,0 +1,24 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 76 76" width="32" height="32">
+  <defs>
+    <linearGradient id="favicon_grad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#F59E0B" />
+      <stop offset="100%" stop-color="#EA580C" />
+    </linearGradient>
+  </defs>
+
+  <!-- Dark Squircle Background -->
+  <rect width="76" height="76" rx="20" fill="#1C1917" stroke="#44403C" stroke-width="2" />
+
+  <!-- Tier 1: Turnover Bar -->
+  <rect x="11" y="16" width="54" height="10" rx="5" fill="url(#favicon_grad)" />
+
+  <!-- Tier 2: Deductions Bar -->
+  <rect x="22" y="32" width="43" height="10" rx="5" fill="#F59E0B" />
+
+  <!-- Tier 3: Profit Bar -->
+  <rect x="22" y="48" width="28" height="10" rx="5" fill="#D97706" />
+
+  <!-- Kinetic Chevron Arrow -->
+  <path d="M58 48 L66 53 L58 58" stroke="#F59E0B" stroke-width="3.5" stroke-linecap="round" stroke-linejoin="round" />
+</svg>
+

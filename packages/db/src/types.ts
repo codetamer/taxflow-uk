@@ -7,6 +7,39 @@ export type FilingStatus =
   | 'ACCEPTED'
   | 'REJECTED';
 
+export type UserRole = 'USER' | 'ADMIN';
+export type CompanyRole = 'OWNER' | 'DIRECTOR' | 'ACCOUNTANT' | 'VIEWER';
+export type GatewayType = 'HMRC' | 'COMPANIES_HOUSE' | 'HMRC_CT600' | 'COMPANIES_HOUSE_ACCOUNTS';
+export type GatewayStatus = 'PENDING' | 'ACCEPTED' | 'REJECTED';
+
+export interface UserRecord {
+  id: string;
+  email: string;
+  passwordHash: string;
+  fullName: string;
+  role: UserRole;
+  isVerified: boolean;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface SessionRecord {
+  id: string;
+  userId: string;
+  tokenHash: string;
+  expiresAt: string;
+  createdAt: string;
+  ipAddress?: string;
+  userAgent?: string;
+}
+
+export interface UserCompanyRecord {
+  userId: string;
+  companyId: string;
+  role: CompanyRole;
+  createdAt: string;
+}
+
 export interface CompanyRecord {
   id: string;
   crn: string;
@@ -63,4 +96,19 @@ export interface PriorYearAccountsRecord {
   calledUpShareCapitalPence: number;
   profitAndLossReservePence: number;
   createdAt: string;
+}
+
+export interface GatewaySubmissionRecord {
+  id: string;
+  filingId: string;
+  gatewayType: GatewayType;
+  correlationId: string;
+  status: GatewayStatus;
+  rawRequestXml?: string;
+  rawResponseXml?: string;
+  errorCode?: string;
+  errorMessage?: string;
+  latencyMs: number;
+  submittedAt: string;
+  completedAt?: string;
 }
