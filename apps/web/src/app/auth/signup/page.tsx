@@ -3,7 +3,7 @@
 import { useState, Suspense } from 'react';
 import Link from 'next/link';
 import { useRouter, useSearchParams } from 'next/navigation';
-import { Lock, Mail, User, Building2, ArrowRight, ShieldCheck, AlertCircle, CheckCircle2 } from 'lucide-react';
+import { Lock, Mail, User, Building2, ArrowRight, ShieldCheck, AlertCircle, CheckCircle2, Sparkles } from 'lucide-react';
 import { TaxFlowLogo } from '@/components/TaxFlowLogo';
 
 export default function SignupPage() {
@@ -77,6 +77,23 @@ function SignupForm() {
             <span>{error}</span>
           </div>
         )}
+
+        {/* Reviewer Quick Access Banner */}
+        <div className="bg-amber-50 border border-amber-200 rounded-3xl p-5 text-center space-y-3">
+          <div className="flex items-center justify-center space-x-2 text-xs font-bold text-amber-900">
+            <Sparkles className="w-4 h-4 text-amber-600" />
+            <span>Reviewer Mode Active</span>
+          </div>
+          <p className="text-xs text-stone-600">
+            Authentication is bypassed for inspection. You can enter the dashboard directly without creating an account.
+          </p>
+          <Link
+            href="/dashboard"
+            className="inline-flex items-center justify-center space-x-2 w-full bg-gradient-to-r from-amber-500 to-orange-500 hover:from-amber-400 hover:to-orange-400 text-stone-950 font-bold py-2.5 rounded-xl text-xs transition shadow-xs"
+          >
+            <span>Enter Studio Directly →</span>
+          </Link>
+        </div>
 
         {/* Form Card */}
         <div className="bg-white rounded-3xl p-7 border border-stone-200/90 shadow-sm space-y-6">
