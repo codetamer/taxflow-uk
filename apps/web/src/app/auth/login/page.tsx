@@ -82,21 +82,23 @@ function LoginForm() {
         )}
 
         {/* Reviewer Quick Access Banner */}
-        <div className="bg-amber-50 border border-amber-200 rounded-3xl p-5 text-center space-y-3">
-          <div className="flex items-center justify-center space-x-2 text-xs font-bold text-amber-900">
-            <Sparkles className="w-4 h-4 text-amber-600" />
-            <span>Reviewer Mode Active</span>
+        {process.env.NEXT_PUBLIC_REVIEWER_MODE !== 'false' && (
+          <div className="bg-amber-50 border border-amber-200 rounded-3xl p-5 text-center space-y-3">
+            <div className="flex items-center justify-center space-x-2 text-xs font-bold text-amber-900">
+              <Sparkles className="w-4 h-4 text-amber-600" />
+              <span>Reviewer Mode Active</span>
+            </div>
+            <p className="text-xs text-stone-600">
+              Authentication is bypassed for inspection. You can enter the dashboard and all filings directly.
+            </p>
+            <Link
+              href="/dashboard"
+              className="inline-flex items-center justify-center space-x-2 w-full bg-gradient-to-r from-amber-500 to-orange-500 hover:from-amber-400 hover:to-orange-400 text-stone-950 font-bold py-2.5 rounded-xl text-xs transition shadow-xs"
+            >
+              <span>Enter Studio Without Sign In →</span>
+            </Link>
           </div>
-          <p className="text-xs text-stone-600">
-            Authentication is bypassed for inspection. You can enter the dashboard and all filings directly.
-          </p>
-          <Link
-            href="/dashboard"
-            className="inline-flex items-center justify-center space-x-2 w-full bg-gradient-to-r from-amber-500 to-orange-500 hover:from-amber-400 hover:to-orange-400 text-stone-950 font-bold py-2.5 rounded-xl text-xs transition shadow-xs"
-          >
-            <span>Enter Studio Without Sign In →</span>
-          </Link>
-        </div>
+        )}
 
         {/* Form Card */}
         <div className="bg-white rounded-3xl p-7 border border-slate-200/90 shadow-sm space-y-6">

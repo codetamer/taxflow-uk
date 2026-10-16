@@ -125,6 +125,17 @@ Visit [http://localhost:3000](http://localhost:3000) in your browser.
 
 ---
 
+## 🎛 Reviewer Mode Configuration
+
+The platform includes a toggleable **Reviewer Mode** engineered for external inspections, stakeholders, and serverless previews without requiring persistent database infrastructure:
+
+- **Reviewer Mode Enabled (Default)**:  
+  Bypasses authentication gating, supplies pre-loaded statutory mock data (`DROPLOGICX LTD`), and allows seamless inspection of all dashboards, filing wizards, Shield audits, and PDF generators.
+- **Strict Production Mode (Toggled via Environment Variable)**:  
+  Set `REVIEWER_MODE=false` (or `NEXT_PUBLIC_REVIEWER_MODE=false`) to enforce strict session authentication, cookie validation, and native database records.
+
+---
+
 ## 📜 License
 
 Private & Proprietary © 2026 TaxFlow UK. All rights reserved.

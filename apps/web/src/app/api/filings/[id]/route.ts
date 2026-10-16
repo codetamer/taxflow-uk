@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getRepositories } from '@taxflow/db';
 import { MOCK_REVIEW_FILING } from '@/lib/mockFiling';
+import { isReviewerMode } from '@/lib/reviewerMode';
 
 export async function GET(
   req: NextRequest,
@@ -27,35 +28,41 @@ export async function GET(
         });
       }
     } catch {
-      // In serverless Reviewer Mode without DB, fall through to mock
+      // Continue to reviewer fallback if enabled
     }
 
-    // Default mock response for drop-logicx or any ID
-    return NextResponse.json({
-      success: true,
-      filing: {
-        ...MOCK_REVIEW_FILING,
-        id,
-        auditLogs: [
-          {
-            id: 'log_001',
-            filingId: id,
-            action: 'COMPANIES_HOUSE_VALIDATED',
-            actor: 'SYSTEM',
-            detailsJson: JSON.stringify({ status: 'PASS' }),
-            timestamp: '2026-10-15T10:45:00.000Z'
-          },
-          {
-            id: 'log_002',
-            filingId: id,
-            action: 'HMRC_IRMARK_GENERATED',
-            actor: 'CT_ENGINE',
-            detailsJson: JSON.stringify({ irmark: 'E8g0182Nsd9120=' }),
-            timestamp: '2026-10-15T10:47:00.000Z'
-          }
-        ]
-      }
-    });
+    if (isReviewerMode()) {
+      return NextResponse.json({
+        success: true,
+        filing: {
+          ...MOCK_REVIEW_FILING,
+          id,
+          auditLogs: [
+            {
+              id: 'log_001',
+              filingId: id,
+              action: 'COMPANIES_HOUSE_VALIDATED',
+              actor: 'SYSTEM',
+              detailsJson: JSON.stringify({ status: 'PASS' }),
+              timestamp: '2026-10-15T10:45:00.000Z'
+            },
+            {
+              id: 'log_002',
+              filingId: id,
+              action: 'HMRC_IRMARK_GENERATED',
+              actor: 'CT_ENGINE',
+              detailsJson: JSON.stringify({ irmark: 'E8g0182Nsd9120=' }),
+              timestamp: '2026-10-15T10:47:00.000Z'
+            }
+          ]
+        }
+      });
+    }
+
+    return NextResponse.json(
+      { success: false, error: `Filing with ID ${id} not found` },
+      { status: 404 }
+    );
   } catch (error: any) {
     return NextResponse.json(
       { success: false, error: error.message || 'Failed to fetch filing' },
@@ -101,17 +108,24 @@ export async function PUT(
         });
       }
     } catch {
-      // In serverless Reviewer Mode fallback
+      // Continue to reviewer fallback if enabled
     }
 
-    return NextResponse.json({
-      success: true,
-      filing: {
-        ...MOCK_REVIEW_FILING,
-        ...body,
-        id
-      }
-    });
+    if (isReviewerMode()) {
+      return NextResponse.json({
+        success: true,
+        filing: {
+          ...MOCK_REVIEW_FILING,
+          ...body,
+          id
+        }
+      });
+    }
+
+    return NextResponse.json(
+      { success: false, error: `Filing with ID ${id} not found` },
+      { status: 404 }
+    );
   } catch (error: any) {
     return NextResponse.json(
       { success: false, error: error.message || 'Failed to update filing' },

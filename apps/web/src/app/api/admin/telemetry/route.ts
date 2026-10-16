@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getCurrentUser, DEFAULT_REVIEWER_CONTEXT } from '@/lib/auth';
 import { getRepositories } from '@taxflow/db';
+import { isReviewerMode } from '@/lib/reviewerMode';
 
 let isSandboxMode = true;
 
@@ -62,7 +63,14 @@ const MOCK_USERS = [
 
 export async function GET() {
   try {
-    const auth = (await getCurrentUser()) || DEFAULT_REVIEWER_CONTEXT;
+    const auth = (await getCurrentUser()) || (isReviewerMode() ? DEFAULT_REVIEWER_CONTEXT : null);
+    if (!auth) {
+      return NextResponse.json({ success: false, error: 'Unauthorized' }, { status: 401 });
+    }
+
+    if (auth.user.role !== 'ADMIN') {
+      return NextResponse.json({ success: false, error: 'Forbidden: Admin access required' }, { status: 403 });
+    }
 
     try {
       const repos = getRepositories();
@@ -81,15 +89,17 @@ export async function GET() {
         users,
         sandboxMode: isSandboxMode
       });
-    } catch {
-      // Serverless Reviewer Mode fallback
-      return NextResponse.json({
-        success: true,
-        stats: MOCK_PLATFORM_STATS,
-        submissions: MOCK_GATEWAY_SUBMISSIONS,
-        users: MOCK_USERS,
-        sandboxMode: isSandboxMode
-      });
+    } catch (dbErr: any) {
+      if (isReviewerMode()) {
+        return NextResponse.json({
+          success: true,
+          stats: MOCK_PLATFORM_STATS,
+          submissions: MOCK_GATEWAY_SUBMISSIONS,
+          users: MOCK_USERS,
+          sandboxMode: isSandboxMode
+        });
+      }
+      throw dbErr;
     }
   } catch (error: any) {
     return NextResponse.json(
@@ -101,6 +111,11 @@ export async function GET() {
 
 export async function POST(req: NextRequest) {
   try {
+    const auth = (await getCurrentUser()) || (isReviewerMode() ? DEFAULT_REVIEWER_CONTEXT : null);
+    if (!auth || auth.user.role !== 'ADMIN') {
+      return NextResponse.json({ success: false, error: 'Admin access required' }, { status: 403 });
+    }
+
     const body = await req.json();
 
     if (body.action === 'toggle_sandbox') {
@@ -133,21 +148,23 @@ export async function POST(req: NextRequest) {
         });
 
         return NextResponse.json({ success: true, submission: newSubmission });
-      } catch {
-        // Serverless Reviewer Mode fallback
-        const mockSubmission = {
-          id: `sub_${Date.now()}`,
-          filingId: 'fil_f114c04facec439e',
-          gatewayType,
-          correlationId,
-          status: 'ACCEPTED',
-          latencyMs,
-          submittedAt: new Date().toISOString(),
-          completedAt: new Date().toISOString(),
-          rawRequestXml: `<GovTalkMessage test="true"><Class>${gatewayType}</Class></GovTalkMessage>`,
-          rawResponseXml: `<GovTalkMessage test="true"><Status>ACCEPTED</Status><LatencyMs>${latencyMs}</LatencyMs></GovTalkMessage>`
-        };
-        return NextResponse.json({ success: true, submission: mockSubmission });
+      } catch (dbErr: any) {
+        if (isReviewerMode()) {
+          const mockSubmission = {
+            id: `sub_${Date.now()}`,
+            filingId: 'fil_f114c04facec439e',
+            gatewayType,
+            correlationId,
+            status: 'ACCEPTED',
+            latencyMs,
+            submittedAt: new Date().toISOString(),
+            completedAt: new Date().toISOString(),
+            rawRequestXml: `<GovTalkMessage test="true"><Class>${gatewayType}</Class></GovTalkMessage>`,
+            rawResponseXml: `<GovTalkMessage test="true"><Status>ACCEPTED</Status><LatencyMs>${latencyMs}</LatencyMs></GovTalkMessage>`
+          };
+          return NextResponse.json({ success: true, submission: mockSubmission });
+        }
+        throw dbErr;
       }
     }
 

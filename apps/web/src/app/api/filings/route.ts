@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getRepositories } from '@taxflow/db';
 import { MOCK_REVIEW_FILING } from '@/lib/mockFiling';
+import { isReviewerMode } from '@/lib/reviewerMode';
 
 export async function GET() {
   try {
@@ -9,28 +10,39 @@ export async function GET() {
     const companies = repos.companies.list();
 
     if (filings.length === 0) {
+      if (isReviewerMode()) {
+        return NextResponse.json({
+          success: true,
+          filings: [MOCK_REVIEW_FILING]
+        });
+      }
       return NextResponse.json({
         success: true,
-        filings: [MOCK_REVIEW_FILING]
+        filings: []
       });
     }
 
     const companyMap = new Map(companies.map((c) => [c.id, c]));
     const enriched = filings.map((f) => ({
       ...f,
-      company: companyMap.get(f.companyId) || MOCK_REVIEW_FILING.company
+      company: companyMap.get(f.companyId) || (isReviewerMode() ? MOCK_REVIEW_FILING.company : null)
     }));
 
     return NextResponse.json({
       success: true,
       filings: enriched
     });
-  } catch {
-    // In Reviewer Mode without DB on serverless, return mock filing
-    return NextResponse.json({
-      success: true,
-      filings: [MOCK_REVIEW_FILING]
-    });
+  } catch (err: any) {
+    if (isReviewerMode()) {
+      return NextResponse.json({
+        success: true,
+        filings: [MOCK_REVIEW_FILING]
+      });
+    }
+    return NextResponse.json(
+      { success: false, error: err.message || 'Failed to list filings' },
+      { status: 500 }
+    );
   }
 }
 
@@ -78,30 +90,32 @@ export async function POST(req: NextRequest) {
         filing,
         company: companyRecord
       });
-    } catch {
-      // In serverless Reviewer Mode fallback
-      const mockId = `fil_${Date.now()}`;
-      return NextResponse.json({
-        success: true,
-        filing: {
-          id: mockId,
-          companyId: `co_${company.crn}`,
-          periodStart: period?.startDate || '2025-10-01',
-          periodEnd: period?.endDate || '2026-09-30',
-          directorName: directorName || 'Muhammad Saif Raza',
-          status: 'DRAFT',
-          createdAt: new Date().toISOString(),
-          updatedAt: new Date().toISOString()
-        },
-        company: {
-          id: `co_${company.crn}`,
-          crn: company.crn,
-          name: company.name,
-          registeredAddress: company.registeredAddress || 'Registered Office in England & Wales',
-          companyType: 'ltd',
-          isCloseCompany: true
-        }
-      });
+    } catch (dbErr: any) {
+      if (isReviewerMode()) {
+        const mockId = `fil_${Date.now()}`;
+        return NextResponse.json({
+          success: true,
+          filing: {
+            id: mockId,
+            companyId: `co_${company.crn}`,
+            periodStart: period?.startDate || '2025-10-01',
+            periodEnd: period?.endDate || '2026-09-30',
+            directorName: directorName || 'Muhammad Saif Raza',
+            status: 'DRAFT',
+            createdAt: new Date().toISOString(),
+            updatedAt: new Date().toISOString()
+          },
+          company: {
+            id: `co_${company.crn}`,
+            crn: company.crn,
+            name: company.name,
+            registeredAddress: company.registeredAddress || 'Registered Office in England & Wales',
+            companyType: 'ltd',
+            isCloseCompany: true
+          }
+        });
+      }
+      throw dbErr;
     }
   } catch (error: any) {
     return NextResponse.json(

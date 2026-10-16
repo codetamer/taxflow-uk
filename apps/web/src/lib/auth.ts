@@ -2,6 +2,7 @@ import { cookies } from 'next/headers';
 import { NextResponse } from 'next/server';
 import { getRepositories } from '@taxflow/db';
 import type { UserRecord, SessionRecord, CompanyRecord, CompanyRole } from '@taxflow/db';
+import { isReviewerMode } from './reviewerMode';
 
 export const SESSION_COOKIE_NAME = 'taxflow_session';
 
@@ -49,7 +50,8 @@ export const DEFAULT_REVIEWER_CONTEXT: AuthenticatedContext = {
 
 /**
  * Retrieves the current authenticated user and their companies from the HTTP-only session cookie.
- * In Reviewer Mode, if no cookie exists or DB is unavailable, returns DEFAULT_REVIEWER_CONTEXT.
+ * If Reviewer Mode is active (default), unauthenticated sessions automatically fall back to DEFAULT_REVIEWER_CONTEXT.
+ * When Reviewer Mode is toggled off (REVIEWER_MODE=false), strictly returns null if unauthenticated.
  */
 export async function getCurrentUser(): Promise<AuthenticatedContext | null> {
   try {
@@ -68,12 +70,12 @@ export async function getCurrentUser(): Promise<AuthenticatedContext | null> {
           };
         }
       } catch {
-        // Fall back to default reviewer session
+        // Fall back below if reviewer mode is enabled
       }
     }
-    return DEFAULT_REVIEWER_CONTEXT;
+    return isReviewerMode() ? DEFAULT_REVIEWER_CONTEXT : null;
   } catch {
-    return DEFAULT_REVIEWER_CONTEXT;
+    return isReviewerMode() ? DEFAULT_REVIEWER_CONTEXT : null;
   }
 }
 

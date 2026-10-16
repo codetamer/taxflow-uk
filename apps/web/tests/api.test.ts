@@ -234,5 +234,25 @@ test('@taxflow/web: Core API & Service Integration Suite', async (t) => {
     assert.ok(ct600Buf.length > 500);
     assert.equal(ct600Buf.subarray(0, 4).toString(), '%PDF');
   });
+
+  await t.test('Reviewer Mode Toggle: Dynamic enablement and strict fallback', async () => {
+    const { isReviewerMode } = await import('../src/lib/reviewerMode.ts');
+    
+    // Default: true
+    delete process.env.REVIEWER_MODE;
+    delete process.env.NEXT_PUBLIC_REVIEWER_MODE;
+    assert.equal(isReviewerMode(), true);
+
+    // Explicit disable: false
+    process.env.REVIEWER_MODE = 'false';
+    assert.equal(isReviewerMode(), false);
+
+    // Explicit re-enable: true
+    process.env.REVIEWER_MODE = 'true';
+    assert.equal(isReviewerMode(), true);
+
+    // Cleanup
+    delete process.env.REVIEWER_MODE;
+  });
 });
 

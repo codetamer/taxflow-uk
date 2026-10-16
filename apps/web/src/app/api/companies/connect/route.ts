@@ -2,10 +2,14 @@ import { NextRequest, NextResponse } from 'next/server';
 import { getCurrentUser, DEFAULT_REVIEWER_CONTEXT } from '@/lib/auth';
 import { getRepositories } from '@taxflow/db';
 import { CompaniesHouseClient } from '@taxflow/companies-house';
+import { isReviewerMode } from '@/lib/reviewerMode';
 
 export async function POST(req: NextRequest) {
   try {
-    const auth = (await getCurrentUser()) || DEFAULT_REVIEWER_CONTEXT;
+    const auth = (await getCurrentUser()) || (isReviewerMode() ? DEFAULT_REVIEWER_CONTEXT : null);
+    if (!auth) {
+      return NextResponse.json({ success: false, error: 'Unauthorized' }, { status: 401 });
+    }
 
     const body = await req.json();
     const crn = body.crn?.trim();
@@ -51,23 +55,25 @@ export async function POST(req: NextRequest) {
         company,
         companies: updatedCompanies.length > 0 ? updatedCompanies : [company]
       });
-    } catch {
-      // Serverless Reviewer Mode fallback
-      const newCompany = {
-        id: `co_${crn}`,
-        crn: details.crn,
-        name: details.name,
-        registeredAddress: details.registeredAddress,
-        companyType: details.companyType,
-        isCloseCompany: details.isCloseCompany,
-        userRole: 'DIRECTOR'
-      };
+    } catch (dbErr: any) {
+      if (isReviewerMode()) {
+        const newCompany = {
+          id: `co_${crn}`,
+          crn: details.crn,
+          name: details.name,
+          registeredAddress: details.registeredAddress,
+          companyType: details.companyType,
+          isCloseCompany: details.isCloseCompany,
+          userRole: 'DIRECTOR'
+        };
 
-      return NextResponse.json({
-        success: true,
-        company: newCompany,
-        companies: [...DEFAULT_REVIEWER_CONTEXT.companies, newCompany]
-      });
+        return NextResponse.json({
+          success: true,
+          company: newCompany,
+          companies: [...(auth.companies || []), newCompany]
+        });
+      }
+      throw dbErr;
     }
   } catch (err: any) {
     return NextResponse.json(
