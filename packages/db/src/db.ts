@@ -134,9 +134,11 @@ export function getDatabase(dbPath?: string): DatabaseSync {
     Boolean(process.env.VERCEL_ENV) ||
     Boolean(process.env.AWS_LAMBDA_FUNCTION_NAME) ||
     Boolean(process.env.LAMBDA_TASK_ROOT) ||
+    Boolean(process.env.NOW_REGION) ||
     (typeof process.cwd === 'function' && (
-      process.cwd().startsWith('/var/task') ||
-      process.cwd().startsWith('/var/runtime')
+      process.cwd().includes('/var/task') ||
+      process.cwd().includes('/var/runtime') ||
+      process.cwd().includes('/vercel')
     ));
 
   let resolvedPath = dbPath || process.env.DATABASE_URL;
