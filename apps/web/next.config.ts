@@ -6,7 +6,9 @@ const nextConfig: NextConfig = {
     '@taxflow/ct-engine',
     '@taxflow/shield',
     '@taxflow/doc-engine',
-    '@taxflow/ingestion'
+    '@taxflow/ingestion',
+    '@taxflow/companies-house',
+    '@taxflow/db'
   ]
 };
 

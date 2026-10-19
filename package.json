@@ -9,7 +9,7 @@
   ],
   "scripts": {
     "dev": "npm run dev --workspace=@taxflow/web",
-    "build": "npm run build --workspace=@taxflow/web",
+    "build": "npm run build --workspace=@taxflow/web && node scripts/postbuild.mjs",
     "start": "npm run start --workspace=@taxflow/web",
     "sidecar": "uvicorn services.validator-sidecar.app:app --port 8000",
     "test": "npm run test --workspaces --if-present",
