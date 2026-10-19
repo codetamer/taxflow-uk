@@ -32,7 +32,7 @@ function seedInitialData(db: DatabaseSync): void {
 
     // 2. Seed Users
     // Password123! scrypt hash
-    const directorHash = '00000000000000000000000000000000:72b528bdfec3bc262bf6a9bf6c1ec5a7cf9f33c7f9ea9fa01f56efb9b77eb8a2';
+    const directorHash = '0b7cb5e17a985d82cd40b578b9c5398a:9a8595d62ea36c8bf809f4b11d94e7cdbc32b8aa6212ae0ab3b1c1489236953f04eb3d7636e9f8d461a155bd7fd2a7ebc180a8c9ac8a324c5c02d7b7e19c6bf6';
     db.prepare(`
       INSERT OR IGNORE INTO users (id, email, password_hash, full_name, role, is_verified, created_at, updated_at)
       VALUES (?, ?, ?, ?, ?, ?, ?, ?)
