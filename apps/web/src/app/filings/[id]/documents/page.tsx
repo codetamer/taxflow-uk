@@ -2,6 +2,7 @@
 
 import { useState } from 'react';
 import Link from 'next/link';
+import { useParams } from 'next/navigation';
 import {
   FileText,
   FileDown,
@@ -25,6 +26,8 @@ import { PlainEnglishBanner } from '@/components/PlainEnglishBanner';
 import { GlossaryModal } from '@/components/GlossaryModal';
 
 export default function DocumentsPage() {
+  const params = useParams();
+  const filingId = (params?.id as string) || 'drop-logicx';
   const [activeTab, setActiveTab] = useState<'accounts' | 'ct600' | 'ixbrl' | 'signing'>('accounts');
   const [isWatermarked, setIsWatermarked] = useState<boolean>(true);
   const [copiedCode, setCopiedCode] = useState<boolean>(false);
@@ -155,7 +158,7 @@ export default function DocumentsPage() {
 
         <div className="flex flex-wrap items-center gap-2.5">
           <a
-            href={`/api/documents/accounts-pdf?draft=${isWatermarked}`}
+            href={`/api/documents/accounts-pdf?draft=${isWatermarked}&filingId=${filingId}`}
             target="_blank"
             className="inline-flex items-center space-x-1.5 bg-gradient-to-r from-amber-500 to-orange-500 hover:from-amber-600 hover:to-orange-600 text-stone-950 font-bold px-4 py-2 rounded-xl text-xs shadow-xs transition"
           >
@@ -163,7 +166,7 @@ export default function DocumentsPage() {
             <span>Download Accounts PDF</span>
           </a>
           <a
-            href={`/api/documents/ct600-pdf?draft=${isWatermarked}`}
+            href={`/api/documents/ct600-pdf?draft=${isWatermarked}&filingId=${filingId}`}
             target="_blank"
             className="inline-flex items-center space-x-1.5 bg-stone-800 text-stone-200 hover:bg-stone-700 px-4 py-2 rounded-xl text-xs font-semibold transition"
           >

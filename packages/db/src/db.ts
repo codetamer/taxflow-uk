@@ -47,6 +47,23 @@ function seedInitialData(db: DatabaseSync): void {
       now
     );
 
+    // AdminPass2026! scrypt hash
+    const adminHash = 'd5dcf488a05d897581fc215e68891881:786ebfb6740b1cbc947783d73b7d3c6f15933807737325863ba14357e7957ec31f81b601ead0515a5254aeca737621fe998e7011c62735ebcf1853774ab6f860';
+    db.prepare(`
+      INSERT OR IGNORE INTO users (id, email, password_hash, full_name, role, is_verified, created_at, updated_at)
+      VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+    `).run(
+      'usr_admin_taxflow_master',
+      'admin@taxflow.co.uk',
+      adminHash,
+      'TaxFlow Administrator',
+      'ADMIN',
+      1,
+      now,
+      now
+    );
+
+    // Link users to DropLogicX Ltd
     db.prepare(`
       INSERT OR IGNORE INTO user_companies (user_id, company_id, role, created_at)
       VALUES (?, ?, ?, ?)
@@ -57,8 +74,18 @@ function seedInitialData(db: DatabaseSync): void {
       now
     );
 
-    // 3. Seed Filing
     db.prepare(`
+      INSERT OR IGNORE INTO user_companies (user_id, company_id, role, created_at)
+      VALUES (?, ?, ?, ?)
+    `).run(
+      'usr_admin_taxflow_master',
+      'co_ad35ee5268244568',
+      'OWNER',
+      now
+    );
+
+    // 3. Seed Primary Filing (with both id 'fil_f114c04facec439e' and alias 'drop-logicx')
+    const seedFilingQuery = `
       INSERT OR IGNORE INTO filings (
         id, company_id, period_start, period_end, status, director_name,
         director_approval_date, director_legal_declaration, is_paid,
@@ -66,8 +93,9 @@ function seedInitialData(db: DatabaseSync): void {
         tax_adjustments_json, calculation_result_json, shield_result_json,
         irmark_base64, irmark_base32, created_at, updated_at
       ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
-    `).run(
-      'fil_f114c04facec439e',
+    `;
+
+    const filingParams = [
       'co_ad35ee5268244568',
       '2025-10-01',
       '2026-09-30',
@@ -79,14 +107,17 @@ function seedInitialData(db: DatabaseSync): void {
       'CT-2026-15152081',
       606100,
       JSON.stringify({ turnoverPence: 10000000, costOfSalesPence: 2000000, otherChargesPence: 4810000 }),
-      JSON.stringify({ disallowablePence: 100000, capitalAllowancesPence: 1500000 }),
+      JSON.stringify({ disallowablePence: 310000, capitalAllowancesPence: 1500000 }),
       JSON.stringify({ turnoverPence: 10000000, taxableProfitPence: 3190000, taxPayablePence: 606100, effectiveRate: 0.19 }),
       JSON.stringify({ overallStatus: 'PASS', passedChecks: 40, totalChecks: 40, criticalErrors: 0 }),
       'E8g0182Nsd9120=',
       'G7YJ2Q4K9M0Z',
       now,
       now
-    );
+    ];
+
+    db.prepare(seedFilingQuery).run('fil_f114c04facec439e', ...filingParams);
+    db.prepare(seedFilingQuery).run('drop-logicx', ...filingParams);
   } catch {
     // Seeding error ignored gracefully
   }
@@ -97,9 +128,21 @@ export function getDatabase(dbPath?: string): DatabaseSync {
     return defaultDbInstance;
   }
 
+  // Detect serverless environment (Vercel, AWS Lambda, read-only root)
+  const isServerless =
+    Boolean(process.env.VERCEL) ||
+    Boolean(process.env.VERCEL_ENV) ||
+    Boolean(process.env.AWS_LAMBDA_FUNCTION_NAME) ||
+    Boolean(process.env.LAMBDA_TASK_ROOT) ||
+    (typeof process.cwd === 'function' && (
+      process.cwd().startsWith('/var/task') ||
+      process.cwd().startsWith('/var/runtime')
+    ));
+
   let resolvedPath = dbPath || process.env.DATABASE_URL;
   if (!resolvedPath) {
-    if (process.env.VERCEL || process.env.AWS_LAMBDA_FUNCTION_NAME) {
+    if (isServerless) {
+      // In serverless, /tmp is the only guaranteed writable directory
       resolvedPath = path.resolve('/tmp', 'taxflow.db');
     } else {
       resolvedPath = path.resolve(process.cwd(), 'data', 'taxflow.db');
@@ -112,7 +155,9 @@ export function getDatabase(dbPath?: string): DatabaseSync {
       if (!fs.existsSync(dir)) {
         fs.mkdirSync(dir, { recursive: true });
       }
+      fs.accessSync(dir, fs.constants.W_OK);
     } catch {
+      // If filesystem is read-only or mkdir fails, fall back to in-memory SQLite
       resolvedPath = ':memory:';
     }
   }
@@ -131,15 +176,14 @@ export function getDatabase(dbPath?: string): DatabaseSync {
     db.exec(SCHEMA_SQL);
   } catch {
     // Fallback: in-memory sqlite
+    resolvedPath = ':memory:';
     db = new DatabaseSync(':memory:');
     db.exec('PRAGMA foreign_keys = ON;');
     db.exec(SCHEMA_SQL);
   }
 
-  // Auto seed in-memory/temp database if empty
-  if (resolvedPath === ':memory:' || resolvedPath.startsWith('/tmp')) {
-    seedInitialData(db);
-  }
+  // Auto seed database if empty
+  seedInitialData(db);
 
   if (!dbPath) {
     defaultDbInstance = db;
@@ -150,7 +194,11 @@ export function getDatabase(dbPath?: string): DatabaseSync {
 
 export function closeDatabase(): void {
   if (defaultDbInstance) {
-    defaultDbInstance.close();
+    try {
+      defaultDbInstance.close();
+    } catch {
+      // ignore
+    }
     defaultDbInstance = null;
   }
 }

@@ -70,7 +70,62 @@ export async function GET(req: NextRequest) {
       }
     };
 
-    const ixbrl = generateFrs105Ixbrl(defaultInput, {
+    const filingId = searchParams.get('filingId');
+    let shieldInput: ShieldInput = { ...defaultInput };
+
+    if (filingId) {
+      try {
+        const { getRepositories } = await import('@taxflow/db');
+        const repos = getRepositories();
+        const filing = repos.filings.getById(filingId);
+        if (filing) {
+          const company = repos.companies.getById(filing.companyId);
+          let calc: any = {};
+          if (filing.calculationResultJson) {
+            try { calc = JSON.parse(filing.calculationResultJson); } catch {}
+          }
+          let tb: any = {};
+          if (filing.trialBalanceJson) {
+            try { tb = JSON.parse(filing.trialBalanceJson); } catch {}
+          }
+
+          const turnover = tb.turnoverPence ?? calc.turnoverPence ?? defaultInput.ledger.turnoverPence;
+          const costOfSales = tb.costOfSalesPence ?? calc.costOfSalesPence ?? defaultInput.ledger.costOfSalesPence;
+          const otherCharges = tb.otherChargesPence ?? calc.otherChargesPence ?? defaultInput.ledger.otherChargesPence;
+          const taxOnProfit = calc.taxPayablePence ?? defaultInput.ledger.taxExpensePence;
+          const profitOrLoss = turnover - costOfSales - otherCharges - taxOnProfit;
+
+          shieldInput = {
+            ...defaultInput,
+            entity: {
+              ...defaultInput.entity,
+              companyName: company?.name || defaultInput.entity.companyName,
+              crn: company?.crn || defaultInput.entity.crn,
+              utr: company?.utr || defaultInput.entity.utr
+            },
+            period: {
+              ...defaultInput.period,
+              periodStart: filing.periodStart || defaultInput.period.periodStart,
+              periodEnd: filing.periodEnd || defaultInput.period.periodEnd,
+              directorDeclarationName: filing.directorName || defaultInput.period.directorDeclarationName,
+              accountsApprovalDate: filing.directorApprovalDate || defaultInput.period.accountsApprovalDate
+            },
+            ledger: {
+              ...defaultInput.ledger,
+              turnoverPence: turnover,
+              costOfSalesPence: costOfSales,
+              otherChargesPence: otherCharges,
+              taxExpensePence: taxOnProfit,
+              netProfitAfterTaxPence: profitOrLoss
+            }
+          };
+        }
+      } catch {
+        // Fall back gracefully to default benchmark dataset
+      }
+    }
+
+    const ixbrl = generateFrs105Ixbrl(shieldInput, {
       includeProfitAndLoss: true,
       watermarkText: isDraft ? 'DRAFT - NOT FOR SUBMISSION' : undefined
     });
@@ -79,7 +134,7 @@ export async function GET(req: NextRequest) {
       status: 200,
       headers: {
         'Content-Type': 'application/xhtml+xml; charset=utf-8',
-        'Content-Disposition': `inline; filename="Accounts_iXBRL_${defaultInput.entity.crn}.html"`
+        'Content-Disposition': `inline; filename="Accounts_iXBRL_${shieldInput.entity.crn}.html"`
       }
     });
   } catch (err: any) {

@@ -254,5 +254,37 @@ test('@taxflow/web: Core API & Service Integration Suite', async (t) => {
     // Cleanup
     delete process.env.REVIEWER_MODE;
   });
+
+  await t.test('Serverless Database Resilience: Auto-seeding and alias resolution', async () => {
+    const { getDatabase, closeDatabase, getRepositories } = await import('@taxflow/db');
+    closeDatabase();
+    
+    // Simulate serverless execution
+    const serverlessDb = getDatabase(':memory:');
+    const repos = getRepositories(serverlessDb);
+    
+    // Check auto-seeded users
+    const saif = repos.auth.getUserByEmail('saif@droplogicx.com');
+    assert.ok(saif);
+    assert.equal(saif.fullName, 'Muhammad Saif Raza');
+    assert.equal(saif.role, 'ADMIN');
+
+    const admin = repos.auth.getUserByEmail('admin@taxflow.co.uk');
+    assert.ok(admin);
+    assert.equal(admin.role, 'ADMIN');
+
+    // Check filing aliasing for drop-logicx
+    const filingByAlias = repos.filings.getById('drop-logicx');
+    assert.ok(filingByAlias);
+    assert.equal(filingByAlias.directorName, 'Muhammad Saif Raza');
+    assert.equal(filingByAlias.status, 'SUBMITTED');
+
+    // Check filing by primary ID
+    const filingById = repos.filings.getById('fil_f114c04facec439e');
+    assert.ok(filingById);
+    assert.equal(filingById.directorName, 'Muhammad Saif Raza');
+
+    closeDatabase();
+  });
 });
 

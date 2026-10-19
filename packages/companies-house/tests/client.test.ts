@@ -49,7 +49,7 @@ test('@taxflow/companies-house: client operations in sandbox mode', async (t) =>
     assert.equal(details.periodStart, '2025-05-01');
     assert.equal(details.periodEnd, '2026-04-30');
     assert.equal(details.accountsDueDate, '2027-01-31');
-    assert.deepEqual(details.directors, ['Jane Doe']);
+    assert.deepEqual(details.directors, ['Muhammad Saif Raza']);
   });
 
   await t.test('generates algorithmic fallback for arbitrary 8-digit CRN', async () => {

@@ -23,7 +23,7 @@ export async function POST(req: Request) {
         email: 'saif@droplogicx.com',
         password: 'Password123!',
         fullName: 'Muhammad Saif Raza',
-        role: 'USER'
+        role: 'ADMIN'
       });
       // Link to DropLogicX Ltd
       const co = repos.companies.upsert({
@@ -43,6 +43,13 @@ export async function POST(req: Request) {
         fullName: 'TaxFlow Administrator',
         role: 'ADMIN'
       });
+      const co = repos.companies.upsert({
+        crn: '15152081',
+        name: 'DROPLOGICX LTD',
+        utr: '1234567890',
+        registeredAddress: '71-75 Shelton Street, Covent Garden, London, WC2H 9JQ'
+      });
+      repos.auth.associateUserWithCompany(user.id, co.id, 'OWNER');
     }
 
     if (!user) {

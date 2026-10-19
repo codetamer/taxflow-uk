@@ -42,13 +42,58 @@ export async function GET(req: NextRequest) {
       ]
     };
 
-    const pdfBuffer = generateCt600Pdf(defaultData, { isDraft });
+    const filingId = searchParams.get('filingId');
+    let ct600Data: Ct600PdfData = { ...defaultData };
+
+    if (filingId) {
+      try {
+        const { getRepositories } = await import('@taxflow/db');
+        const repos = getRepositories();
+        const filing = repos.filings.getById(filingId);
+        if (filing) {
+          const company = repos.companies.getById(filing.companyId);
+          let calc: any = {};
+          if (filing.calculationResultJson) {
+            try { calc = JSON.parse(filing.calculationResultJson); } catch {}
+          }
+          let tb: any = {};
+          if (filing.trialBalanceJson) {
+            try { tb = JSON.parse(filing.trialBalanceJson); } catch {}
+          }
+
+          const turnover = tb.turnoverPence ?? calc.turnoverPence ?? defaultData.turnoverPence;
+          const taxableProfit = calc.taxableProfitPence ?? defaultData.totalTaxableProfitPence;
+          const ctTax = calc.taxPayablePence ?? defaultData.corporationTaxChargeablePence;
+
+          ct600Data = {
+            ...defaultData,
+            companyName: company?.name || defaultData.companyName,
+            companyNumber: company?.crn || defaultData.companyNumber,
+            utr: company?.utr || defaultData.utr,
+            periodStart: filing.periodStart || defaultData.periodStart,
+            periodEnd: filing.periodEnd || defaultData.periodEnd,
+            turnoverPence: turnover,
+            tradingProfitPence: taxableProfit,
+            totalTaxableProfitPence: taxableProfit,
+            smallProfitsTaxPence: ctTax,
+            corporationTaxChargeablePence: ctTax,
+            totalTaxPayablePence: ctTax + defaultData.s455TaxChargePence,
+            signatoryName: filing.directorName || defaultData.signatoryName,
+            declarationDate: filing.directorApprovalDate || defaultData.declarationDate
+          };
+        }
+      } catch {
+        // Fall back gracefully to default benchmark dataset
+      }
+    }
+
+    const pdfBuffer = generateCt600Pdf(ct600Data, { isDraft });
 
     return new NextResponse(new Uint8Array(pdfBuffer), {
       status: 200,
       headers: {
         'Content-Type': 'application/pdf',
-        'Content-Disposition': `${isDraft ? 'inline' : 'attachment'}; filename="HMRC_CT600_${defaultData.utr}.pdf"`
+        'Content-Disposition': `${isDraft ? 'inline' : 'attachment'}; filename="HMRC_CT600_${ct600Data.utr}.pdf"`
       }
     });
   } catch (err: any) {

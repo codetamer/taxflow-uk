@@ -40,11 +40,11 @@ const MOCK_COMPANIES: Record<string, { profile: CompaniesHouseProfile; officers:
     },
     officers: [
       {
-        name: 'DOE, Jane',
+        name: 'RAZA, Muhammad Saif',
         officer_role: 'director',
         appointed_on: '2023-09-20',
         nationality: 'British',
-        occupation: 'Software Engineer'
+        occupation: 'Software Engineer & Director'
       }
     ]
   },
@@ -249,7 +249,7 @@ export class CompaniesHouseClient {
     // Algorithmic default director
     return [
       {
-        name: 'DOE, Jane',
+        name: 'RAZA, Muhammad Saif',
         officer_role: 'director',
         appointed_on: '2023-01-01'
       }
@@ -288,7 +288,7 @@ export class CompaniesHouseClient {
       periodStart,
       periodEnd,
       accountsDueDate,
-      directors: activeDirectors.length > 0 ? activeDirectors : ['Jane Doe'],
+      directors: activeDirectors.length > 0 ? activeDirectors : ['Muhammad Saif Raza'],
       isCloseCompany: true
     };
   }

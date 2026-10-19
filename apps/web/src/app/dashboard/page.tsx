@@ -59,6 +59,8 @@ export default function DashboardPage() {
     setIsGlossaryOpen(true);
   };
 
+  const [latestFiling, setLatestFiling] = useState<any>(null);
+
   useEffect(() => {
     async function loadUser() {
       try {
@@ -87,8 +89,17 @@ export default function DashboardPage() {
             }
           }
         }
+
+        // Load active filings
+        const filingsRes = await fetch('/api/filings');
+        if (filingsRes.ok) {
+          const filingsData = await filingsRes.json();
+          if (filingsData.success && Array.isArray(filingsData.filings) && filingsData.filings.length > 0) {
+            setLatestFiling(filingsData.filings[0]);
+          }
+        }
       } catch (err) {
-        console.error('Failed to load user companies:', err);
+        console.error('Failed to load user companies or filings:', err);
       } finally {
         setIsLoadingAuth(false);
       }
@@ -256,7 +267,7 @@ export default function DashboardPage() {
         {/* Primary Actions */}
         <div className="flex flex-wrap items-center gap-2.5 self-start lg:self-auto">
           <Link
-            href={`/filings/drop-logicx/wizard?crn=${activeCompany.crn}&name=${encodeURIComponent(activeCompany.name)}`}
+            href={`/filings/${latestFiling?.id || 'drop-logicx'}/wizard?crn=${activeCompany.crn}&name=${encodeURIComponent(activeCompany.name)}`}
             className="inline-flex items-center space-x-2 bg-gradient-to-r from-amber-500 to-orange-500 hover:from-amber-600 hover:to-orange-600 text-stone-950 font-bold px-5 py-2.5 rounded-xl text-sm shadow-xs transition"
           >
             <span>Resume Filing Wizard</span>
@@ -423,7 +434,7 @@ export default function DashboardPage() {
         </div>
 
         <Link
-          href={`/filings/drop-logicx/shield?crn=${activeCompany.crn}`}
+          href={`/filings/${latestFiling?.id || 'drop-logicx'}/shield?crn=${activeCompany.crn}`}
           className="bg-gradient-to-r from-amber-500 to-orange-500 hover:from-amber-600 hover:to-orange-600 text-stone-950 font-bold px-4 py-2.5 rounded-xl text-xs sm:text-sm transition whitespace-nowrap self-stretch sm:self-auto text-center"
         >
           Inspect 40 Validation Checks
@@ -487,7 +498,7 @@ export default function DashboardPage() {
               <span>Download Draft CT600</span>
             </a>
             <Link
-              href="/filings/drop-logicx/documents"
+              href={`/filings/${latestFiling?.id || 'drop-logicx'}/documents`}
               className="inline-flex items-center space-x-1 text-xs font-medium text-stone-600 hover:text-stone-900 px-2 py-2 transition"
             >
               <span>Document Center</span>
