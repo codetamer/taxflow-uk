@@ -1,7 +1,11 @@
 import type { NextConfig } from 'next';
+import { fileURLToPath } from 'url';
+
+const monorepoRoot = fileURLToPath(new URL('../../', import.meta.url));
 
 const nextConfig: NextConfig = {
   reactStrictMode: true,
+  outputFileTracingRoot: monorepoRoot,
   transpilePackages: [
     '@taxflow/ct-engine',
     '@taxflow/shield',

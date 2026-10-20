@@ -31,5 +31,8 @@
     "companies-house"
   ],
   "author": "Muhammad Bilal / Bilal Jabbar",
-  "license": "UNLICENSED"
+  "license": "UNLICENSED",
+  "dependencies": {
+    "@swc/helpers": "^0.5.15"
+  }
 }
