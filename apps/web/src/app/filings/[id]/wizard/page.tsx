@@ -530,7 +530,7 @@ function WizardContent() {
             Filing Studio: Micro-Entity Accounts & CT600
           </h1>
           <p className="text-xs text-slate-500">
-            Guided step-by-step statutory filing with automated plain-English translations and live error defense.
+            Guided step-by-step statutory filing with interactive director guidance, automatic compliance checks, and live error defense.
           </p>
         </div>
 
@@ -540,7 +540,7 @@ function WizardContent() {
           className="inline-flex items-center space-x-1.5 text-xs font-semibold text-amber-900 bg-amber-50 hover:bg-amber-100 border border-amber-200 px-3 py-1.5 rounded-xl transition self-start sm:self-auto"
         >
           <BookOpen className="w-3.5 h-3.5 text-amber-700" />
-          <span>Audit Terms Explained (Glossary)</span>
+          <span>Director Tax Guide</span>
         </button>
       </div>
 
@@ -605,7 +605,7 @@ function WizardContent() {
                 </p>
               </div>
 
-              {/* Contextual Plain English Guide */}
+              {/* Contextual Director Guidance */}
               <PlainEnglishBanner
                 title="Understanding Your Company Registration"
                 summary="Companies House and HMRC identify your business through specific reference numbers. Using the live search below pulls the exact official legal record automatically."
@@ -1054,12 +1054,12 @@ function WizardContent() {
               </div>
 
               <PlainEnglishBanner
-                title="Profit and Loss Made Simple"
-                summary="The P&L statement calculates your company's trading profit for the year. This is the starting point HMRC uses to calculate your Corporation Tax."
+                title="Profit & Loss: Statutory Trading Account"
+                summary="The Profit & Loss statement establishes your company's trading profit for the period, forming the baseline from which Corporation Tax reliefs and charges are computed."
                 tips={[
-                  'Turnover is the total gross income your company invoiced and earned in the period.',
+                  'Turnover represents total invoiced revenue earned by your company in the accounting period.',
                   'Cost of Sales includes direct costs of delivering goods/services (e.g. subcontractors, raw materials).',
-                  'Disallowable expenses are genuine business costs (like entertaining a prospective client) that HMRC does not permit you to deduct for tax purposes.'
+                  'Disallowable expenses are legitimate business expenditures (such as client entertaining) that UK tax legislation excludes from tax deduction.'
                 ]}
                 onOpenGlossary={() => openGlossaryWith('disallowable-expenses')}
                 defaultOpen={true}
@@ -1219,12 +1219,12 @@ function WizardContent() {
               </div>
 
               <PlainEnglishBanner
-                title="Why Your Balance Sheet Must Balance to the Exact Penny"
-                summary="The balance sheet is a snapshot on the final day of your accounting period. Companies House computer systems will reject any submission where Net Assets do not equal Shareholders' Funds down to 0.00p."
+                title="Balance Sheet Symmetry & Financial Position"
+                summary="The balance sheet represents your company's financial position at period end. UK statutory reporting requires Total Net Assets to equal Total Shareholders' Funds to the exact penny."
                 tips={[
-                  'Net Assets = Fixed Assets (computers/tools) + Debtors (unpaid client invoices) + Cash at bank - Creditors (unpaid bills).',
-                  'Total Shareholders\' Funds = £100 share capital + Accumulated retained profits kept in the company.',
-                  'If your numbers don\'t balance, check your bank cash balance or opening profit figure.'
+                  'Net Assets = Fixed Assets (equipment/tools) + Debtors (unpaid customer invoices) + Cash at bank - Creditors (unpaid supplier bills and tax provisions).',
+                  'Total Shareholders\' Funds = £100 share capital + Accumulated retained profits reinvested in the company.',
+                  'TaxFlow monitors this equilibrium continuously and offers instant one-click auto-balance assistance.'
                 ]}
                 onOpenGlossary={() => openGlossaryWith('balance-sheet-symmetry')}
                 defaultOpen={true}
@@ -1460,13 +1460,13 @@ function WizardContent() {
               </div>
 
               <PlainEnglishBanner
-                title="What is a Director's Loan & Do You Owe Tax?"
-                summary="If you withdraw money from the business that is not salary or dividends, HMRC considers it a loan from the company to you."
+                title="Director Loan Accounts & Section 455 Tax Guidelines"
+                summary="When company funds are withdrawn outside standard payroll or formal dividend declarations, UK tax legislation records the balance as a Director's Loan. HMRC provides clear statutory rules for reporting and relief."
                 tips={[
-                  `If you owe money to the company at the end of the year, you have 9 months and 1 day to pay it back (by ${paymentDueDate}).`,
-                  'If repaid by the statutory due date, there is £0.00 Section 455 tax to pay!',
-                  'If not repaid within 9 months, HMRC charges a temporary tax (33.75% for loans before 6 Apr 2026; 35.75% on/after 6 Apr 2026), which HMRC refunds once repaid.',
-                  'If you never borrowed money from your company, simply keep this box at £0.'
+                  `If you hold an overdrawn director loan balance at period end, UK law grants 9 months and 1 day to settle the account (by ${paymentDueDate}).`,
+                  'If the loan is settled by the statutory due date, £0.00 Section 455 tax is payable.',
+                  'If unsettled after 9 months, HMRC levies a temporary s455 tax (33.75% for loans taken before 6 Apr 2026; 35.75% on or after), which HMRC fully refunds once repaid.',
+                  'If you did not withdraw funds outside salary or dividends, simply leave this amount at £0.'
                 ]}
                 onOpenGlossary={() => openGlossaryWith('s455-loan')}
                 defaultOpen={true}

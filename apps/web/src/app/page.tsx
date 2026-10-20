@@ -87,7 +87,7 @@ export default function HomePage() {
             className="w-full sm:w-auto inline-flex items-center justify-center space-x-2 bg-white text-stone-800 border border-stone-300 hover:bg-stone-50 px-6 py-3.5 rounded-xl font-semibold transition"
           >
             <BookOpen className="w-4 h-4 text-amber-700" />
-            <span>Plain-English Tax Guide</span>
+            <span>Director's Tax & Compliance Guide</span>
           </Link>
         </div>
 
@@ -322,18 +322,18 @@ export default function HomePage() {
         </div>
       </section>
 
-      {/* Human Jargon Demystification Section */}
+      {/* Director Clarity & Executive Guidance Section */}
       <section className="bg-stone-50 rounded-3xl p-8 sm:p-10 border border-stone-200 space-y-6">
         <div className="text-center space-y-2 max-w-2xl mx-auto">
           <div className="inline-flex items-center space-x-1.5 text-xs font-semibold text-amber-900 bg-amber-100/80 px-3 py-1 rounded-full border border-amber-200">
             <BookOpen className="w-3.5 h-3.5 text-amber-700" />
-            <span>Built for Humans, Not Just Accountants</span>
+            <span>Clarity for Company Directors</span>
           </div>
           <h2 className="text-2xl sm:text-3xl font-bold tracking-tight text-stone-950">
-            Never get lost in UK accounting jargon again.
+            Total confidence in your statutory filings.
           </h2>
           <p className="text-xs sm:text-sm text-stone-600">
-            Every confusing statutory code, box number, and Companies Act requirement is explained with simple everyday examples.
+            Every statutory requirement, tax box, and Companies Act rule is accompanied by clear, actionable guidance so you always stay in complete control.
           </p>
         </div>
 
@@ -433,20 +433,20 @@ export default function HomePage() {
 
                 <tr>
                   <td className="py-4 px-6 font-medium text-stone-900">
-                    Plain-English Terminology
-                    <p className="text-xs text-stone-500 font-normal mt-0.5">Help for non-accountant directors</p>
+                    Intuitive Guidance & Transparency
+                    <p className="text-xs text-stone-500 font-normal mt-0.5">Contextual guidance throughout every step</p>
                   </td>
                   <td className="py-4 px-6 text-stone-600">
                     <span className="inline-flex items-center space-x-1 text-stone-600 bg-stone-100 px-2 py-0.5 rounded text-xs font-medium">
-                      <span>Dense jargon with zero help</span>
+                      <span>Opaque codes & complex forms</span>
                     </span>
-                    <p className="text-xs text-stone-400 mt-1">Assumes you have an accounting degree</p>
+                    <p className="text-xs text-stone-400 mt-1">Offers minimal guidance during critical data entry</p>
                   </td>
                   <td className="py-4 px-6 bg-amber-50/20 font-semibold text-stone-950">
                     <span className="inline-flex items-center space-x-1 text-amber-900 bg-amber-100/80 px-2.5 py-0.5 rounded text-xs font-bold border border-amber-200">
-                      <span>Interactive Glossary & Guidance</span>
+                      <span>Interactive Director Guide & Explanations</span>
                     </span>
-                    <p className="text-xs text-amber-900/80 mt-1">Every term explained in plain English with real scenarios</p>
+                    <p className="text-xs text-amber-900/80 mt-1">Clear statutory context, real-world examples, and instant explanations</p>
                   </td>
                 </tr>
 

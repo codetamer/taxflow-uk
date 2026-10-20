@@ -76,10 +76,10 @@ export function GlossaryModal({ isOpen, onClose, initialTermId }: GlossaryModalP
             </div>
             <div>
               <h2 id="glossary-title" className="text-xl font-bold tracking-tight">
-                Director's Plain-English Tax & Audit Guide
+                Director's Statutory Tax & Compliance Guide
               </h2>
               <p className="text-xs text-stone-400 mt-0.5">
-                Every confusing HMRC & Companies House statutory term explained in human language.
+                Clear statutory context, practical director guidance, and real-world compliance insights.
               </p>
             </div>
           </div>
@@ -174,7 +174,7 @@ export function GlossaryModal({ isOpen, onClose, initialTermId }: GlossaryModalP
                   {isExpanded && (
                     <div className="mt-4 pt-3 border-t border-stone-200 space-y-3 text-xs animate-in fade-in duration-150">
                       <div className="space-y-1">
-                        <span className="font-bold text-stone-900 block text-xs">Plain-English Translation:</span>
+                        <span className="font-bold text-stone-900 block text-xs">Practical Director Guidance:</span>
                         <p className="text-stone-700 leading-relaxed whitespace-pre-line bg-white p-3.5 rounded-xl border border-stone-200">
                           {item.plainEnglish}
                         </p>

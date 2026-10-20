@@ -54,8 +54,8 @@ export function TermExplainer({ termId, label, children, showIcon = true }: Term
           setIsOpen(!isOpen);
         }}
         className="inline-flex items-center space-x-1 text-stone-800 hover:text-amber-700 underline decoration-stone-300 underline-offset-2 decoration-dotted font-medium transition cursor-help focus:outline-none focus:ring-1 focus:ring-amber-500 rounded"
-        title={`Click to read plain-English explanation for ${termData.term}`}
-        aria-label={`What does ${termData.term} mean?`}
+        title={`Click for statutory guidance on ${termData.term}`}
+        aria-label={`Guidance on ${termData.term}`}
       >
         <span>{displayText}</span>
         {showIcon && <HelpCircle className="w-3.5 h-3.5 text-stone-400 hover:text-amber-600 shrink-0" />}
@@ -79,7 +79,7 @@ export function TermExplainer({ termId, label, children, showIcon = true }: Term
             <button
               onClick={() => setIsOpen(false)}
               className="text-stone-400 hover:text-stone-700 p-1 rounded-lg hover:bg-stone-100 transition"
-              aria-label="Close explanation"
+              aria-label="Close guidance"
             >
               <X className="w-4 h-4" />
             </button>
@@ -92,19 +92,19 @@ export function TermExplainer({ termId, label, children, showIcon = true }: Term
             </p>
 
             <div className="bg-stone-50 p-3 rounded-xl border border-stone-100 space-y-1 text-stone-600 leading-relaxed">
-              <span className="font-bold text-stone-900 block">In Plain English:</span>
+              <span className="font-bold text-stone-900 block">Practical Guidance:</span>
               <p className="whitespace-pre-line">{termData.plainEnglish}</p>
             </div>
 
             {termData.example && (
               <div className="bg-amber-50/70 p-3 rounded-xl border border-amber-200/80 space-y-1 text-stone-900 leading-relaxed">
-                <span className="font-bold block text-amber-950">Real-World Example:</span>
+                <span className="font-bold block text-amber-950">Real-World Scenario:</span>
                 <p>{termData.example}</p>
               </div>
             )}
 
             <div className="space-y-1 text-stone-600 leading-relaxed">
-              <span className="font-bold text-stone-900 block">Why HMRC & Companies House Care:</span>
+              <span className="font-bold text-stone-900 block">Statutory Importance:</span>
               <p>{termData.whyItMatters}</p>
             </div>
 

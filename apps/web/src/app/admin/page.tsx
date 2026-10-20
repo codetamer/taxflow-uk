@@ -525,7 +525,7 @@ export default function AdminCockpitPage() {
         </div>
       </div>
 
-      {/* Plain-English Technical Terms Guide for Gateways */}
+      {/* Technical Standards Reference Guide for Gateways */}
       <div className="bg-slate-50 rounded-3xl p-6 sm:p-8 border border-slate-200 space-y-4">
         <h3 className="text-sm font-bold text-slate-900 tracking-tight flex items-center space-x-2">
           <ShieldCheck className="w-4 h-4 text-emerald-700" />

@@ -14,46 +14,46 @@ export const TAX_GLOSSARY: GlossaryTerm[] = [
     id: 'frs-105',
     term: 'FRS 105 (Micro-Entities Standard)',
     category: 'Accounts',
-    shortSummary: 'The simplest legal accounting standard in the UK for small companies.',
+    shortSummary: 'The official streamlined accounting standard for eligible UK small companies.',
     plainEnglish:
-      'FRS 105 is a simplified rulebook designed specifically for very small businesses ("micro-entities"). Instead of producing 30-page complex corporate reports, it allows you to submit a stripped-down, 2-page balance sheet and profit & loss account without complicated fair-value notes.',
+      'FRS 105 is the statutory accounting framework created by the UK Financial Reporting Council specifically for micro-entities. It enables eligible businesses to submit clear, concise accounts consisting of a Balance Sheet and Profit & Loss statement, without the extensive fair-value disclosures required for larger corporations.',
     whyItMatters:
-      'Using FRS 105 keeps you fully compliant with Companies House while drastically reducing reporting paperwork and accountant fees.',
-    example: 'A solo consultant or e-commerce shop with turnover under £1,000,000 qualifies to use FRS 105.',
+      'Using FRS 105 keeps you fully compliant with Companies House while keeping reporting focused, efficient, and cost-effective.',
+    example: 'A consultant or e-commerce business with turnover under £1,000,000 qualifies to use FRS 105.',
     statutoryRef: 'Financial Reporting Standard 105 / The Small Companies Regulations 2008'
   },
   {
     id: 'ct600',
     term: 'HMRC CT600 Form',
     category: 'Corporation Tax',
-    shortSummary: 'The official tax return your company files annually with HMRC.',
+    shortSummary: 'The official statutory tax return filed annually by limited companies with HMRC.',
     plainEnglish:
-      'Just like an individual files a Self Assessment tax return, a limited company files a CT600. It calculates your company’s trading profit, applies allowable deductions, and works out how much Corporation Tax your company owes.',
+      'The CT600 is the official company tax return. It reconciles your company’s trading profit, incorporates allowable deductions and capital allowances, and determines the precise Corporation Tax liability due to HMRC.',
     whyItMatters:
-      'It must be filed with HMRC within 12 months after your accounting period ends, though the actual tax payment is due earlier (9 months and 1 day). Late submission incurs automatic penalties.',
+      'The return must be filed within 12 months after your accounting period ends, while the actual tax payment is due on a separate statutory schedule (9 months and 1 day).',
     statutoryRef: 'Corporation Tax Act 2010'
   },
   {
     id: 's455-loan',
     term: 'Section 455 Director’s Loan Tax',
     category: 'Director Compliance',
-    shortSummary: 'A temporary tax (33.75% or 35.75%) HMRC charges if you borrow money from your company and do not pay it back.',
+    shortSummary: 'The statutory framework governing temporary funds borrowed by company directors.',
     plainEnglish:
-      'Company money is not your personal money. If you withdraw money from the business that is not salary or dividends, it is legally a "director’s loan". If you don’t repay it within 9 months and 1 day after your financial year ends, HMRC charges the company a temporary tax (33.75% for loans taken before 6 April 2026, and 35.75% for loans made on or after).',
+      'In a limited company, corporate funds and personal finances remain legally distinct. When a director withdraws funds outside standard salary or declared dividends, UK tax law classifies this as a Director’s Loan. To prevent tax avoidance, HMRC provides a 9-month and 1-day grace period following the financial year-end to settle the balance. If repaid within this window, £0.00 s455 tax is due. If any balance remains outstanding past the statutory due date, HMRC charges a temporary s455 tax (33.75% for loans taken before 6 April 2026, and 35.75% for loans made on or after), which is fully refundable once the loan is repaid.',
     whyItMatters:
-      'The good news: Once you repay the loan back to the company, HMRC refunds this entire tax to you under Section 458! TaxFlow tracks repayment dates automatically so you never overpay.',
-    example: 'You borrowed £10,000 for home renovations. If still unpaid 9 months after year-end, company pays £3,375 tax to HMRC, which is refunded when you pay the £10,000 back.',
+      'Once the advance is repaid back to the company, HMRC refunds 100% of this tax under Section 458 of the Corporation Tax Act 2010. TaxFlow tracks repayment dates automatically so your company never overpays.',
+    example: 'A director advances £10,000 for short-term personal needs. If repaid within 9 months of year-end, £0.00 s455 tax is due. If unpaid, the temporary tax is refunded once the advance is settled.',
     statutoryRef: 'Corporation Tax Act 2010 s455 & s458'
   },
   {
     id: 'balance-sheet-symmetry',
     term: 'Balance Sheet Symmetry (Net Assets = Equity)',
     category: 'Accounts',
-    shortSummary: 'The fundamental rule that what the company owns minus what it owes must equal shareholders’ funds.',
+    shortSummary: 'The fundamental accounting standard ensuring Net Assets precisely equal Shareholders’ Equity.',
     plainEnglish:
-      'Think of a balance sheet as two sides of a scale: Side A is Net Assets (Everything the company owns like cash, computers, and invoices owed to you, minus all debts and unpaid bills). Side B is Shareholders’ Funds (the original £100 share capital + all profits kept in the business). Both sides MUST match to the exact single penny.',
+      'Balance sheet symmetry is the fundamental identity of UK corporate accounting: Total Net Assets (everything the company owns minus what it owes) must equal Total Shareholders’ Funds (the original share capital plus accumulated retained profits) to the exact single penny. TaxFlow guarantees this mathematical equilibrium automatically so your statutory submission passes Companies House validation without rejection.',
     whyItMatters:
-      'Companies House computer systems check this down to the 1p level. If Side A does not equal Side B, the electronic gateway rejects your submission immediately.',
+      'Companies House automated gateway systems validate this identity down to 1p. Ensuring exact zero-penny discrepancy guarantees your return is accepted without gateway rejection.',
     example: 'Fixed Assets (£15,000) + Cash (£31,139) - Creditors (£25,000) = £31,139 Net Assets. This precisely matches £100 Shares + £31,039 Retained Profit.',
     statutoryRef: 'Companies Act 2006 s396 & FRS 105 Section 4'
   },
@@ -61,89 +61,89 @@ export const TAX_GLOSSARY: GlossaryTerm[] = [
     id: 'disallowable-expenses',
     term: 'Disallowable Expenses (Add-Backs)',
     category: 'Corporation Tax',
-    shortSummary: 'Business costs that you are legally allowed to record, but which cannot reduce your tax bill.',
+    shortSummary: 'Commercial expenditures that UK tax law excludes from corporation tax deductions.',
     plainEnglish:
-      'Not every business expense reduces your corporation tax. For example, taking a client to lunch or paying a parking fine are valid accounting costs, but HMRC rules say you cannot deduct them for tax. These get "added back" to your profit before computing your tax.',
+      'While all genuine commercial costs can be recorded in your internal bookkeeping, UK tax legislation designates certain categories (such as client hospitality and statutory fines) as non-deductible for Corporation Tax. TaxFlow automatically adds back these items to your net accounting profit to ensure your Corporation Tax calculation is 100% compliant with HMRC rules.',
     whyItMatters:
-      'Claiming client entertaining or parking tickets as tax-deductible is one of the most common mistakes HMRC audits and penalizes.',
-    example: 'You made £30,000 accounting profit and spent £1,000 taking prospective clients to dinners. TaxFlow automatically adds back the £1,000 so your tax is calculated on £31,000.',
+      'Accurately distinguishing allowable operating costs from non-deductible expenses ensures your company claims every legitimate tax relief while remaining fully compliant with HMRC standards.',
+    example: 'A business records £30,000 accounting profit and spent £1,000 hosting prospective clients. TaxFlow automatically adds back the £1,000 so tax is calculated on £31,000.',
     statutoryRef: 'Corporation Tax Act 2009 s1298 (Client Entertaining)'
   },
   {
     id: 'capital-allowances-aia',
     term: 'Capital Allowances & AIA (Annual Investment Allowance)',
     category: 'Corporation Tax',
-    shortSummary: 'HMRC’s way of letting you deduct 100% of the cost of tools, laptops, and equipment in year one.',
+    shortSummary: 'Statutory tax relief providing immediate 100% deduction on qualifying business equipment.',
     plainEnglish:
-      'When you buy everyday stationery, it’s an expense. When you buy a £2,000 MacBook or specialist tools that last years, it’s a "capital asset". Normal depreciation isn’t tax deductible, but HMRC gives you "Annual Investment Allowance" (AIA) which lets you deduct 100% of the equipment price from your taxable profits immediately.',
+      'Capital allowances enable businesses to write off the full cost of qualifying capital equipment (such as laptops, servers, tools, and office hardware) against taxable profits. Under the Annual Investment Allowance (AIA), your company can deduct up to 100% of eligible equipment expenditure in the year of purchase, significantly reducing your immediate Corporation Tax bill.',
     whyItMatters:
-      'Saves you significant tax up front! However, motor cars (except 100% electric zero-emission vehicles) are legally barred from 100% AIA and must use Writing Down Allowances instead.',
+      'Maximizing your Annual Investment Allowance accelerates tax savings and improves working capital in the year investments are made. Note that passenger cars (except 100% zero-emission electric vehicles) use Writing Down Allowances instead.',
     statutoryRef: 'Capital Allowances Act 2001 s38A & s38B'
   },
   {
     id: 'wda-main-pool',
     term: 'Writing Down Allowance (WDA) & 14% Reform',
     category: 'Corporation Tax',
-    shortSummary: 'The annual percentage deduction you claim on business assets that do not get 100% first-year relief.',
+    shortSummary: 'The annual percentage deduction claimed on business assets that do not receive 100% first-year relief.',
     plainEnglish:
-      'For assets that don’t qualify for 100% first-year deduction (like certain company vehicles), you deduct a percentage of their value each year. From April 2026, the UK government reduced the standard rate from 18% to 14%.',
+      'For assets that do not qualify for 100% first-year deduction, you deduct a percentage of their value each year. From April 2026, UK legislation adjusted the standard main pool rate from 18% to 14%.',
     whyItMatters:
-      'If your company financial year crosses 1 April 2026 (e.g. October 2025 to September 2026), you cannot use a simple 18% or 14%. You must calculate a day-by-day blended rate. TaxFlow does this calculation automatically to the exact penny.',
+      'When your company financial year straddles 1 April 2026, statutory rules require a day-by-day blended rate. TaxFlow calculates this day-weighted percentage automatically to the exact penny.',
     statutoryRef: 'Finance Act 2024 / CAA 2001 s56'
   },
   {
     id: 'distributable-reserves',
-    term: 'Distributable Reserves & Illegal Dividends',
+    term: 'Distributable Reserves & Dividends',
     category: 'Director Compliance',
-    shortSummary: 'The actual accumulated post-tax profit your company is legally permitted to pay out as dividends.',
+    shortSummary: 'Accumulated post-tax profits legally available for distribution to shareholders.',
     plainEnglish:
-      'You cannot legally pay yourself a dividend just because there is cash in the company bank account. A dividend can ONLY be paid out of accumulated profit AFTER setting aside money for Corporation Tax and unpaid bills. If you take dividends when reserves are negative, it is an "ultra vires" (unlawful) dividend.',
+      'Under the Companies Act 2006, company dividends can only be distributed from realized accumulated profits, after accounting for Corporation Tax and operational liabilities. TaxFlow verifies your distributable reserves in real time to ensure all distributions are lawful and properly documented.',
     whyItMatters:
-      'If HMRC audits an illegal dividend, they can reclassify it as an overdrawn director loan and demand 33.75% / 35.75% s455 tax plus National Insurance penalties. TaxFlow’s shield verifies you have sufficient reserves before you distribute.',
+      'Maintaining positive distributable reserves before declaring dividends protects directors from unlawful distributions and potential tax reclassifications.',
     statutoryRef: 'Companies Act 2006 s830'
   },
   {
     id: 's477-exemption',
     term: 'Section 477 Audit Exemption',
     category: 'Accounts',
-    shortSummary: 'The legal right of micro-entities not to pay £5,000+ for an independent external auditor.',
+    shortSummary: 'The statutory right of micro-entities to file without appointing an external auditor.',
     plainEnglish:
-      'Large corporations must hire expensive audit firms to review their financial records. As a UK micro-entity, you are legally exempt from this requirement under Section 477 of the Companies Act 2006, as long as you include the mandatory legal declaration on your balance sheet.',
+      'Under Section 477 of the Companies Act 2006, qualifying small companies and micro-entities are legally exempt from appointing an independent auditor. TaxFlow automatically embeds the required statutory exemption statements and director declaration on your Balance Sheet.',
     whyItMatters:
-      'Companies House will reject any accounts that lack this exact statutory statement. TaxFlow embeds the exact required wording and director sign-off block automatically.',
+      'Including the exact statutory audit exemption declaration allows small businesses to file confidently without incurring external audit fees.',
     statutoryRef: 'Companies Act 2006 s477'
   },
   {
     id: 'ixbrl-irmark',
     term: 'iXBRL & C14N IRmark',
     category: 'Technical',
-    shortSummary: 'The digital language and cryptographic security stamp used by HMRC and Companies House.',
+    shortSummary: 'The digital reporting standard and cryptographic security digest used by HMRC and Companies House.',
     plainEnglish:
-      'Instead of reading PDFs like humans do, government computers read "Inline XBRL" (iXBRL) — HTML documents with hidden computer tags on every number (e.g. `<ix:nonFraction name="uk-gaap:Turnover">100000</ix:nonFraction>`). An "IRmark" is a digital SHA-1 fingerprint generated from the document code to prove it hasn’t been tampered with.',
+      'Government gateways process accounts using Inline XBRL (iXBRL) — specialized digital documents with embedded taxonomy tags for every financial item. An IRmark is a cryptographic SHA-1 digest generated from canonical XML code (W3C C14N) that verifies data integrity and provides non-repudiation.',
     whyItMatters:
-      'Both HMRC and Companies House reject files if the iXBRL code has invalid namespaces or if the IRmark fingerprint does not match the XML body precisely.',
+      'Both HMRC and Companies House require certified iXBRL tagging and valid IRmark digests to accept statutory electronic filings.',
     statutoryRef: 'HMRC Technical Pack / W3C XML Canonicalization (C14N)'
   },
   {
     id: 'close-company',
     term: 'Close Company',
     category: 'Director Compliance',
-    shortSummary: 'A limited company controlled by 5 or fewer directors/shareholders.',
+    shortSummary: 'A private limited company controlled by five or fewer director-shareholders.',
     plainEnglish:
-      'Almost every contractor, family business, and startup in the UK is a "close company". It simply means the company is owned and controlled by a small circle of individuals (usually the founding directors) rather than thousands of public stock market investors.',
+      'Most UK startups, consultancies, and family businesses are close companies, meaning ownership is concentrated among founding directors. This structure qualifies companies for streamlined statutory reporting provisions.',
     whyItMatters:
-      'Special anti-avoidance tax rules (like Section 455 director loan tax) only apply to close companies.',
+      'Certain director compliance rules (such as Section 455 loan schedules) apply specifically to close companies, ensuring transparent corporate governance.',
     statutoryRef: 'Corporation Tax Act 2010 s439'
   },
   {
     id: 'marginal-relief',
     term: 'Marginal Relief & Augmented Profits',
     category: 'Corporation Tax',
-    shortSummary: 'A tax discount for companies with taxable profits between £50,000 and £250,000.',
+    shortSummary: 'A graduated tax rate mechanism for companies with taxable profits between £50,000 and £250,000.',
     plainEnglish:
-      'Companies with profits under £50,000 pay the 19% Small Profits Rate. Companies earning over £250,000 pay the 25% Main Rate. If your profit falls between £50k and £250k, the UK tax system provides "Marginal Relief" — a sliding scale discount so your tax rate transitions smoothly instead of jumping instantly.',
+      'Companies with profits under £50,000 pay the 19% Small Profits Rate, while companies with profits over £250,000 pay the 25% Main Rate. For profits between £50,000 and £250,000, UK tax law provides Marginal Relief — a graduated sliding scale that transitions your effective tax rate smoothly.',
     whyItMatters:
-      'Without Marginal Relief, a company earning £50,001 would see a sudden jump in tax. TaxFlow calculates this fractional taper (standard fraction 3/200) automatically.',
+      'Marginal Relief ensures that companies earning slightly over £50,000 do not experience a sudden jump to the 25% rate. TaxFlow calculates this fractional relief (standard fraction 3/200) automatically.',
     statutoryRef: 'Corporation Tax Act 2010 s18A'
   },
   {
@@ -206,22 +206,22 @@ export const TAX_GLOSSARY: GlossaryTerm[] = [
     id: 'confirmation-statement',
     term: 'Confirmation Statement (CS01) vs Accounts',
     category: 'Director Compliance',
-    shortSummary: 'Two completely different annual submissions that directors frequently confuse.',
+    shortSummary: 'Understanding the distinct statutory roles of the CS01 and your annual financial accounts.',
     plainEnglish:
-      '• Confirmation Statement (CS01): A corporate identity check verifying your directors, registered address, shareholders, and PSC (Persons of Significant Control). No financial figures or numbers are involved.\n• Annual Accounts (FRS 105): A financial report showing your turnover, profit, assets, and liabilities.\nBoth must be submitted annually to Companies House, but they are separate filings.',
+      'UK companies have two distinct annual requirements:\n• Confirmation Statement (CS01): A corporate identity confirmation verifying directors, registered office address, shareholders, and Persons of Significant Control (PSC).\n• Annual Accounts (FRS 105): A statutory financial report detailing turnover, profit, balance sheet assets, and liabilities.\nBoth must be submitted annually to Companies House on separate statutory schedules.',
     whyItMatters:
-      'Filing your accounts does not satisfy your Confirmation Statement duty. Both have distinct deadlines.',
+      'Filing your accounts does not satisfy your Confirmation Statement duty. Keeping both current maintains your company’s active standing on the public register.',
     statutoryRef: 'Companies Act 2006 Part 24'
   },
   {
     id: 'payment-deadline-vs-filing',
     term: 'Corporation Tax Payment Date vs Return Deadline',
     category: 'Corporation Tax',
-    shortSummary: 'The trap where your tax bill is due before your tax return needs to be filed.',
+    shortSummary: 'Understanding the dual timetable for Corporation Tax payment and CT600 return filing.',
     plainEnglish:
-      'In the UK tax system, you must PAY your Corporation Tax to HMRC 9 months and 1 day after your accounting period ends (e.g. 1 July for a 30 September year end). However, you have 12 months to submit the actual CT600 return form (e.g. 30 September).',
+      'In the UK tax system, Corporation Tax payment is due 9 months and 1 day after your accounting period ends (e.g. 1 July for a 30 September year end), while the CT600 tax return itself is due within 12 months (e.g. 30 September). TaxFlow provides clear timetable visibility so your company stays ahead of both deadlines.',
     whyItMatters:
-      'Many directors assume their tax payment isn\'t due until the return filing deadline, which causes HMRC to charge automatic interest on unpaid tax.',
+      'Settling Corporation Tax by the 9-month due date prevents automatic HMRC interest charges and keeps your compliance record clean.',
     statutoryRef: 'TMA 1970 s59D'
   },
   {

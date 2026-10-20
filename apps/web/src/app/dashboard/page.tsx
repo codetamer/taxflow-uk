@@ -279,19 +279,19 @@ export default function DashboardPage() {
             className="inline-flex items-center space-x-1.5 bg-white hover:bg-stone-50 text-stone-800 border border-stone-300 px-4 py-2.5 rounded-xl text-sm font-semibold transition"
           >
             <BookOpen className="w-4 h-4 text-amber-700" />
-            <span>Tax Glossary</span>
+            <span>Director Tax Guide</span>
           </button>
         </div>
       </div>
 
-      {/* Plain-English Director's Briefing */}
+      {/* Director Compliance Briefing */}
       <PlainEnglishBanner
-        title="Director's Compliance Briefing: What You Need to Know"
-        summary="As a director of a UK limited company, you have two separate legal responsibilities: submitting statutory accounts to Companies House and paying Corporation Tax to HMRC. TaxFlow aligns both together automatically."
+        title="Director Compliance Briefing: Key Timelines & Responsibilities"
+        summary="As a director of a UK limited company, you have two key statutory commitments: submitting annual accounts to Companies House and settling Corporation Tax with HMRC. TaxFlow aligns both workflows into a unified, high-assurance process."
         tips={[
-          'Companies House Accounts are public and show your company balance sheet and legal exemptions.',
-          'HMRC CT600 Return is private and details your income, allowable expenses, and tax payable.',
-          'Your Corporation Tax payment is due on 01 July 2027 (9 months and 1 day after year end), while your CT600 return is due by 30 September 2027.'
+          'Companies House Accounts are filed publicly, confirming your company balance sheet and statutory audit exemptions.',
+          'HMRC CT600 Return is private, calculating your trading revenues, allowable deductions, and corporation tax liability.',
+          'Your Corporation Tax payment is due on 01 July 2027 (9 months and 1 day after year end), while the CT600 return is due by 30 September 2027.'
         ]}
         onOpenGlossary={() => openGlossary('ct600')}
         defaultOpen={true}

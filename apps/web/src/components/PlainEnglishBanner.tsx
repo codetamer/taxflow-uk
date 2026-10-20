@@ -34,7 +34,7 @@ export function PlainEnglishBanner({
             <h4 className="text-xs font-bold text-stone-900 tracking-tight flex items-center space-x-2">
               <span>{title}</span>
               <span className="text-[10px] font-normal text-amber-800 bg-amber-50 px-2 py-0.5 rounded-full border border-amber-200">
-                Plain English Guide
+                Director Guidance
               </span>
             </h4>
             <p className="text-[11px] text-stone-500 mt-0.5 line-clamp-1">{summary}</p>
@@ -43,7 +43,7 @@ export function PlainEnglishBanner({
 
         <div className="flex items-center space-x-2 shrink-0">
           <span className="text-xs text-stone-500 hidden sm:inline font-medium">
-            {isOpen ? 'Hide details' : 'What does this mean?'}
+            {isOpen ? 'Hide guidance' : 'View director guidance'}
           </span>
           {isOpen ? (
             <ChevronUp className="w-4 h-4 text-stone-400" />
@@ -59,7 +59,7 @@ export function PlainEnglishBanner({
 
           {tips.length > 0 && (
             <div className="space-y-1.5 pt-1">
-              <span className="font-bold text-stone-900 block text-[11px]">Key Rules in Plain English:</span>
+              <span className="font-bold text-stone-900 block text-[11px]">Key Statutory Principles & Guidance:</span>
               <ul className="space-y-1 text-stone-600 list-disc list-inside">
                 {tips.map((tip, index) => (
                   <li key={index} className="leading-relaxed">
@@ -81,7 +81,7 @@ export function PlainEnglishBanner({
                 className="inline-flex items-center space-x-1.5 text-[11px] font-bold text-amber-800 hover:text-amber-950 transition"
               >
                 <BookOpen className="w-3.5 h-3.5" />
-                <span>Search all tax definitions in Glossary →</span>
+                <span>Explore complete Director Guide & Statutory Definitions →</span>
               </button>
             </div>
           )}

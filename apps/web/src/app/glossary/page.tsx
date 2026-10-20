@@ -98,10 +98,10 @@ export default function GlossaryPage() {
         <div className="flex flex-col sm:flex-row sm:items-end justify-between gap-4">
           <div className="space-y-2">
             <h1 className="text-3xl sm:text-5xl font-extrabold tracking-tight text-stone-950">
-              Plain-English Tax & Audit Guide
+              Director's Statutory Tax & Compliance Guide
             </h1>
             <p className="text-sm sm:text-base text-stone-600 max-w-2xl leading-relaxed">
-              Every UK statutory accounting term, Companies Act regulation, and HMRC CT600 code explained with everyday analogies, statutory citations, and practical guidance for company directors.
+              Comprehensive UK statutory accounting principles, Companies Act regulations, and HMRC CT600 codes explained with practical examples, statutory citations, and actionable guidance for company directors.
             </p>
           </div>
 
@@ -249,10 +249,10 @@ export default function GlossaryPage() {
                     </p>
                   </div>
 
-                  {/* Plain English Core Section */}
+                  {/* Statutory Guidance Core Section */}
                   <div className="space-y-3">
                     <h3 className="text-xs font-bold text-stone-400 uppercase tracking-wider">
-                      Plain-English Breakdown
+                      Practical Guidance & Overview
                     </h3>
                     <p className="text-sm text-stone-700 leading-relaxed whitespace-pre-line">
                       {item.plainEnglish}

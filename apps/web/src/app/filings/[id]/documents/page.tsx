@@ -131,14 +131,14 @@ export default function DocumentsPage() {
         </div>
       </div>
 
-      {/* Plain-English Overview Banner */}
+      {/* Statutory Guidance Overview Banner */}
       <PlainEnglishBanner
-        title="Understanding What These 3 Documents Are For"
-        summary="UK company law requires two separate submissions each year, plus a digital file format for automated government servers."
+        title="Statutory Filing Requirements & Document Roles"
+        summary="UK corporate regulations require two separate statutory returns each year, accompanied by certified digital iXBRL for government gateway validation."
         tips={[
-          'Full Accounts (FRS 105): Filed with Companies House and published on the public online register. Shows your balance sheet, audit exemption, and director sign-off.',
+          'Full Accounts (FRS 105): Filed with Companies House and published on the public online register. Discloses your balance sheet, statutory exemption statements, and director sign-off.',
           'HMRC CT600 Form: Submitted privately to HMRC. Contains detailed box-by-box tax calculations showing how your Corporation Tax was determined.',
-          'iXBRL XHTML: The computer-readable file with digital semantic tags that both government gateways require for automated processing.'
+          'iXBRL XHTML: The certified computer-readable digital format with embedded taxonomy tags required by both government gateways for automated processing.'
         ]}
         onOpenGlossary={() => openGlossary('frs-105')}
         defaultOpen={true}

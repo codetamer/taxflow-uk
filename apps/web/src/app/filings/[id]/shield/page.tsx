@@ -468,7 +468,7 @@ export default function ShieldDashboardPage() {
                 <p className="text-sm font-semibold text-slate-900">{err.message}</p>
                 {err.remediation && (
                   <div className="text-xs text-slate-700 bg-slate-50 p-3 rounded-xl border border-slate-200 space-y-1">
-                    <span className="font-bold text-slate-900">In Plain English: How to Fix This:</span>
+                    <span className="font-bold text-slate-900">Recommended Resolution & Guidance:</span>
                     <p className="text-slate-600">{err.remediation}</p>
                   </div>
                 )}
