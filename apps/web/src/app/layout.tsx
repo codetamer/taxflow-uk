@@ -5,7 +5,7 @@ import { Navbar } from '../components/Navbar';
 import { TaxFlowLogo } from '../components/TaxFlowLogo';
 
 export const metadata: Metadata = {
-  title: 'TaxFlow UK | Statutory Accounts (FRS 105) & CT600 Filing',
+  title: 'TaxFlow UK | Annual Accounts (FRS 105) & CT600 Tax Filing',
   description: 'The high-assurance UK micro-entity tax filing and compliance platform with 40-Point Pre-Flight Rejection Shield.',
   icons: {
     icon: '/favicon.svg',
@@ -33,7 +33,7 @@ export default function RootLayout({
               <div className="space-y-2">
                 <TaxFlowLogo variant="compact" theme="light" size="sm" />
                 <p className="text-stone-500 text-xs max-w-md">
-                  High-Assurance UK Micro-Entity Statutory Accounts (FRS 105) &amp; HMRC CT600 Corporate Tax Returns.
+                  High-Assurance UK Micro-Entity Annual Accounts (FRS 105) &amp; HMRC CT600 Corporate Tax Returns.
                 </p>
               </div>
 
@@ -65,7 +65,7 @@ export default function RootLayout({
 
             <div className="flex flex-col sm:flex-row items-center justify-between gap-4 text-[11px] text-slate-400">
               <p>
-                © 2026 TaxFlow UK. All statutory calculations certified under Finance Act 2024 and Companies Act 2006.
+                © 2026 TaxFlow UK. All tax calculations certified under Finance Act 2024 and Companies Act 2006.
               </p>
               <div className="flex items-center space-x-3 text-[11px] text-slate-500">
                 <span>HMRC IRmark Digest</span>

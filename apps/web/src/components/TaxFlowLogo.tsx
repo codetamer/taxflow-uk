@@ -98,7 +98,7 @@ export function TaxFlowLogo({
         </div>
         {(variant === 'full' || withTagline) && (
           <span className={`text-[10px] tracking-wide font-normal -mt-0.5 ${taglineColor}`}>
-            Statutory Accounts &amp; CT600
+            Annual Accounts &amp; CT600
           </span>
         )}
       </div>

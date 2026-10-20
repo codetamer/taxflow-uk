@@ -69,7 +69,7 @@ function LoginForm() {
             Sign In to Compliance Studio
           </h1>
           <p className="text-xs text-stone-500">
-            Access your statutory FRS 105 accounts and HMRC CT600 filings
+            Access your annual FRS 105 accounts and HMRC CT600 filings
           </p>
         </div>
 

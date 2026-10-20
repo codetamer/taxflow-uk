@@ -356,7 +356,7 @@ function WizardContent() {
   const operatingProfit = grossProfit - form.otherCharges;
   const taxableProfit = Math.max(0, operatingProfit + form.disallowables - form.aiaClaimed);
 
-  // 2. Statutory Due Date and Loan Scheduling
+  // 2. Official Due Date and Loan Scheduling
   const paymentDueDate = form.periodEnd ? ctPaymentDueDate(form.periodEnd) : '2027-07-01';
 
   let loanOutstandingAtDueDate = 0;
@@ -530,7 +530,7 @@ function WizardContent() {
             Filing Studio: Micro-Entity Accounts & CT600
           </h1>
           <p className="text-xs text-slate-500">
-            Guided step-by-step statutory filing with interactive director guidance, automatic compliance checks, and live error defense.
+            Guided step-by-step company filing with interactive director guidance, automatic compliance checks, and live error defense.
           </p>
         </div>
 
@@ -773,7 +773,7 @@ function WizardContent() {
                   />
                   {!isPeriodValid && periodDayCount > 366 && (
                     <p className="text-[11px] text-red-600 mt-1">
-                      Statutory limit exceeded: CT600 accounting period cannot exceed 12 months ({periodDayCount} days). Split into two periods under CTA 2009 s10.
+                      Official limit exceeded: CT600 accounting period cannot exceed 12 months ({periodDayCount} days). Split into two periods under CTA 2009 s10.
                     </p>
                   )}
                 </div>
@@ -809,7 +809,7 @@ function WizardContent() {
                 </div>
               </div>
 
-              {/* Statutory Exemption Declaration Checkbox */}
+              {/* Legal Exemption Declaration Checkbox */}
               <div className="bg-slate-50 p-4 rounded-2xl border border-slate-200/90 flex items-start space-x-3">
                 <input
                   type="checkbox"
@@ -955,7 +955,7 @@ function WizardContent() {
                         <span>Categorization Summary ({parsedIngestion.sourceBank} Dialect)</span>
                       </h3>
                       <p className="text-[11px] text-slate-500">
-                        {parsedIngestion.totalTransactions} transactions evaluated against UK statutory tax rules.
+                        {parsedIngestion.totalTransactions} transactions evaluated against UK tax rules.
                       </p>
                     </div>
                     <button
@@ -1054,7 +1054,7 @@ function WizardContent() {
               </div>
 
               <PlainEnglishBanner
-                title="Profit & Loss: Statutory Trading Account"
+                title="Profit & Loss: Trading Account"
                 summary="The Profit & Loss statement establishes your company's trading profit for the period, forming the baseline from which Corporation Tax reliefs and charges are computed."
                 tips={[
                   'Turnover represents total invoiced revenue earned by your company in the accounting period.',
@@ -1171,10 +1171,10 @@ function WizardContent() {
                 </div>
               </div>
 
-              {/* Statutory CT600 Deduction Bridge */}
+              {/* Official CT600 Deduction Bridge */}
               <div className="bg-slate-50 border border-slate-200/90 rounded-2xl p-4 text-xs space-y-2">
                 <div className="flex items-center justify-between text-slate-500 text-[11px] uppercase tracking-wider font-bold">
-                  <span>HMRC Statutory Reconciliation to Box 235</span>
+                  <span>HMRC Reconciliation to Box 235</span>
                   <span>Amount</span>
                 </div>
                 <div className="flex justify-between text-slate-700">
@@ -1220,7 +1220,7 @@ function WizardContent() {
 
               <PlainEnglishBanner
                 title="Balance Sheet Symmetry & Financial Position"
-                summary="The balance sheet represents your company's financial position at period end. UK statutory reporting requires Total Net Assets to equal Total Shareholders' Funds to the exact penny."
+                summary="The balance sheet represents your company's financial position at period end. UK accounting standards require Total Net Assets to equal Total Shareholders' Funds to the exact penny."
                 tips={[
                   'Net Assets = Fixed Assets (equipment/tools) + Debtors (unpaid customer invoices) + Cash at bank - Creditors (unpaid supplier bills and tax provisions).',
                   'Total Shareholders\' Funds = £100 share capital + Accumulated retained profits reinvested in the company.',
@@ -1461,10 +1461,10 @@ function WizardContent() {
 
               <PlainEnglishBanner
                 title="Director Loan Accounts & Section 455 Tax Guidelines"
-                summary="When company funds are withdrawn outside standard payroll or formal dividend declarations, UK tax legislation records the balance as a Director's Loan. HMRC provides clear statutory rules for reporting and relief."
+                summary="When company funds are withdrawn outside standard payroll or formal dividend declarations, UK tax rules record the balance as a Director's Loan. HMRC provides clear rules for reporting and relief."
                 tips={[
                   `If you hold an overdrawn director loan balance at period end, UK law grants 9 months and 1 day to settle the account (by ${paymentDueDate}).`,
-                  'If the loan is settled by the statutory due date, £0.00 Section 455 tax is payable.',
+                  'If the loan is settled by the official due date, £0.00 Section 455 tax is payable.',
                   'If unsettled after 9 months, HMRC levies a temporary s455 tax (33.75% for loans taken before 6 Apr 2026; 35.75% on or after), which HMRC fully refunds once repaid.',
                   'If you did not withdraw funds outside salary or dividends, simply leave this amount at £0.'
                 ]}
@@ -1534,13 +1534,13 @@ function WizardContent() {
                         onChange={(e) => setForm({ ...form, directorLoanRepaidDate: e.target.value })}
                         className="w-full px-3.5 py-2.5 border border-slate-300 rounded-xl text-sm font-medium focus:ring-2 focus:ring-slate-900 focus:outline-none"
                       />
-                      <p className="text-[11px] text-slate-400 mt-1">Must be on or before {paymentDueDate} for statutory relief</p>
+                      <p className="text-[11px] text-slate-400 mt-1">Must be on or before {paymentDueDate} for tax relief</p>
                     </div>
                   </>
                 )}
               </div>
 
-              {/* Statutory s455 Tax Impact Banner */}
+              {/* Official s455 Tax Impact Banner */}
               {form.directorLoanAdvance > 0 && (
                 <div className={`p-4 rounded-2xl border text-xs space-y-1 ${
                   s455TaxPayable === 0 ? 'bg-emerald-50 border-emerald-200 text-emerald-900' : 'bg-amber-50 border-amber-200 text-amber-900'
@@ -1559,7 +1559,7 @@ function WizardContent() {
                   </div>
                   <p className="text-[11px] opacity-90 leading-relaxed">
                     {s455TaxPayable === 0
-                      ? `Because the loan advance is fully repaid by the statutory due date (${paymentDueDate}), zero s455 tax is charged on your CT600 return.`
+                      ? `Because the loan advance is fully repaid by the official due date (${paymentDueDate}), zero s455 tax is charged on your CT600 return.`
                       : `The outstanding balance of £${loanOutstandingAtDueDate.toLocaleString()} attracts Section 455 tax at ${(s455RatePct(form.directorLoanDate)).toFixed(2)}%. This £${s455TaxPayable.toLocaleString()} is added to your total HMRC liability (CT600A Supplementary Page) and is refunded once repaid.`}
                   </p>
                 </div>
@@ -1573,7 +1573,7 @@ function WizardContent() {
               <div className="space-y-1">
                 <h2 className="text-xl font-bold tracking-tight text-slate-950">Step 6: Free Draft Review & Submission Gate</h2>
                 <p className="text-xs text-slate-500">
-                  Inspect full statutory documents for free. Pay only when you are 100% satisfied and ready to submit to government gateways.
+                  Inspect full company accounts and tax return for free. Pay only when you are 100% satisfied and ready to submit to government gateways.
                 </p>
               </div>
 
@@ -1582,7 +1582,7 @@ function WizardContent() {
                 summary="Unlike other software that traps your return behind a paywall before you can even see if the numbers balance, TaxFlow allows you to download full watermarked drafts of both your FRS 105 Accounts and CT600 Form for free."
                 tips={[
                   'Download the draft PDFs below and share them with co-directors or advisers.',
-                  'All 40 statutory checks have been verified. There will be zero gateway rejections.',
+                  'All 40 automated checks have been verified. There will be zero gateway rejections.',
                   'When ready, pay £49.00 net to send directly to Companies House and HMRC with an official digital IRmark.'
                 ]}
                 onOpenGlossary={() => openGlossaryWith('ixbrl-irmark')}
@@ -1668,10 +1668,10 @@ function WizardContent() {
                 </div>
               )}
 
-              {/* Statutory Tax Liability Summary Breakdown */}
+              {/* Tax Liability Summary Breakdown */}
               <div className="bg-slate-50 border border-slate-200 rounded-2xl p-5 space-y-3">
                 <div className="flex items-center justify-between border-b border-slate-200 pb-2">
-                  <h3 className="text-xs font-bold text-slate-900 uppercase tracking-wider">Statutory Tax Payable to HMRC</h3>
+                  <h3 className="text-xs font-bold text-slate-900 uppercase tracking-wider">Total Tax Payable to HMRC</h3>
                   <span className="text-[11px] font-mono font-bold text-slate-600">Payment Due: {paymentDueDate}</span>
                 </div>
                 <div className="space-y-2 text-xs">
@@ -1725,7 +1725,7 @@ function WizardContent() {
                 <div className="flex items-center justify-between">
                   <div>
                     <h3 className="text-base font-bold text-white">Transmit to Companies House & HMRC</h3>
-                    <p className="text-xs text-stone-400">Direct gateway submission with statutory C14N IRmark.</p>
+                    <p className="text-xs text-stone-400">Direct gateway submission with certified C14N IRmark.</p>
                   </div>
                   <div className="text-right">
                     <span className="text-[11px] text-stone-400">One-off Flat Fee</span>
@@ -1818,9 +1818,9 @@ function WizardContent() {
           </div>
         </div>
 
-        {/* Right Column: Live Statutory Audit Rail (4 cols, sticky) */}
+        {/* Right Column: Live Shield Audit Rail (4 cols, sticky) */}
         <div className="lg:col-span-4 space-y-4 lg:sticky lg:top-24">
-          {/* Statutory Shield Health Card */}
+          {/* Shield Health Card */}
           <div className="bg-white rounded-2xl border border-slate-200/90 p-5 shadow-xs space-y-3">
             <div className="flex items-center justify-between">
               <span className="text-xs font-bold text-slate-900 flex items-center space-x-1.5">

@@ -16,7 +16,7 @@ export const TAX_GLOSSARY: GlossaryTerm[] = [
     category: 'Accounts',
     shortSummary: 'The official streamlined accounting standard for eligible UK small companies.',
     plainEnglish:
-      'FRS 105 is the statutory accounting framework created by the UK Financial Reporting Council specifically for micro-entities. It enables eligible businesses to submit clear, concise accounts consisting of a Balance Sheet and Profit & Loss statement, without the extensive fair-value disclosures required for larger corporations.',
+      'FRS 105 is the official accounting standard created by the UK Financial Reporting Council specifically for micro-entities. It enables eligible businesses to submit clear, concise accounts consisting of a Balance Sheet and Profit & Loss statement, without the extensive fair-value disclosures required for larger corporations.',
     whyItMatters:
       'Using FRS 105 keeps you fully compliant with Companies House while keeping reporting focused, efficient, and cost-effective.',
     example: 'A consultant or e-commerce business with turnover under £1,000,000 qualifies to use FRS 105.',
@@ -26,20 +26,20 @@ export const TAX_GLOSSARY: GlossaryTerm[] = [
     id: 'ct600',
     term: 'HMRC CT600 Form',
     category: 'Corporation Tax',
-    shortSummary: 'The official statutory tax return filed annually by limited companies with HMRC.',
+    shortSummary: 'The official company tax return filed annually by limited companies with HMRC.',
     plainEnglish:
       'The CT600 is the official company tax return. It reconciles your company’s trading profit, incorporates allowable deductions and capital allowances, and determines the precise Corporation Tax liability due to HMRC.',
     whyItMatters:
-      'The return must be filed within 12 months after your accounting period ends, while the actual tax payment is due on a separate statutory schedule (9 months and 1 day).',
+      'The return must be filed within 12 months after your accounting period ends, while the actual tax payment is due on a separate official timetable (9 months and 1 day).',
     statutoryRef: 'Corporation Tax Act 2010'
   },
   {
     id: 's455-loan',
     term: 'Section 455 Director’s Loan Tax',
     category: 'Director Compliance',
-    shortSummary: 'The statutory framework governing temporary funds borrowed by company directors.',
+    shortSummary: 'The tax rules governing temporary funds borrowed by company directors.',
     plainEnglish:
-      'In a limited company, corporate funds and personal finances remain legally distinct. When a director withdraws funds outside standard salary or declared dividends, UK tax law classifies this as a Director’s Loan. To prevent tax avoidance, HMRC provides a 9-month and 1-day grace period following the financial year-end to settle the balance. If repaid within this window, £0.00 s455 tax is due. If any balance remains outstanding past the statutory due date, HMRC charges a temporary s455 tax (33.75% for loans taken before 6 April 2026, and 35.75% for loans made on or after), which is fully refundable once the loan is repaid.',
+      'In a limited company, corporate funds and personal finances remain legally distinct. When a director withdraws funds outside standard salary or declared dividends, UK tax law classifies this as a Director’s Loan. To prevent tax avoidance, HMRC provides a 9-month and 1-day grace period following the financial year-end to settle the balance. If repaid within this window, £0.00 s455 tax is due. If any balance remains outstanding past the official payment deadline, HMRC charges a temporary s455 tax (33.75% for loans taken before 6 April 2026, and 35.75% for loans made on or after), which is fully refundable once the loan is repaid.',
     whyItMatters:
       'Once the advance is repaid back to the company, HMRC refunds 100% of this tax under Section 458 of the Corporation Tax Act 2010. TaxFlow tracks repayment dates automatically so your company never overpays.',
     example: 'A director advances £10,000 for short-term personal needs. If repaid within 9 months of year-end, £0.00 s455 tax is due. If unpaid, the temporary tax is refunded once the advance is settled.',
@@ -51,7 +51,7 @@ export const TAX_GLOSSARY: GlossaryTerm[] = [
     category: 'Accounts',
     shortSummary: 'The fundamental accounting standard ensuring Net Assets precisely equal Shareholders’ Equity.',
     plainEnglish:
-      'Balance sheet symmetry is the fundamental identity of UK corporate accounting: Total Net Assets (everything the company owns minus what it owes) must equal Total Shareholders’ Funds (the original share capital plus accumulated retained profits) to the exact single penny. TaxFlow guarantees this mathematical equilibrium automatically so your statutory submission passes Companies House validation without rejection.',
+      'Balance sheet symmetry is the fundamental identity of UK corporate accounting: Total Net Assets (everything the company owns minus what it owes) must equal Total Shareholders’ Funds (the original share capital plus accumulated retained profits) to the exact single penny. TaxFlow guarantees this mathematical equilibrium automatically so your annual filing passes Companies House validation without rejection.',
     whyItMatters:
       'Companies House automated gateway systems validate this identity down to 1p. Ensuring exact zero-penny discrepancy guarantees your return is accepted without gateway rejection.',
     example: 'Fixed Assets (£15,000) + Cash (£31,139) - Creditors (£25,000) = £31,139 Net Assets. This precisely matches £100 Shares + £31,039 Retained Profit.',
@@ -63,7 +63,7 @@ export const TAX_GLOSSARY: GlossaryTerm[] = [
     category: 'Corporation Tax',
     shortSummary: 'Commercial expenditures that UK tax law excludes from corporation tax deductions.',
     plainEnglish:
-      'While all genuine commercial costs can be recorded in your internal bookkeeping, UK tax legislation designates certain categories (such as client hospitality and statutory fines) as non-deductible for Corporation Tax. TaxFlow automatically adds back these items to your net accounting profit to ensure your Corporation Tax calculation is 100% compliant with HMRC rules.',
+      'While all genuine commercial costs can be recorded in your internal bookkeeping, UK tax legislation designates certain categories (such as client hospitality and government fines) as non-deductible for Corporation Tax. TaxFlow automatically adds back these items to your net accounting profit to ensure your Corporation Tax calculation is 100% compliant with HMRC rules.',
     whyItMatters:
       'Accurately distinguishing allowable operating costs from non-deductible expenses ensures your company claims every legitimate tax relief while remaining fully compliant with HMRC standards.',
     example: 'A business records £30,000 accounting profit and spent £1,000 hosting prospective clients. TaxFlow automatically adds back the £1,000 so tax is calculated on £31,000.',
@@ -73,7 +73,7 @@ export const TAX_GLOSSARY: GlossaryTerm[] = [
     id: 'capital-allowances-aia',
     term: 'Capital Allowances & AIA (Annual Investment Allowance)',
     category: 'Corporation Tax',
-    shortSummary: 'Statutory tax relief providing immediate 100% deduction on qualifying business equipment.',
+    shortSummary: 'Valuable tax relief providing immediate 100% deduction on qualifying business equipment.',
     plainEnglish:
       'Capital allowances enable businesses to write off the full cost of qualifying capital equipment (such as laptops, servers, tools, and office hardware) against taxable profits. Under the Annual Investment Allowance (AIA), your company can deduct up to 100% of eligible equipment expenditure in the year of purchase, significantly reducing your immediate Corporation Tax bill.',
     whyItMatters:
@@ -88,7 +88,7 @@ export const TAX_GLOSSARY: GlossaryTerm[] = [
     plainEnglish:
       'For assets that do not qualify for 100% first-year deduction, you deduct a percentage of their value each year. From April 2026, UK legislation adjusted the standard main pool rate from 18% to 14%.',
     whyItMatters:
-      'When your company financial year straddles 1 April 2026, statutory rules require a day-by-day blended rate. TaxFlow calculates this day-weighted percentage automatically to the exact penny.',
+      'When your company financial year straddles 1 April 2026, UK tax rules require a day-by-day blended rate. TaxFlow calculates this day-weighted percentage automatically to the exact penny.',
     statutoryRef: 'Finance Act 2024 / CAA 2001 s56'
   },
   {
@@ -106,11 +106,11 @@ export const TAX_GLOSSARY: GlossaryTerm[] = [
     id: 's477-exemption',
     term: 'Section 477 Audit Exemption',
     category: 'Accounts',
-    shortSummary: 'The statutory right of micro-entities to file without appointing an external auditor.',
+    shortSummary: 'The legal right of micro-entities to file without appointing an external auditor.',
     plainEnglish:
-      'Under Section 477 of the Companies Act 2006, qualifying small companies and micro-entities are legally exempt from appointing an independent auditor. TaxFlow automatically embeds the required statutory exemption statements and director declaration on your Balance Sheet.',
+      'Under Section 477 of the Companies Act 2006, qualifying small companies and micro-entities are legally exempt from appointing an independent auditor. TaxFlow automatically embeds the required official exemption statements and director declaration on your Balance Sheet.',
     whyItMatters:
-      'Including the exact statutory audit exemption declaration allows small businesses to file confidently without incurring external audit fees.',
+      'Including the exact legal audit exemption declaration allows small businesses to file confidently without incurring external audit fees.',
     statutoryRef: 'Companies Act 2006 s477'
   },
   {
@@ -121,7 +121,7 @@ export const TAX_GLOSSARY: GlossaryTerm[] = [
     plainEnglish:
       'Government gateways process accounts using Inline XBRL (iXBRL) — specialized digital documents with embedded taxonomy tags for every financial item. An IRmark is a cryptographic SHA-1 digest generated from canonical XML code (W3C C14N) that verifies data integrity and provides non-repudiation.',
     whyItMatters:
-      'Both HMRC and Companies House require certified iXBRL tagging and valid IRmark digests to accept statutory electronic filings.',
+      'Both HMRC and Companies House require certified iXBRL tagging and valid IRmark digests to accept digital tax filings.',
     statutoryRef: 'HMRC Technical Pack / W3C XML Canonicalization (C14N)'
   },
   {
@@ -130,7 +130,7 @@ export const TAX_GLOSSARY: GlossaryTerm[] = [
     category: 'Director Compliance',
     shortSummary: 'A private limited company controlled by five or fewer director-shareholders.',
     plainEnglish:
-      'Most UK startups, consultancies, and family businesses are close companies, meaning ownership is concentrated among founding directors. This structure qualifies companies for streamlined statutory reporting provisions.',
+      'Most UK startups, consultancies, and family businesses are close companies, meaning ownership is concentrated among founding directors. This structure qualifies companies for streamlined annual reporting provisions.',
     whyItMatters:
       'Certain director compliance rules (such as Section 455 loan schedules) apply specifically to close companies, ensuring transparent corporate governance.',
     statutoryRef: 'Corporation Tax Act 2010 s439'
@@ -206,9 +206,9 @@ export const TAX_GLOSSARY: GlossaryTerm[] = [
     id: 'confirmation-statement',
     term: 'Confirmation Statement (CS01) vs Accounts',
     category: 'Director Compliance',
-    shortSummary: 'Understanding the distinct statutory roles of the CS01 and your annual financial accounts.',
+    shortSummary: 'Understanding the distinct roles of the CS01 and your annual financial accounts.',
     plainEnglish:
-      'UK companies have two distinct annual requirements:\n• Confirmation Statement (CS01): A corporate identity confirmation verifying directors, registered office address, shareholders, and Persons of Significant Control (PSC).\n• Annual Accounts (FRS 105): A statutory financial report detailing turnover, profit, balance sheet assets, and liabilities.\nBoth must be submitted annually to Companies House on separate statutory schedules.',
+      'UK companies have two distinct annual requirements:\n• Confirmation Statement (CS01): A corporate identity confirmation verifying directors, registered office address, shareholders, and Persons of Significant Control (PSC).\n• Annual Accounts (FRS 105): An official financial report detailing turnover, profit, balance sheet assets, and liabilities.\nBoth must be submitted annually to Companies House on separate official schedules.',
     whyItMatters:
       'Filing your accounts does not satisfy your Confirmation Statement duty. Keeping both current maintains your company’s active standing on the public register.',
     statutoryRef: 'Companies Act 2006 Part 24'
@@ -241,7 +241,7 @@ export const TAX_GLOSSARY: GlossaryTerm[] = [
     category: 'Accounts',
     shortSummary: 'Matching income and costs to when work happened, not when money moved.',
     plainEnglish:
-      'Under UK statutory accounting, you must report transactions in the year they happened. An "Accrual" is an expense you incurred but haven\'t paid yet (like December electricity billed in January). A "Prepayment" is an expense you paid in advance (like annual insurance paid upfront).',
+      'Under UK accounting standards, you must report transactions in the year they happened. An "Accrual" is an expense you incurred but haven\'t paid yet (like December electricity billed in January). A "Prepayment" is an expense you paid in advance (like annual insurance paid upfront).',
     whyItMatters:
       'Ensures your profit calculation matches the exact trading reality of your 12-month period, rather than being distorted by cash timing.',
     example: 'You paid £1,200 for 12 months software on 1 July. Only £300 belongs to the period ending 30 September; the remaining £900 is a prepayment.',

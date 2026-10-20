@@ -58,7 +58,7 @@ export default function HomePage() {
       <section className="text-center space-y-6 pt-6 sm:pt-10">
         <div className="inline-flex items-center space-x-2 bg-amber-50 border border-amber-200 text-amber-900 px-3.5 py-1.5 rounded-full text-xs font-medium">
           <span className="w-2 h-2 rounded-full bg-amber-600 animate-pulse" />
-          <span>Finance Act 2024 & 2026/27 Statutory Rules Active</span>
+          <span>Finance Act 2024 & 2026/27 Tax Rules Active</span>
         </div>
 
         <h1 className="text-4xl sm:text-6xl font-bold tracking-tight text-stone-950 max-w-4xl mx-auto leading-tight">
@@ -66,7 +66,7 @@ export default function HomePage() {
         </h1>
 
         <p className="text-lg text-stone-600 max-w-2xl mx-auto leading-relaxed">
-          File statutory <TermExplainer termId="frs-105" label="FRS 105 annual accounts" /> to Companies House and <TermExplainer termId="ct600" label="CT600 returns" /> to HMRC with mathematical certainty. Zero gateway rejections. Free draft PDFs. Pay £49 only upon submission.
+          File official <TermExplainer termId="frs-105" label="FRS 105 annual accounts" /> to Companies House and <TermExplainer termId="ct600" label="CT600 returns" /> to HMRC with mathematical certainty. Zero gateway rejections. Free draft PDFs. Pay £49 only upon submission.
         </p>
 
         {/* Live Companies House Search Engine */}
@@ -112,7 +112,7 @@ export default function HomePage() {
         </div>
       </section>
 
-      {/* Centerpiece: Interactive Live Tax & Statutory Ledger Simulator */}
+      {/* Centerpiece: Interactive Live Tax & Accounts Simulator */}
       <section className="bg-white rounded-3xl border border-stone-200 shadow-sm overflow-hidden">
         <div className="bg-stone-950 text-white px-6 sm:px-8 py-5 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
           <div>
@@ -252,7 +252,7 @@ export default function HomePage() {
             <div className="bg-stone-50 rounded-2xl p-4 border border-stone-200 space-y-2.5 text-xs text-stone-600">
               <div className="flex items-center space-x-1.5 font-semibold text-stone-900">
                 <ShieldCheck className="w-4 h-4 text-amber-600" />
-                <span>Automated Statutory Deductions</span>
+                <span>Automated Tax Deductions</span>
               </div>
               <p className="leading-relaxed">
                 Includes full 100% <TermExplainer termId="capital-allowances-aia" label="Annual Investment Allowance (AIA)" />, automatic <TermExplainer termId="disallowable-expenses" label="disallowable add-backs" />, and 2026/27 <TermExplainer termId="wda-main-pool" label="14% Main Pool WDA rates" />.
@@ -263,7 +263,7 @@ export default function HomePage() {
           {/* Real-time Ledger Preview (7 cols) */}
           <div className="lg:col-span-7 bg-stone-50/70 rounded-2xl p-6 border border-stone-200/90 space-y-5">
             <h3 className="text-xs font-semibold text-stone-500 uppercase tracking-wider">
-              Statutory Tax & Reserves Computation
+              Tax & Reserves Calculation
             </h3>
 
             <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
@@ -330,10 +330,10 @@ export default function HomePage() {
             <span>Clarity for Company Directors</span>
           </div>
           <h2 className="text-2xl sm:text-3xl font-bold tracking-tight text-stone-950">
-            Total confidence in your statutory filings.
+            Total confidence in your annual filings.
           </h2>
           <p className="text-xs sm:text-sm text-stone-600">
-            Every statutory requirement, tax box, and Companies Act rule is accompanied by clear, actionable guidance so you always stay in complete control.
+            Every tax requirement, box number, and company rule is accompanied by clear, actionable guidance so you always stay in complete control.
           </p>
         </div>
 
@@ -395,7 +395,7 @@ export default function HomePage() {
                 <tr>
                   <td className="py-4 px-6 font-medium text-stone-900">
                     Pre-Flight Error Defense
-                    <p className="text-xs text-stone-500 font-normal mt-0.5">Automated statutory gateway gate before submission</p>
+                    <p className="text-xs text-stone-500 font-normal mt-0.5">Automated gateway checks before submission</p>
                   </td>
                   <td className="py-4 px-6 text-stone-600">
                     <span className="inline-flex items-center space-x-1 text-amber-700 bg-amber-50 px-2 py-0.5 rounded text-xs font-medium">
@@ -446,7 +446,7 @@ export default function HomePage() {
                     <span className="inline-flex items-center space-x-1 text-amber-900 bg-amber-100/80 px-2.5 py-0.5 rounded text-xs font-bold border border-amber-200">
                       <span>Interactive Director Guide & Explanations</span>
                     </span>
-                    <p className="text-xs text-amber-900/80 mt-1">Clear statutory context, real-world examples, and instant explanations</p>
+                    <p className="text-xs text-amber-900/80 mt-1">Clear explanations, real-world examples, and instant guidance</p>
                   </td>
                 </tr>
 
@@ -480,7 +480,7 @@ export default function HomePage() {
             Inspect the live audited micro-entity filing.
           </h2>
           <p className="text-sm text-stone-400 leading-relaxed">
-            Explore a complete £100,000 turnover statutory return with £31,900 trading profit, £20,000 taxable profit, £3,800 corporation tax, and verified FRS 105 iXBRL tags.
+            Explore a complete £100,000 turnover company filing with £31,900 trading profit, £20,000 taxable profit, £3,800 corporation tax, and verified FRS 105 iXBRL tags.
           </p>
         </div>
 

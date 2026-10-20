@@ -120,7 +120,7 @@ const categoryExplanations: Record<string, CategoryDetail> = {
     statutoryRef: 'Companies Act 2006 s830'
   },
   'Category 3: CT600 Box Parity & Cross-Checking': {
-    summary: 'Cross-checks your HMRC Corporation Tax return boxes against your Companies House statutory accounts.',
+    summary: 'Cross-checks your HMRC Corporation Tax return boxes against your Companies House annual accounts.',
     why: 'HMRC and Companies House cross-reference data. The turnover, cost of sales, and profit figures on your CT600 must match your FRS 105 accounts.',
     consequence: 'HMRC Gateway Error 3001 or compliance audit for discrepancy between accounts and tax return.',
     remedy: 'TaxFlow generates both documents from a single unified ledger, ensuring 100% mathematical parity across all boxes.',
@@ -131,12 +131,12 @@ const categoryExplanations: Record<string, CategoryDetail> = {
     summary: 'Confirms your business qualifies for simplified FRS 105 accounts without needing an expensive external audit.',
     why: 'Companies must meet at least 2 of 3 criteria (turnover <= £1,000,000, balance sheet total <= £500,000, employees <= 10) to qualify as a micro-entity.',
     consequence: 'Accounts rejected by Companies House for unauthorized use of micro-entity format; forced full FRS 102 audit costing £5,000+.',
-    remedy: 'Automated threshold monitoring verifies your company is safely within the statutory micro-entity boundary.',
+    remedy: 'Automated threshold monitoring verifies your company is safely within the official micro-entity size limit.',
     glossaryTerm: 'frs-105',
     statutoryRef: 'Companies Act 2006 s384A & s477'
   },
-  'Category 5: Period Consistency & Statutory Deadlines': {
-    summary: 'Audits accounting period dates, ensures periods do not exceed 12 months, and verifies statutory filing deadlines.',
+  'Category 5: Period Consistency & Filing Deadlines': {
+    summary: 'Audits accounting period dates, ensures periods do not exceed 12 months, and verifies official filing deadlines.',
     why: 'HMRC only accepts returns for periods up to 12 months. Longer periods must be split into two separate CT600 returns.',
     consequence: 'HMRC Gateway Error 8016 ("Accounting period exceeds 365 days") and late filing penalties starting at £100.',
     remedy: 'TaxFlow automatically splits long periods into two consecutive returns (365 days + remaining days) under CTA 2009 s10.',
@@ -146,7 +146,7 @@ const categoryExplanations: Record<string, CategoryDetail> = {
   'Category 6: Close Company Director Loans & s455': {
     summary: 'Tracks any money borrowed from the company and verifies the 9-month repayment relief rule.',
     why: 'Loans to directors of close companies not repaid within 9 months and 1 day after year-end trigger a mandatory 33.75% tax charge (or 35.75% for loans made on/after 6 April 2026).',
-    consequence: 'HMRC compliance notice, statutory interest, and surprise 33.75% / 35.75% tax bill under CTA 2010 s455.',
+    consequence: 'HMRC compliance notice, interest charges, and surprise 33.75% / 35.75% tax bill under CTA 2010 s455.',
     remedy: 'TaxFlow tracks loan advance dates and automatically files Section 458 relief claims when repaid within the 9-month window.',
     glossaryTerm: 's455-loan',
     statutoryRef: 'Corporation Tax Act 2010 s455 & s458'
@@ -270,7 +270,7 @@ export default function ShieldDashboardPage() {
                 </span>
               </div>
               <p className="text-xs text-slate-400">
-                Automated statutory audit suite verifying all 40 mathematical and regulatory invariants before submission.
+                Automated pre-flight defense verifying all 40 mathematical and regulatory rules before submission.
               </p>
             </div>
           </div>
@@ -304,7 +304,7 @@ export default function ShieldDashboardPage() {
             <span>Why Does This Diagnostic Screen Exist?</span>
           </h3>
           <p className="text-xs text-stone-800 leading-relaxed max-w-3xl">
-            Government computer systems at Companies House and HMRC reject filings for simple mathematical rounding errors, missing statutory declarations, or illegal dividends. TaxFlow checks all 40 rules <strong>before</strong> you submit, saving you weeks of stressful rejection notices.
+            Government computer systems at Companies House and HMRC reject filings for simple mathematical rounding errors, missing legal declarations, or illegal dividends. TaxFlow checks all 40 rules <strong>before</strong> you submit, saving you weeks of stressful rejection notices.
           </p>
         </div>
         <button
@@ -453,7 +453,7 @@ export default function ShieldDashboardPage() {
             <h3 className="font-bold text-base">Submission Gate Locked: Fatal Rejection Errors Intercepted</h3>
           </div>
           <p className="text-xs text-red-800 leading-relaxed">
-            These statutory violations would cause an immediate Gateway rejection code (e.g. 1000, 3001, 8016) from Companies House or HMRC. You must remediate these before submission.
+            These compliance errors would cause an immediate Gateway rejection code (e.g. 1000, 3001, 8016) from Companies House or HMRC. You must resolve these before submission.
           </p>
 
           <div className="space-y-3 pt-1">
@@ -594,12 +594,12 @@ export default function ShieldDashboardPage() {
                   </span>
                 </div>
 
-                {/* Statutory Background Detail Box */}
+                {/* Legal & Rule Background Detail Box */}
                 {explanation && (
                   <div className="grid grid-cols-1 md:grid-cols-3 gap-3 pt-2 text-[11px] border-t border-slate-200/60">
                     <div className="bg-white p-2.5 rounded-xl border border-slate-200/80 space-y-0.5">
                       <span className="font-bold text-slate-800 uppercase tracking-wider text-[10px] block">
-                        Statutory Authority
+                        Official Legal Rule
                       </span>
                       <p className="text-slate-600 font-mono text-[10px]">{explanation.statutoryRef}</p>
                     </div>
@@ -658,7 +658,7 @@ export default function ShieldDashboardPage() {
                             onClick={() => toggleRuleExpand(rule.id)}
                             className="text-[11px] font-semibold text-slate-600 hover:text-slate-900 bg-slate-100 hover:bg-slate-200 px-2.5 py-1 rounded-lg transition flex items-center space-x-1"
                           >
-                            <span>{isExpanded ? 'Less' : 'Statute & Details'}</span>
+                            <span>{isExpanded ? 'Less' : 'Rules & Details'}</span>
                             {isExpanded ? <ChevronUp className="w-3 h-3" /> : <ChevronDown className="w-3 h-3" />}
                           </button>
                           <span className={`text-[11px] font-bold px-2.5 py-1 rounded-full ${
@@ -673,19 +673,19 @@ export default function ShieldDashboardPage() {
                         </div>
                       </div>
 
-                      {/* Expandable Statutory Rationale Drawer */}
+                      {/* Expandable Rule Rationale Drawer */}
                       {isExpanded && (
                         <div className="bg-slate-50 rounded-2xl p-4 border border-slate-200 space-y-2.5 text-xs animate-in fade-in-50">
                           <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                             <div className="space-y-1">
                               <span className="text-[10px] font-bold uppercase tracking-wider text-slate-400">
-                                Legal Basis & Statute
+                                Legal Basis & Official Rule
                               </span>
                               <p className="font-mono text-slate-800 font-semibold text-[11px]">
                                 {explanation?.statutoryRef || 'Companies Act 2006 & CTA 2010'}
                               </p>
                               <p className="text-slate-500 text-[11px]">
-                                {explanation?.why || 'Required for statutory submission parity.'}
+                                {explanation?.why || 'Required for official submission parity.'}
                               </p>
                             </div>
                             <div className="space-y-1">

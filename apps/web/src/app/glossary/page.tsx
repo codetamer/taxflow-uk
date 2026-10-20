@@ -92,16 +92,16 @@ export default function GlossaryPage() {
       <section className="space-y-4 text-center sm:text-left">
         <div className="inline-flex items-center space-x-2 bg-amber-50 border border-amber-200 text-amber-900 px-3.5 py-1.5 rounded-full text-xs font-semibold">
           <BookOpen className="w-3.5 h-3.5 text-amber-700" />
-          <span>Statutory Tax & Accounting Encyclopedia</span>
+          <span>Director's Tax & Accounting Encyclopedia</span>
         </div>
 
         <div className="flex flex-col sm:flex-row sm:items-end justify-between gap-4">
           <div className="space-y-2">
             <h1 className="text-3xl sm:text-5xl font-extrabold tracking-tight text-stone-950">
-              Director's Statutory Tax & Compliance Guide
+              Director's Tax & Compliance Guide
             </h1>
             <p className="text-sm sm:text-base text-stone-600 max-w-2xl leading-relaxed">
-              Comprehensive UK statutory accounting principles, Companies Act regulations, and HMRC CT600 codes explained with practical examples, statutory citations, and actionable guidance for company directors.
+              Comprehensive UK accounting principles, Companies Act regulations, and HMRC CT600 codes explained with practical examples, official citations, and actionable guidance for company directors.
             </p>
           </div>
 
@@ -249,7 +249,7 @@ export default function GlossaryPage() {
                     </p>
                   </div>
 
-                  {/* Statutory Guidance Core Section */}
+                  {/* Practical Guidance Core Section */}
                   <div className="space-y-3">
                     <h3 className="text-xs font-bold text-stone-400 uppercase tracking-wider">
                       Practical Guidance & Overview
@@ -283,11 +283,11 @@ export default function GlossaryPage() {
                     </div>
                   )}
 
-                  {/* Statutory Reference Footer */}
+                  {/* Official Reference Footer */}
                   {item.statutoryRef && (
                     <div className="pt-4 border-t border-stone-100 flex flex-col sm:flex-row sm:items-center justify-between gap-3 text-xs">
                       <div className="flex items-center space-x-2">
-                        <span className="font-semibold text-stone-500">Statute:</span>
+                        <span className="font-semibold text-stone-500">Official Reference:</span>
                         <span className="font-mono text-stone-800 bg-stone-100 px-2 py-0.5 rounded border border-stone-200">
                           {item.statutoryRef}
                         </span>

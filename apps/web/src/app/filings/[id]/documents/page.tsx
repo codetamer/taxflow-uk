@@ -59,7 +59,7 @@ export default function DocumentsPage() {
       xmlns:uk-direp="http://xbrl.frc.org.uk/reports/2019-01-01/direp"
       xmlns:frs-105="http://xbrl.frc.org.uk/frs/105/2019-01-01">
   <head>
-    <title>DROPLOGICX LTD - Statutory Micro-Entity Accounts</title>
+    <title>DROPLOGICX LTD - Micro-Entity Annual Accounts</title>
   </head>
   <body>
     <!-- FRS 105 Income Statement -->
@@ -77,7 +77,7 @@ export default function DocumentsPage() {
     <ix:nonFraction name="uk-gaap:ShareholderFunds" unitRef="GBP" decimals="0" contextRef="ctx_current_instant">33400</ix:nonFraction>
     <ix:nonFraction name="uk-gaap:ProfitLossAccountReserve" unitRef="GBP" decimals="0" contextRef="ctx_current_instant">33300</ix:nonFraction>
 
-    <!-- Statutory Declarations -->
+    <!-- Official Declarations -->
     <ix:nonNumeric name="uk-direp:DateApprovalAccounts" contextRef="ctx_current_instant">2026-10-15</ix:nonNumeric>
     <ix:nonNumeric name="uk-direp:NameEntityOfficer" contextRef="ctx_current_instant">Muhammad Saif Raza</ix:nonNumeric>
   </body>
@@ -99,14 +99,14 @@ export default function DocumentsPage() {
               <FileText className="w-5 h-5 text-slate-800" />
             </span>
             <div>
-              <h1 className="text-2xl font-bold tracking-tight text-slate-950">Statutory Document Center</h1>
+              <h1 className="text-2xl font-bold tracking-tight text-slate-950">Company Document Center</h1>
               <p className="text-xs text-slate-500 font-mono">
                 DROPLOGICX LTD (CRN: 15152081) · Accounting Period Ended 30 Sep 2026
               </p>
             </div>
           </div>
           <p className="text-xs sm:text-sm text-slate-600 max-w-2xl leading-relaxed">
-            Inspect full statutory filings on screen or download free watermarked draft PDFs to review with your co-directors before final submission.
+            Inspect full company filings on screen or download free watermarked draft PDFs to review with your co-directors before final submission.
           </p>
         </div>
 
@@ -131,12 +131,12 @@ export default function DocumentsPage() {
         </div>
       </div>
 
-      {/* Statutory Guidance Overview Banner */}
+      {/* Guidance Overview Banner */}
       <PlainEnglishBanner
-        title="Statutory Filing Requirements & Document Roles"
-        summary="UK corporate regulations require two separate statutory returns each year, accompanied by certified digital iXBRL for government gateway validation."
+        title="Annual Filing Requirements & Document Roles"
+        summary="UK company regulations require two separate annual returns each year, accompanied by certified digital iXBRL for government gateway validation."
         tips={[
-          'Full Accounts (FRS 105): Filed with Companies House and published on the public online register. Discloses your balance sheet, statutory exemption statements, and director sign-off.',
+          'Full Accounts (FRS 105): Filed with Companies House and published on the public online register. Discloses your balance sheet, audit exemption statements, and director sign-off.',
           'HMRC CT600 Form: Submitted privately to HMRC. Contains detailed box-by-box tax calculations showing how your Corporation Tax was determined.',
           'iXBRL XHTML: The certified computer-readable digital format with embedded taxonomy tags required by both government gateways for automated processing.'
         ]}
@@ -152,7 +152,7 @@ export default function DocumentsPage() {
             <span>Zero Gateway Rejections Guaranteed</span>
           </div>
           <p className="text-xs text-stone-300">
-            All documents pre-flight audited across 40 statutory checks. Pay £49 only upon final submission.
+            All documents pre-flight audited across 40 automated checks. Pay £49 only upon final submission.
           </p>
         </div>
 
@@ -366,10 +366,10 @@ export default function DocumentsPage() {
             </div>
           </div>
 
-          {/* Statutory Exemption Declaration Footnotes */}
+          {/* Audit Exemption Declaration Footnotes */}
           <div className="bg-slate-50 p-5 rounded-2xl border border-slate-200 space-y-2 text-xs font-sans text-slate-600">
             <p className="font-bold text-slate-900">
-              <TermExplainer termId="s477-exemption" label="Companies Act 2006 Statutory Exemption Statements" />:
+              <TermExplainer termId="s477-exemption" label="Companies Act 2006 Audit Exemption Statements" />:
             </p>
             <p className="leading-relaxed">
               (a) For the period ended 30 September 2026 the company was entitled to exemption from audit under section 477 of the Companies Act 2006 relating to micro-entities.
@@ -388,14 +388,14 @@ export default function DocumentsPage() {
             </div>
           </div>
 
-          {/* Statutory Notes to the Accounts (CA 2006 s411 & s413) */}
+          {/* Notes to the Accounts (CA 2006 s411 & s413) */}
           <div className="border border-slate-200 p-6 rounded-2xl space-y-4 text-xs font-sans text-slate-700">
             <h3 className="font-bold text-sm text-slate-950 uppercase tracking-wider border-b border-slate-200 pb-2">
               Notes to the Financial Statements for the Period Ended 30 September 2026
             </h3>
 
             <div className="space-y-1">
-              <h4 className="font-bold text-slate-900">1. Statutory Information</h4>
+              <h4 className="font-bold text-slate-900">1. Company Information</h4>
               <p className="text-slate-600 leading-relaxed">
                 DROPLOGICX LTD is a private company limited by shares, incorporated in England and Wales under company number 15152081. Registered office: 71-75 Shelton Street, Covent Garden, London, WC2H 9JQ.
               </p>
@@ -460,7 +460,7 @@ export default function DocumentsPage() {
           {/* Box Numbered Table */}
           <div className="border border-slate-200 rounded-2xl overflow-hidden divide-y divide-slate-100">
             <div className="bg-slate-50 px-5 py-3 text-xs font-bold uppercase tracking-wider text-slate-700">
-              HMRC Statutory Return Boxes & Calculations
+              HMRC Return Boxes & Calculations
             </div>
 
             <div className="p-4 flex items-center justify-between text-xs sm:text-sm">
@@ -536,7 +536,7 @@ export default function DocumentsPage() {
             <div className="p-4 flex items-center justify-between text-xs sm:text-sm">
               <div className="flex items-center space-x-3">
                 <span className="font-mono bg-slate-100 border border-slate-300 px-2 py-0.5 rounded text-xs font-bold text-slate-800">Box 510</span>
-                <span>Statutory Payment Due Date (HMRC)</span>
+                <span>Payment Due Date (HMRC)</span>
               </div>
               <span className="font-mono font-semibold text-slate-900">01 July 2027</span>
             </div>
@@ -587,7 +587,7 @@ export default function DocumentsPage() {
                   <Award className="w-4 h-4" />
                 </span>
                 <h2 className="text-lg font-bold text-slate-950">
-                  Director Approval & Statutory Exemption Certificate
+                  Director Approval & Audit Exemption Certificate
                 </h2>
               </div>
               <p className="text-xs text-slate-500">
@@ -601,10 +601,10 @@ export default function DocumentsPage() {
             </div>
           </div>
 
-          {/* Statutory Sign-off Card */}
+          {/* Sign-off Card */}
           <div className="bg-slate-50/80 rounded-2xl border border-slate-200/90 p-5 space-y-4">
             <h3 className="text-xs font-bold text-slate-900 uppercase tracking-wider">
-              Statutory Board Representation Details
+              Board Representation Details
             </h3>
 
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 text-xs">

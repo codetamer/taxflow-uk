@@ -66,7 +66,7 @@ function SignupForm() {
             Create Director Account
           </h1>
           <p className="text-xs text-stone-500">
-            Start filing statutory accounts with 40-point pre-flight assurance
+            Start filing annual accounts with 40-point pre-flight assurance
           </p>
         </div>
 

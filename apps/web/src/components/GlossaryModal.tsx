@@ -76,10 +76,10 @@ export function GlossaryModal({ isOpen, onClose, initialTermId }: GlossaryModalP
             </div>
             <div>
               <h2 id="glossary-title" className="text-xl font-bold tracking-tight">
-                Director's Statutory Tax & Compliance Guide
+                Director's Tax & Compliance Guide
               </h2>
               <p className="text-xs text-stone-400 mt-0.5">
-                Clear statutory context, practical director guidance, and real-world compliance insights.
+                Clear explanations, practical director tips, and real-world tax guidance.
               </p>
             </div>
           </div>
@@ -196,7 +196,7 @@ export function GlossaryModal({ isOpen, onClose, initialTermId }: GlossaryModalP
 
                       {item.statutoryRef && (
                         <div className="text-[11px] text-stone-400 font-mono pt-1">
-                          Statute: {item.statutoryRef}
+                          Official Reference: {item.statutoryRef}
                         </div>
                       )}
                     </div>

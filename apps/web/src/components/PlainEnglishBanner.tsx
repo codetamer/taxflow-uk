@@ -59,7 +59,7 @@ export function PlainEnglishBanner({
 
           {tips.length > 0 && (
             <div className="space-y-1.5 pt-1">
-              <span className="font-bold text-stone-900 block text-[11px]">Key Statutory Principles & Guidance:</span>
+              <span className="font-bold text-stone-900 block text-[11px]">Key Principles & Helpful Tips:</span>
               <ul className="space-y-1 text-stone-600 list-disc list-inside">
                 {tips.map((tip, index) => (
                   <li key={index} className="leading-relaxed">
@@ -81,7 +81,7 @@ export function PlainEnglishBanner({
                 className="inline-flex items-center space-x-1.5 text-[11px] font-bold text-amber-800 hover:text-amber-950 transition"
               >
                 <BookOpen className="w-3.5 h-3.5" />
-                <span>Explore complete Director Guide & Statutory Definitions →</span>
+                <span>Explore complete Director Guide & Key Definitions →</span>
               </button>
             </div>
           )}
@@ -91,3 +91,4 @@ export function PlainEnglishBanner({
   );
 }
 
+export const DirectorGuidanceBanner = PlainEnglishBanner;

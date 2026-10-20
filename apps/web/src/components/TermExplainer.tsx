@@ -54,7 +54,7 @@ export function TermExplainer({ termId, label, children, showIcon = true }: Term
           setIsOpen(!isOpen);
         }}
         className="inline-flex items-center space-x-1 text-stone-800 hover:text-amber-700 underline decoration-stone-300 underline-offset-2 decoration-dotted font-medium transition cursor-help focus:outline-none focus:ring-1 focus:ring-amber-500 rounded"
-        title={`Click for statutory guidance on ${termData.term}`}
+        title={`Click for helpful guidance on ${termData.term}`}
         aria-label={`Guidance on ${termData.term}`}
       >
         <span>{displayText}</span>
@@ -104,13 +104,13 @@ export function TermExplainer({ termId, label, children, showIcon = true }: Term
             )}
 
             <div className="space-y-1 text-stone-600 leading-relaxed">
-              <span className="font-bold text-stone-900 block">Statutory Importance:</span>
+              <span className="font-bold text-stone-900 block">Why This Matters:</span>
               <p>{termData.whyItMatters}</p>
             </div>
 
             {termData.statutoryRef && (
               <div className="pt-2 border-t border-stone-100 text-[10px] text-stone-400 font-mono">
-                Statutory Reference: {termData.statutoryRef}
+                Official Reference: {termData.statutoryRef}
               </div>
             )}
           </div>

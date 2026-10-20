@@ -146,7 +146,7 @@ export default function DashboardPage() {
     userRole: 'DIRECTOR'
   };
 
-  // Statutory Filing Baseline
+  // Official Filing Baseline
   const filingMetrics = {
     jurisdiction: 'England & Wales',
     director: userName,
@@ -287,9 +287,9 @@ export default function DashboardPage() {
       {/* Director Compliance Briefing */}
       <PlainEnglishBanner
         title="Director Compliance Briefing: Key Timelines & Responsibilities"
-        summary="As a director of a UK limited company, you have two key statutory commitments: submitting annual accounts to Companies House and settling Corporation Tax with HMRC. TaxFlow aligns both workflows into a unified, high-assurance process."
+        summary="As a director of a UK limited company, you have two key annual responsibilities: submitting accounts to Companies House and settling Corporation Tax with HMRC. TaxFlow aligns both workflows into a unified, high-assurance process."
         tips={[
-          'Companies House Accounts are filed publicly, confirming your company balance sheet and statutory audit exemptions.',
+          'Companies House Accounts are filed publicly, confirming your company balance sheet and small company audit exemptions.',
           'HMRC CT600 Return is private, calculating your trading revenues, allowable deductions, and corporation tax liability.',
           'Your Corporation Tax payment is due on 01 July 2027 (9 months and 1 day after year end), while the CT600 return is due by 30 September 2027.'
         ]}
@@ -297,12 +297,12 @@ export default function DashboardPage() {
         defaultOpen={true}
       />
 
-      {/* Statutory Filing Deadlines Countdown */}
+      {/* Official Filing Deadlines Countdown */}
       <div className="space-y-3">
         <div className="flex items-center justify-between">
           <h2 className="text-xs font-semibold text-stone-500 uppercase tracking-wider flex items-center space-x-2">
             <Clock className="w-4 h-4 text-stone-400" />
-            <span>Statutory Filing Deadlines & Timetable</span>
+            <span>Official Filing Deadlines & Timetable</span>
           </h2>
           <span className="text-xs text-stone-400">All filings currently in draft</span>
         </div>
@@ -378,7 +378,7 @@ export default function DashboardPage() {
       <div className="space-y-3">
         <h2 className="text-xs font-semibold text-stone-500 uppercase tracking-wider flex items-center space-x-2">
           <TrendingUp className="w-4 h-4 text-amber-600" />
-          <span>Statutory Accounting & Tax Position (2025/26)</span>
+          <span>Year-End Accounts & Tax Position (2025/26)</span>
         </h2>
 
         <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
@@ -449,7 +449,7 @@ export default function DashboardPage() {
               <FileText className="w-5 h-5" />
             </div>
             <div>
-              <h3 className="font-bold text-stone-950 text-base">Statutory FRS 105 Accounts (PDF)</h3>
+              <h3 className="font-bold text-stone-950 text-base">Annual FRS 105 Accounts (PDF)</h3>
               <p className="text-xs text-stone-500">Balance sheet, P&L, footnotes, and director sign-off</p>
             </div>
           </div>
