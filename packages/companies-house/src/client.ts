@@ -50,7 +50,7 @@ const MOCK_COMPANIES: Record<string, { profile: CompaniesHouseProfile; officers:
   },
   '12345678': {
     profile: {
-      company_name: 'TINYTAX ALTERNATIVE LTD',
+      company_name: 'COVENTRY CLOUD TECH LTD',
       company_number: '12345678',
       company_status: 'active',
       type: 'ltd',

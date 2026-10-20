@@ -187,16 +187,16 @@ export default function HomePage() {
                 <button
                   type="button"
                   onClick={() => {
-                    setTurnover(280000);
+                    setTurnover(350000);
                     setExpenses(70000);
                   }}
                   className={`px-2.5 py-1 rounded-lg text-xs font-medium border transition ${
-                    turnover === 280000
+                    turnover === 350000
                       ? 'bg-stone-950 text-white border-stone-950'
                       : 'bg-white hover:bg-stone-50 text-stone-700 border-stone-200'
                   }`}
                 >
-                  £280k (Main Rate 25%)
+                  £350k (Main Rate 25%)
                 </button>
               </div>
             </div>
@@ -212,16 +212,16 @@ export default function HomePage() {
                 id="turnover-slider"
                 type="range"
                 min="10000"
-                max="300000"
-                step="5000"
+                max="1000000"
+                step="10000"
                 value={turnover}
                 onChange={(e) => setTurnover(Number(e.target.value))}
                 className="w-full h-2 bg-stone-200 rounded-lg appearance-none cursor-pointer accent-amber-600"
               />
               <div className="flex justify-between text-[11px] text-stone-400 font-mono">
                 <span>£10,000</span>
-                <span>£150,000</span>
-                <span>£300,000</span>
+                <span>£500,000</span>
+                <span>£1,000,000 (Micro Max)</span>
               </div>
             </div>
 
@@ -354,7 +354,7 @@ export default function HomePage() {
             </span>
             <h3 className="font-bold text-stone-900 text-sm">Director Loans Refunded by HMRC</h3>
             <p className="text-xs text-stone-600 leading-relaxed">
-              If you borrow money from your company, HMRC charges a temporary 33.75% tax if unpaid after 9 months. Once you repay the loan, HMRC refunds this entire tax back to your company.
+              If you borrow money from your company, HMRC charges a temporary s455 tax (33.75% for loans taken before 6 April 2026; 35.75% on or after) if unpaid 9 months after your year-end. Once repaid, HMRC refunds this entire tax back to your company.
             </p>
           </div>
 
@@ -370,14 +370,14 @@ export default function HomePage() {
         </div>
       </section>
 
-      {/* The Direct Confrontation: TinyTax vs TaxFlow UK */}
+      {/* Assurance Comparison: Traditional Firms & Legacy Tools vs TaxFlow UK */}
       <section className="space-y-6">
         <div className="text-center space-y-2 max-w-2xl mx-auto">
           <h2 className="text-2xl sm:text-3xl font-bold tracking-tight text-stone-950">
             Engineered for high assurance, not basic form filling.
           </h2>
           <p className="text-sm text-stone-600">
-            Why UK directors and contractors are switching from TinyTax and traditional accounting firms.
+            Why UK directors and contractors choose TaxFlow over traditional firms and legacy filing portals.
           </p>
         </div>
 
@@ -387,7 +387,7 @@ export default function HomePage() {
               <thead>
                 <tr className="border-b border-stone-200 bg-stone-50/75">
                   <th className="py-4 px-6 font-semibold text-stone-900 w-1/3">Capability & Assurance</th>
-                  <th className="py-4 px-6 font-semibold text-stone-400 w-1/3">TinyTax / Legacy Tools</th>
+                  <th className="py-4 px-6 font-semibold text-stone-400 w-1/3">Traditional Firms & Legacy Tools</th>
                   <th className="py-4 px-6 font-bold text-amber-950 bg-amber-50/50 w-1/3">TaxFlow UK Sovereign</th>
                 </tr>
               </thead>
@@ -480,7 +480,7 @@ export default function HomePage() {
             Inspect the live audited micro-entity filing.
           </h2>
           <p className="text-sm text-stone-400 leading-relaxed">
-            Explore a complete £100,000 turnover statutory return with £31,900 taxable profits, £6,061 corporation tax, and verified FRS 105 iXBRL tags.
+            Explore a complete £100,000 turnover statutory return with £31,900 trading profit, £20,000 taxable profit, £3,800 corporation tax, and verified FRS 105 iXBRL tags.
           </p>
         </div>
 

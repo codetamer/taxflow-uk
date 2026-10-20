@@ -19,7 +19,7 @@ export const TAX_GLOSSARY: GlossaryTerm[] = [
       'FRS 105 is a simplified rulebook designed specifically for very small businesses ("micro-entities"). Instead of producing 30-page complex corporate reports, it allows you to submit a stripped-down, 2-page balance sheet and profit & loss account without complicated fair-value notes.',
     whyItMatters:
       'Using FRS 105 keeps you fully compliant with Companies House while drastically reducing reporting paperwork and accountant fees.',
-    example: 'A solo consultant or e-commerce shop with turnover under £632,000 qualifies to use FRS 105.',
+    example: 'A solo consultant or e-commerce shop with turnover under £1,000,000 qualifies to use FRS 105.',
     statutoryRef: 'Financial Reporting Standard 105 / The Small Companies Regulations 2008'
   },
   {
@@ -37,9 +37,9 @@ export const TAX_GLOSSARY: GlossaryTerm[] = [
     id: 's455-loan',
     term: 'Section 455 Director’s Loan Tax',
     category: 'Director Compliance',
-    shortSummary: 'A temporary 33.75% tax HMRC charges if you borrow money from your company and do not pay it back.',
+    shortSummary: 'A temporary tax (33.75% or 35.75%) HMRC charges if you borrow money from your company and do not pay it back.',
     plainEnglish:
-      'Company money is not your personal money. If you withdraw money from the business that is not salary or dividends, it is legally a "director’s loan". If you don’t repay it within 9 months after your financial year ends, HMRC charges the company a temporary tax (33.75% or 35.75%).',
+      'Company money is not your personal money. If you withdraw money from the business that is not salary or dividends, it is legally a "director’s loan". If you don’t repay it within 9 months and 1 day after your financial year ends, HMRC charges the company a temporary tax (33.75% for loans taken before 6 April 2026, and 35.75% for loans made on or after).',
     whyItMatters:
       'The good news: Once you repay the loan back to the company, HMRC refunds this entire tax to you under Section 458! TaxFlow tracks repayment dates automatically so you never overpay.',
     example: 'You borrowed £10,000 for home renovations. If still unpaid 9 months after year-end, company pays £3,375 tax to HMRC, which is refunded when you pay the £10,000 back.',
@@ -99,7 +99,7 @@ export const TAX_GLOSSARY: GlossaryTerm[] = [
     plainEnglish:
       'You cannot legally pay yourself a dividend just because there is cash in the company bank account. A dividend can ONLY be paid out of accumulated profit AFTER setting aside money for Corporation Tax and unpaid bills. If you take dividends when reserves are negative, it is an "ultra vires" (unlawful) dividend.',
     whyItMatters:
-      'If HMRC audits an illegal dividend, they can reclassify it as an overdrawn director loan and demand 33.75% s455 tax plus National Insurance penalties. TaxFlow’s shield verifies you have sufficient reserves before you distribute.',
+      'If HMRC audits an illegal dividend, they can reclassify it as an overdrawn director loan and demand 33.75% / 35.75% s455 tax plus National Insurance penalties. TaxFlow’s shield verifies you have sufficient reserves before you distribute.',
     statutoryRef: 'Companies Act 2006 s830'
   },
   {

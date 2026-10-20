@@ -15,19 +15,21 @@ export async function GET(req: NextRequest) {
       turnoverPence: 10000000,
       costOfSalesPence: 2000000,
       otherChargesPence: 4810000,
-      taxOnProfitPence: 606100,
-      profitOrLossPence: 2583900,
+      taxOnProfitPence: 380000,
+      profitOrLossPence: 2810000,
       tangibleFixedAssetsPence: 1500000,
       debtorsPence: 1000000,
-      cashAtBankPence: 3113900,
+      cashAtBankPence: 3340000,
       creditorsDueWithinOneYearPence: 2500000,
       calledUpShareCapitalPence: 10000,
-      profitAndLossAccountReservePence: 3103900,
-      shareholderFundsPence: 3113900,
-      averageEmployees: 3,
+      profitAndLossAccountReservePence: 3330000,
+      shareholderFundsPence: 3340000,
+      averageEmployees: 1,
       balanceSheetDateApproval: '2026-10-15',
       directorName: 'Muhammad Saif Raza',
-      directorsLoanAdvancePence: 500000
+      directorsLoanAdvancePence: 0,
+      directorsLoanRepaidPence: 0,
+      directorsLoanClosingPence: 0
     };
 
     const filingId = searchParams.get('filingId');

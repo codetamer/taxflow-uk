@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect, Suspense } from 'react';
+import { useState, useEffect, useMemo, Suspense } from 'react';
 import Link from 'next/link';
 import { useParams, useSearchParams } from 'next/navigation';
 import {
@@ -29,11 +29,16 @@ import {
   Check,
   FileSpreadsheet,
   Download,
-  RefreshCw
+  RefreshCw,
+  XCircle,
+  AlertTriangle
 } from 'lucide-react';
 import { TermExplainer } from '@/components/TermExplainer';
 import { PlainEnglishBanner } from '@/components/PlainEnglishBanner';
 import { GlossaryModal } from '@/components/GlossaryModal';
+import { computePeriod, ctPaymentDueDate, daysInclusive, s455RatePct } from '@taxflow/ct-engine';
+import { runPreFlightShield } from '@taxflow/shield';
+import type { ShieldInput } from '@taxflow/shield';
 
 interface IngestedRowPreview {
   date: string;
@@ -104,6 +109,8 @@ function WizardContent() {
     directorName: 'Muhammad Saif Raza',
     periodStart: '2025-10-01',
     periodEnd: '2026-09-30',
+    associatedCompanies: 0,
+    averageEmployees: 1,
     isDirectorApproved: true,
     turnover: 100000,
     costOfSales: 20000,
@@ -112,13 +119,15 @@ function WizardContent() {
     fixedAssets: 15000,
     aiaClaimed: 15000,
     debtors: 10000,
-    cashAtBank: 31139,
+    cashAtBank: 33400,
     creditorsUnderOneYear: 25000,
     shareCapital: 100,
     dividendsPaid: 10000,
     openingRetainedEarnings: 15200,
     directorLoanAdvance: 0,
-    directorLoanDate: '2026-05-01'
+    directorLoanDate: '2026-05-01',
+    directorLoanRepaidAmount: 0,
+    directorLoanRepaidDate: ''
   });
 
   // Companies House Live Lookup State
@@ -342,11 +351,74 @@ function WizardContent() {
     }
   };
 
-  // Calculations
+  // 1. Core Operating and Taxable Profit Metrics
   const grossProfit = form.turnover - form.costOfSales;
   const operatingProfit = grossProfit - form.otherCharges;
   const taxableProfit = Math.max(0, operatingProfit + form.disallowables - form.aiaClaimed);
-  const taxPayable = Math.round(taxableProfit * 0.19);
+
+  // 2. Statutory Due Date and Loan Scheduling
+  const paymentDueDate = form.periodEnd ? ctPaymentDueDate(form.periodEnd) : '2027-07-01';
+
+  let loanOutstandingAtDueDate = 0;
+  let isLoanRepaidInWindow = false;
+  if (form.directorLoanAdvance > 0) {
+    if (form.directorLoanRepaidDate && form.directorLoanRepaidDate <= paymentDueDate) {
+      loanOutstandingAtDueDate = Math.max(0, form.directorLoanAdvance - (form.directorLoanRepaidAmount || 0));
+      isLoanRepaidInWindow = true;
+    } else {
+      loanOutstandingAtDueDate = form.directorLoanAdvance;
+    }
+  }
+
+  const directorLoansList = useMemo(() => {
+    if (form.directorLoanAdvance <= 0) return [];
+    return [
+      {
+        id: 'loan_1',
+        madeOn: form.directorLoanDate || '2026-05-01',
+        outstandingAtDueDatePence: Math.round(loanOutstandingAtDueDate * 100)
+      }
+    ];
+  }, [form.directorLoanAdvance, form.directorLoanDate, loanOutstandingAtDueDate]);
+
+  // 3. Official Corporation Tax & s455 Computation Engine
+  const ctResult = useMemo(() => {
+    try {
+      const days = form.periodStart && form.periodEnd ? daysInclusive(form.periodStart, form.periodEnd) : 365;
+      if (days <= 0 || days > 366) return null;
+
+      return computePeriod({
+        period: { start: form.periodStart, end: form.periodEnd },
+        daysInYearBasis: 365,
+        associatedCompanies: Number(form.associatedCompanies) || 0,
+        tradingProfitAfterAllowancesPence: Math.round(taxableProfit * 100),
+        nonTradingIncomePence: 0,
+        exemptDistributionsPence: 0,
+        tradingLossesBroughtForwardPence: 0,
+        setOffCurrentLossAgainstOtherProfits: false,
+        closeCompany: true,
+        directorLoans: directorLoansList
+      });
+    } catch {
+      return null;
+    }
+  }, [form.periodStart, form.periodEnd, form.associatedCompanies, taxableProfit, directorLoansList]);
+
+  // 4. Exact Corporation Tax and s455 Tax Payable
+  const taxPayable = ctResult ? Math.round(ctResult.corporationTaxPence / 100) : Math.round(taxableProfit * 0.19);
+  const s455TaxPayable = ctResult ? Math.round(ctResult.s455TaxPence / 100) : 0;
+  const totalHmrcPayable = taxPayable + s455TaxPayable;
+
+  let taxRateLabel = 'Small Profits (19%)';
+  if (ctResult && ctResult.totalTaxableProfitsPence > 0) {
+    if (ctResult.marginalReliefPence > 0) {
+      taxRateLabel = 'Marginal Relief';
+    } else if (ctResult.augmentedProfitsPence >= ctResult.upperLimitPence) {
+      taxRateLabel = 'Main Rate (25%)';
+    }
+  }
+
+  // 5. P&L Bottom Line and Balance Sheet Calculations
   const netProfit = operatingProfit - taxPayable;
   const closingRetainedEarnings = form.openingRetainedEarnings + netProfit - form.dividendsPaid;
 
@@ -355,6 +427,90 @@ function WizardContent() {
   const netAssets = form.fixedAssets + netCurrentAssets;
   const totalEquity = form.shareCapital + closingRetainedEarnings;
   const balanceSheetVariance = netAssets - totalEquity;
+
+  // 6. Validation Rules (Step 1 & Step 6)
+  const isUtrValid = /^\d{10}$/.test(form.utr.trim());
+  const periodDayCount = form.periodStart && form.periodEnd ? daysInclusive(form.periodStart, form.periodEnd) : 0;
+  const isPeriodValid = periodDayCount > 0 && periodDayCount <= 366;
+  const isStep1Valid = isUtrValid && isPeriodValid && form.companyName.trim().length > 0 && form.crn.trim().length > 0;
+
+  // 7. Live Pre-Flight Shield Radar Engine
+  const liveShieldReport = useMemo(() => {
+    try {
+      const input: ShieldInput = {
+        entity: {
+          crn: form.crn,
+          companyName: form.companyName,
+          companyType: 'TRADING',
+          utr: form.utr,
+          isCloseCompany: true,
+          isCharityOrPlc: false,
+          chAuthCode: 'ABC123',
+          gatewayUserId: '123456789012',
+          gatewayPassword: 'SecretPassword123!'
+        },
+        period: {
+          periodStart: form.periodStart,
+          periodEnd: form.periodEnd,
+          daysInYearBasis: 365,
+          paymentDueDate: paymentDueDate,
+          accountsApprovalDate: '2026-10-15',
+          directorDeclarationName: form.directorName,
+          isDirectorApproved: form.isDirectorApproved
+        },
+        ledger: {
+          turnoverPence: Math.round(form.turnover * 100),
+          costOfSalesPence: Math.round(form.costOfSales * 100),
+          staffCostsPence: 0,
+          depreciationPence: 0,
+          otherChargesPence: Math.round(form.otherCharges * 100),
+          clientEntertainingPence: Math.round(form.disallowables * 100),
+          finesPence: 0,
+          bankInterestPence: 0,
+          taxExpensePence: Math.round(taxPayable * 100),
+          netProfitAfterTaxPence: Math.round(netProfit * 100),
+          dividendsPaidPence: Math.round(form.dividendsPaid * 100),
+          openingRetainedEarningsPence: Math.round(form.openingRetainedEarnings * 100),
+          closingRetainedEarningsPence: Math.round(closingRetainedEarnings * 100),
+          fixedAssetsPence: Math.round(form.fixedAssets * 100),
+          debtorsPence: Math.round(form.debtors * 100),
+          cashPence: Math.round(form.cashAtBank * 100),
+          creditorsUnderOneYearPence: Math.round(form.creditorsUnderOneYear * 100),
+          creditorsOverOneYearPence: 0,
+          provisionsPence: 0,
+          shareCapitalPence: Math.round(form.shareCapital * 100),
+          employeeCount: form.averageEmployees || 1
+        },
+        tax: {
+          tradingProfitPence: Math.round(taxableProfit * 100),
+          nonTradingIncomePence: 0,
+          exemptDistributionsPence: 0,
+          ttpPence: Math.round(taxableProfit * 100),
+          augmentedProfitsPence: ctResult?.augmentedProfitsPence ?? Math.round(taxableProfit * 100),
+          lowerLimitPence: ctResult?.lowerLimitPence ?? 5000000,
+          upperLimitPence: ctResult?.upperLimitPence ?? 25000000,
+          ctBeforeReliefPence: ctResult?.ctBeforeReliefPence ?? Math.round(taxPayable * 100),
+          marginalReliefPence: ctResult?.marginalReliefPence ?? 0,
+          ctPayablePence: Math.round(taxPayable * 100),
+          mainPoolWdaRatePct: 14.0,
+          carAiaClaimedPence: 0,
+          zeroEmissionFyaClaimedPence: 0,
+          directorLoans: directorLoansList,
+          s455TaxPence: Math.round(s455TaxPayable * 100)
+        }
+      };
+      return runPreFlightShield(input);
+    } catch {
+      return null;
+    }
+  }, [form, taxableProfit, taxPayable, s455TaxPayable, netProfit, closingRetainedEarnings, ctResult, directorLoansList, paymentDueDate]);
+
+  const fatalShieldErrors = useMemo(() => {
+    if (!liveShieldReport) return [];
+    return liveShieldReport.evaluations.filter((e) => e.status === 'FAIL' && e.severity === 'FATAL');
+  }, [liveShieldReport]);
+
+  const canTransmit = isStep1Valid && balanceSheetVariance === 0 && fatalShieldErrors.length === 0;
 
   const steps = [
     { num: 1, title: 'Company Details', time: '1 min' },
@@ -399,12 +555,18 @@ function WizardContent() {
               <button
                 key={s.num}
                 type="button"
-                onClick={() => setCurrentStep(s.num)}
+                onClick={() => {
+                  if (s.num > 1 && !isStep1Valid) return;
+                  setCurrentStep(s.num);
+                }}
+                disabled={s.num > 1 && !isStep1Valid}
                 className={`flex items-center space-x-2 px-3 py-2 rounded-xl text-xs font-semibold whitespace-nowrap transition-all ${
                   isActive
                     ? 'bg-[#1C1917] text-white shadow-xs'
                     : isCompleted
                     ? 'text-stone-800 hover:bg-stone-100'
+                    : s.num > 1 && !isStep1Valid
+                    ? 'text-stone-300 opacity-50 cursor-not-allowed'
                     : 'text-stone-400 hover:bg-stone-50'
                 }`}
               >
@@ -547,16 +709,29 @@ function WizardContent() {
                 </div>
 
                 <div>
-                  <label className="block text-xs font-bold text-slate-700 mb-1">
-                    <TermExplainer termId="utr-vs-crn" label="HMRC Unique Taxpayer Reference (UTR)" />
-                  </label>
+                  <div className="flex justify-between items-center mb-1">
+                    <label className="block text-xs font-bold text-slate-700">
+                      <TermExplainer termId="utr-vs-crn" label="HMRC Unique Taxpayer Reference (UTR)" />
+                    </label>
+                    {form.utr && (
+                      <span className={`text-[10px] font-semibold ${isUtrValid ? 'text-emerald-600' : 'text-red-600'}`}>
+                        {isUtrValid ? '✓ Valid 10 digits' : '✗ Must be 10 digits'}
+                      </span>
+                    )}
+                  </div>
                   <input
                     type="text"
                     value={form.utr}
-                    onChange={(e) => setForm({ ...form, utr: e.target.value })}
+                    maxLength={10}
+                    onChange={(e) => setForm({ ...form, utr: e.target.value.replace(/\D/g, '') })}
                     placeholder="10-digit number"
-                    className="w-full px-3.5 py-2.5 border border-slate-300 rounded-xl text-sm font-mono font-semibold focus:outline-none focus:ring-2 focus:ring-slate-900"
+                    className={`w-full px-3.5 py-2.5 border rounded-xl text-sm font-mono font-semibold focus:outline-none focus:ring-2 ${
+                      !isUtrValid && form.utr ? 'border-red-300 focus:ring-red-400 bg-red-50/20' : 'border-slate-300 focus:ring-slate-900'
+                    }`}
                   />
+                  {!isUtrValid && form.utr && (
+                    <p className="text-[11px] text-red-600 mt-1">HMRC CT600 requires an exact 10-digit numeric UTR.</p>
+                  )}
                 </div>
 
                 <div>
@@ -580,13 +755,57 @@ function WizardContent() {
                 </div>
 
                 <div>
-                  <label className="block text-xs font-bold text-slate-700 mb-1">Accounting Period End</label>
+                  <div className="flex justify-between items-center mb-1">
+                    <label className="block text-xs font-bold text-slate-700">Accounting Period End</label>
+                    {periodDayCount > 0 && (
+                      <span className={`text-[10px] font-semibold ${isPeriodValid ? 'text-emerald-600' : 'text-red-600'}`}>
+                        {periodDayCount} days {isPeriodValid ? '✓' : '(Max 366 days)'}
+                      </span>
+                    )}
+                  </div>
                   <input
                     type="date"
                     value={form.periodEnd}
                     onChange={(e) => setForm({ ...form, periodEnd: e.target.value })}
-                    className="w-full px-3.5 py-2.5 border border-slate-300 rounded-xl text-sm font-medium focus:outline-none focus:ring-2 focus:ring-slate-900"
+                    className={`w-full px-3.5 py-2.5 border rounded-xl text-sm font-medium focus:outline-none focus:ring-2 ${
+                      !isPeriodValid && form.periodEnd ? 'border-red-300 focus:ring-red-400 bg-red-50/20' : 'border-slate-300 focus:ring-slate-900'
+                    }`}
                   />
+                  {!isPeriodValid && periodDayCount > 366 && (
+                    <p className="text-[11px] text-red-600 mt-1">
+                      Statutory limit exceeded: CT600 accounting period cannot exceed 12 months ({periodDayCount} days). Split into two periods under CTA 2009 s10.
+                    </p>
+                  )}
+                </div>
+
+                <div>
+                  <label className="block text-xs font-bold text-slate-700 mb-1">
+                    <TermExplainer termId="associated-companies" label="Associated Companies (N)" />
+                  </label>
+                  <input
+                    type="number"
+                    min="0"
+                    max="50"
+                    value={form.associatedCompanies}
+                    onChange={(e) => setForm({ ...form, associatedCompanies: Math.max(0, parseInt(e.target.value) || 0) })}
+                    className="w-full px-3.5 py-2.5 border border-slate-300 rounded-xl text-sm font-semibold focus:outline-none focus:ring-2 focus:ring-slate-900"
+                  />
+                  <p className="text-[11px] text-slate-400 mt-1">Other active companies you control (divides £50k/£250k thresholds by N+1)</p>
+                </div>
+
+                <div>
+                  <label className="block text-xs font-bold text-slate-700 mb-1">
+                    Average Number of Employees (CA 2006 s411)
+                  </label>
+                  <input
+                    type="number"
+                    min="1"
+                    max="10"
+                    value={form.averageEmployees}
+                    onChange={(e) => setForm({ ...form, averageEmployees: Math.max(1, parseInt(e.target.value) || 1) })}
+                    className="w-full px-3.5 py-2.5 border border-slate-300 rounded-xl text-sm font-semibold focus:outline-none focus:ring-2 focus:ring-slate-900"
+                  />
+                  <p className="text-[11px] text-slate-400 mt-1">Mandatory note in FRS 105 accounts (default 1 for single-director micro-entity)</p>
                 </div>
               </div>
 
@@ -941,14 +1160,44 @@ function WizardContent() {
                   </span>
                 </div>
                 <div>
-                  <span className="text-[11px] text-slate-400">Estimated CT (19%)</span>
+                  <span className="text-[11px] text-slate-400">Estimated CT</span>
                   <p className="text-base font-bold num-tabular text-amber-400">£{taxPayable.toLocaleString()}</p>
-                  <span className="text-[10px] text-slate-500 font-mono">Small Profits</span>
+                  <span className="text-[10px] text-slate-400 font-mono">{taxRateLabel}</span>
                 </div>
                 <div>
                   <span className="text-[11px] text-slate-400">Net Profit After Tax</span>
                   <p className="text-base font-bold num-tabular text-white">£{netProfit.toLocaleString()}</p>
                   <span className="text-[10px] text-slate-500 font-mono">FRS 105 Retained</span>
+                </div>
+              </div>
+
+              {/* Statutory CT600 Deduction Bridge */}
+              <div className="bg-slate-50 border border-slate-200/90 rounded-2xl p-4 text-xs space-y-2">
+                <div className="flex items-center justify-between text-slate-500 text-[11px] uppercase tracking-wider font-bold">
+                  <span>HMRC Statutory Reconciliation to Box 235</span>
+                  <span>Amount</span>
+                </div>
+                <div className="flex justify-between text-slate-700">
+                  <span>Box 155: Trading Profit (Turnover less allowable costs):</span>
+                  <span className="font-mono font-semibold">£{operatingProfit.toLocaleString()}</span>
+                </div>
+                <div className="flex justify-between text-slate-700">
+                  <span className="flex items-center space-x-1">
+                    <span className="text-slate-400 font-bold">+</span>
+                    <span>Add: Disallowable Expenses (Client Entertaining / Non-trade):</span>
+                  </span>
+                  <span className="font-mono font-semibold text-slate-800">£{form.disallowables.toLocaleString()}</span>
+                </div>
+                <div className="flex justify-between text-slate-700">
+                  <span className="flex items-center space-x-1">
+                    <span className="text-slate-400 font-bold">-</span>
+                    <span>Deduct: Capital Allowances (AIA claimed on qualifying equipment):</span>
+                  </span>
+                  <span className="font-mono font-semibold text-slate-800">(£{form.aiaClaimed.toLocaleString()})</span>
+                </div>
+                <div className="pt-2 border-t border-slate-200 flex justify-between font-bold text-slate-950 text-sm">
+                  <span>Box 235: Total Taxable Profits (TTP):</span>
+                  <span className="font-mono text-emerald-700">£{taxableProfit.toLocaleString()}</span>
                 </div>
               </div>
             </div>
@@ -1214,9 +1463,9 @@ function WizardContent() {
                 title="What is a Director's Loan & Do You Owe Tax?"
                 summary="If you withdraw money from the business that is not salary or dividends, HMRC considers it a loan from the company to you."
                 tips={[
-                  'If you owe money to the company at the end of the year, you have 9 months to pay it back.',
-                  'If repaid within 9 months, there is £0 tax to pay!',
-                  'If not repaid within 9 months, HMRC charges a temporary 33.75% tax, which HMRC refunds to the company once you eventually pay the money back.',
+                  `If you owe money to the company at the end of the year, you have 9 months and 1 day to pay it back (by ${paymentDueDate}).`,
+                  'If repaid by the statutory due date, there is £0.00 Section 455 tax to pay!',
+                  'If not repaid within 9 months, HMRC charges a temporary tax (33.75% for loans before 6 Apr 2026; 35.75% on/after 6 Apr 2026), which HMRC refunds once repaid.',
                   'If you never borrowed money from your company, simply keep this box at £0.'
                 ]}
                 onOpenGlossary={() => openGlossaryWith('s455-loan')}
@@ -1251,9 +1500,70 @@ function WizardContent() {
                     onChange={(e) => setForm({ ...form, directorLoanDate: e.target.value })}
                     className="w-full px-3.5 py-2.5 border border-slate-300 rounded-xl text-sm font-medium focus:ring-2 focus:ring-slate-900 focus:outline-none"
                   />
-                  <p className="text-[11px] text-slate-400 mt-1">Used to determine whether the 33.75% or 35.75% rate applies</p>
+                  <p className="text-[11px] text-slate-400 mt-1">
+                    Rate: {s455RatePct(form.directorLoanDate)}% ({form.directorLoanDate >= '2026-04-06' ? 'Post-April 2026 35.75% rate' : 'Pre-April 2026 33.75% rate'})
+                  </p>
                 </div>
+
+                {form.directorLoanAdvance > 0 && (
+                  <>
+                    <div>
+                      <label className="block text-xs font-bold text-slate-700 mb-1">
+                        Amount Repaid to Company
+                      </label>
+                      <div className="relative rounded-xl shadow-2xs">
+                        <div className="pointer-events-none absolute inset-y-0 left-0 flex items-center pl-3.5">
+                          <span className="text-slate-400 font-bold text-xs">£</span>
+                        </div>
+                        <input
+                          type="number"
+                          value={form.directorLoanRepaidAmount}
+                          onChange={(e) => setForm({ ...form, directorLoanRepaidAmount: parseFloat(e.target.value) || 0 })}
+                          className="w-full pl-8 pr-3.5 py-2.5 border border-slate-300 rounded-xl text-sm font-semibold num-tabular focus:ring-2 focus:ring-slate-900 focus:outline-none"
+                          placeholder="0"
+                        />
+                      </div>
+                      <p className="text-[11px] text-slate-400 mt-1">Repayments made on or before 9-month due date ({paymentDueDate})</p>
+                    </div>
+
+                    <div>
+                      <label className="block text-xs font-bold text-slate-700 mb-1">Date Repayment Was Made</label>
+                      <input
+                        type="date"
+                        value={form.directorLoanRepaidDate}
+                        onChange={(e) => setForm({ ...form, directorLoanRepaidDate: e.target.value })}
+                        className="w-full px-3.5 py-2.5 border border-slate-300 rounded-xl text-sm font-medium focus:ring-2 focus:ring-slate-900 focus:outline-none"
+                      />
+                      <p className="text-[11px] text-slate-400 mt-1">Must be on or before {paymentDueDate} for statutory relief</p>
+                    </div>
+                  </>
+                )}
               </div>
+
+              {/* Statutory s455 Tax Impact Banner */}
+              {form.directorLoanAdvance > 0 && (
+                <div className={`p-4 rounded-2xl border text-xs space-y-1 ${
+                  s455TaxPayable === 0 ? 'bg-emerald-50 border-emerald-200 text-emerald-900' : 'bg-amber-50 border-amber-200 text-amber-900'
+                }`}>
+                  <div className="flex items-center space-x-2 font-bold">
+                    {s455TaxPayable === 0 ? (
+                      <CheckCircle2 className="w-4 h-4 text-emerald-600" />
+                    ) : (
+                      <AlertCircle className="w-4 h-4 text-amber-600" />
+                    )}
+                    <span>
+                      {s455TaxPayable === 0
+                        ? 'Full Relief: £0.00 Section 455 Tax Chargeable'
+                        : `Section 455 Tax Charge: £${s455TaxPayable.toLocaleString()} (${(s455RatePct(form.directorLoanDate)).toFixed(2)}%)`}
+                    </span>
+                  </div>
+                  <p className="text-[11px] opacity-90 leading-relaxed">
+                    {s455TaxPayable === 0
+                      ? `Because the loan advance is fully repaid by the statutory due date (${paymentDueDate}), zero s455 tax is charged on your CT600 return.`
+                      : `The outstanding balance of £${loanOutstandingAtDueDate.toLocaleString()} attracts Section 455 tax at ${(s455RatePct(form.directorLoanDate)).toFixed(2)}%. This £${s455TaxPayable.toLocaleString()} is added to your total HMRC liability (CT600A Supplementary Page) and is refunded once repaid.`}
+                  </p>
+                </div>
+              )}
             </div>
           )}
 
@@ -1279,24 +1589,107 @@ function WizardContent() {
                 defaultOpen={true}
               />
 
-              {/* Pre-flight passed card */}
-              <div className="bg-emerald-50/80 border border-emerald-200 rounded-2xl p-5 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
-                <div className="space-y-1">
-                  <div className="flex items-center space-x-2">
-                    <CheckCircle2 className="w-5 h-5 text-emerald-600 shrink-0" />
-                    <h3 className="font-bold text-emerald-950 text-sm">40-Point Pre-Flight Shield: Passed</h3>
+              {/* Pre-flight status card */}
+              {canTransmit ? (
+                <div className="bg-emerald-50/80 border border-emerald-200 rounded-2xl p-5 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
+                  <div className="space-y-1">
+                    <div className="flex items-center space-x-2">
+                      <CheckCircle2 className="w-5 h-5 text-emerald-600 shrink-0" />
+                      <h3 className="font-bold text-emerald-950 text-sm">40-Point Pre-Flight Shield: Passed</h3>
+                    </div>
+                    <p className="text-xs text-emerald-800">
+                      Zero fatal errors detected. Your balance sheet, P&L, iXBRL tags, and CT600 return are fully compliant with UK law.
+                    </p>
                   </div>
-                  <p className="text-xs text-emerald-800">
-                    Zero fatal errors detected. Your balance sheet, P&L, iXBRL tags, and CT600 return are fully compliant with UK law.
-                  </p>
+                  <Link
+                    href={`/filings/${filingId}/shield`}
+                    className="inline-flex items-center space-x-1.5 bg-white text-emerald-800 border border-emerald-300 hover:bg-emerald-100/50 px-3.5 py-2 rounded-xl text-xs font-semibold whitespace-nowrap transition"
+                  >
+                    <span>Inspect 40 Rules</span>
+                    <ExternalLink className="w-3 h-3" />
+                  </Link>
                 </div>
-                <Link
-                  href="/filings/drop-logicx/shield"
-                  className="inline-flex items-center space-x-1.5 bg-white text-emerald-800 border border-emerald-300 hover:bg-emerald-100/50 px-3.5 py-2 rounded-xl text-xs font-semibold whitespace-nowrap transition"
-                >
-                  <span>Inspect 40 Rules</span>
-                  <ExternalLink className="w-3 h-3" />
-                </Link>
+              ) : (
+                <div className="bg-red-50 border border-red-200 rounded-2xl p-5 space-y-3">
+                  <div className="flex items-start justify-between gap-4">
+                    <div className="space-y-1">
+                      <div className="flex items-center space-x-2">
+                        <AlertCircle className="w-5 h-5 text-red-600 shrink-0" />
+                        <h3 className="font-bold text-red-950 text-sm">Pre-Flight Shield: Action Required to Transmit</h3>
+                      </div>
+                      <p className="text-xs text-red-800">
+                        Companies House and HMRC reject submissions with fatal errors. You must resolve the following before transmission is unlocked:
+                      </p>
+                    </div>
+                    <Link
+                      href={`/filings/${filingId}/shield`}
+                      className="inline-flex items-center space-x-1.5 bg-white text-red-800 border border-red-300 hover:bg-red-100/50 px-3.5 py-2 rounded-xl text-xs font-semibold whitespace-nowrap transition"
+                    >
+                      <span>View Error Report</span>
+                      <ExternalLink className="w-3 h-3" />
+                    </Link>
+                  </div>
+
+                  <ul className="text-xs text-red-900 space-y-1.5 bg-white/80 p-3 rounded-xl border border-red-200 font-medium">
+                    {!isUtrValid && (
+                      <li className="flex items-center space-x-2">
+                        <span className="w-1.5 h-1.5 rounded-full bg-red-600 shrink-0" />
+                        <span>Step 1: HMRC UTR must be an exact 10-digit number (currently "{form.utr}").</span>
+                      </li>
+                    )}
+                    {!isPeriodValid && (
+                      <li className="flex items-center space-x-2">
+                        <span className="w-1.5 h-1.5 rounded-full bg-red-600 shrink-0" />
+                        <span>Step 1: Accounting period length ({periodDayCount} days) cannot exceed 366 days under CTA 2009 s10.</span>
+                      </li>
+                    )}
+                    {balanceSheetVariance !== 0 && (
+                      <li className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
+                        <div className="flex items-center space-x-2">
+                          <span className="w-1.5 h-1.5 rounded-full bg-red-600 shrink-0" />
+                          <span>Step 4: Balance sheet imbalance of £{Math.abs(balanceSheetVariance).toLocaleString()}. Net assets must equal equity down to 0.00p.</span>
+                        </div>
+                        <button
+                          type="button"
+                          onClick={autoReconcileCash}
+                          className="self-start sm:self-auto text-[11px] font-bold text-red-700 bg-red-100 hover:bg-red-200 px-2 py-0.5 rounded-md transition"
+                        >
+                          Auto-Balance Cash
+                        </button>
+                      </li>
+                    )}
+                    {fatalShieldErrors.map((err) => (
+                      <li key={err.id} className="flex items-center space-x-2">
+                        <span className="w-1.5 h-1.5 rounded-full bg-red-600 shrink-0" />
+                        <span>{err.category}: {err.message}</span>
+                      </li>
+                    ))}
+                  </ul>
+                </div>
+              )}
+
+              {/* Statutory Tax Liability Summary Breakdown */}
+              <div className="bg-slate-50 border border-slate-200 rounded-2xl p-5 space-y-3">
+                <div className="flex items-center justify-between border-b border-slate-200 pb-2">
+                  <h3 className="text-xs font-bold text-slate-900 uppercase tracking-wider">Statutory Tax Payable to HMRC</h3>
+                  <span className="text-[11px] font-mono font-bold text-slate-600">Payment Due: {paymentDueDate}</span>
+                </div>
+                <div className="space-y-2 text-xs">
+                  <div className="flex justify-between text-slate-700">
+                    <span>Corporation Tax (CT600 Box 440) — {taxRateLabel}:</span>
+                    <span className="font-mono font-bold text-slate-900">£{taxPayable.toLocaleString()}</span>
+                  </div>
+                  {s455TaxPayable > 0 && (
+                    <div className="flex justify-between text-amber-900">
+                      <span>Section 455 Tax on Director Loans (CT600A):</span>
+                      <span className="font-mono font-bold">£{s455TaxPayable.toLocaleString()}</span>
+                    </div>
+                  )}
+                  <div className="pt-2 border-t border-slate-200 flex justify-between text-sm font-black text-slate-950">
+                    <span>Total Amount Payable to HMRC:</span>
+                    <span className="font-mono text-emerald-700">£{totalHmrcPayable.toLocaleString()}</span>
+                  </div>
+                </div>
               </div>
 
               {/* Free Draft Downloads */}
@@ -1309,7 +1702,7 @@ function WizardContent() {
                 </div>
                 <div className="flex flex-wrap gap-3 pt-1">
                   <a
-                    href="/api/documents/accounts-pdf?draft=true"
+                    href={`/api/documents/accounts-pdf?draft=true&filingId=${filingId}`}
                     target="_blank"
                     className="inline-flex items-center space-x-2 bg-slate-100 hover:bg-slate-200 text-slate-800 px-4 py-2.5 rounded-xl text-xs font-semibold transition"
                   >
@@ -1317,7 +1710,7 @@ function WizardContent() {
                     <span>Download Draft Accounts (PDF)</span>
                   </a>
                   <a
-                    href="/api/documents/ct600-pdf?draft=true"
+                    href={`/api/documents/ct600-pdf?draft=true&filingId=${filingId}`}
                     target="_blank"
                     className="inline-flex items-center space-x-2 bg-slate-100 hover:bg-slate-200 text-slate-800 px-4 py-2.5 rounded-xl text-xs font-semibold transition"
                   >
@@ -1342,11 +1735,23 @@ function WizardContent() {
 
                 <button
                   type="button"
-                  onClick={() => alert('TaxFlow UK: Test Mode Active. All 40 Pre-Flight Checks Passed! Gateway submission payload is ready.')}
-                  className="w-full bg-gradient-to-r from-amber-500 to-orange-500 hover:from-amber-600 hover:to-orange-600 text-stone-950 font-bold py-3 rounded-xl text-xs transition flex items-center justify-center space-x-2 shadow-sm"
+                  disabled={!canTransmit}
+                  onClick={() => {
+                    if (!canTransmit) return;
+                    alert('TaxFlow UK: Test Mode Active. All 40 Pre-Flight Checks Passed! Direct gateway submission payload with C14N IRmark is ready.');
+                  }}
+                  className={`w-full font-bold py-3.5 rounded-xl text-xs transition flex items-center justify-center space-x-2 shadow-sm ${
+                    canTransmit
+                      ? 'bg-gradient-to-r from-amber-500 to-orange-500 hover:from-amber-600 hover:to-orange-600 text-stone-950 cursor-pointer'
+                      : 'bg-stone-800 text-stone-500 cursor-not-allowed border border-stone-700'
+                  }`}
                 >
                   <Lock className="w-3.5 h-3.5" />
-                  <span>Transmit to Government Gateways (£49.00)</span>
+                  <span>
+                    {canTransmit
+                      ? 'Transmit to Government Gateways (£49.00)'
+                      : 'Fix Validation Errors to Enable Transmission'}
+                  </span>
                 </button>
               </div>
             </div>
@@ -1387,15 +1792,23 @@ function WizardContent() {
             {currentStep < 6 ? (
               <button
                 type="button"
-                onClick={() => setCurrentStep((prev) => Math.min(6, prev + 1))}
-                className="inline-flex items-center space-x-1.5 bg-gradient-to-r from-amber-500 to-orange-500 hover:from-amber-600 hover:to-orange-600 text-stone-950 px-5 py-2.5 rounded-xl text-xs font-bold shadow-xs transition"
+                onClick={() => {
+                  if (currentStep === 1 && !isStep1Valid) return;
+                  setCurrentStep((prev) => Math.min(6, prev + 1));
+                }}
+                disabled={currentStep === 1 && !isStep1Valid}
+                className={`inline-flex items-center space-x-1.5 px-5 py-2.5 rounded-xl text-xs font-bold shadow-xs transition ${
+                  currentStep === 1 && !isStep1Valid
+                    ? 'bg-stone-200 text-stone-400 cursor-not-allowed'
+                    : 'bg-gradient-to-r from-amber-500 to-orange-500 hover:from-amber-600 hover:to-orange-600 text-stone-950'
+                }`}
               >
                 <span>Continue</span>
                 <ArrowRight className="w-3.5 h-3.5" />
               </button>
             ) : (
               <Link
-                href="/filings/drop-logicx/documents"
+                href={`/filings/${filingId}/documents`}
                 className="inline-flex items-center space-x-1.5 bg-gradient-to-r from-amber-500 to-orange-500 hover:from-amber-600 hover:to-orange-600 text-stone-950 px-5 py-2.5 rounded-xl text-xs font-bold shadow-xs transition"
               >
                 <span>View Documents</span>
@@ -1411,11 +1824,13 @@ function WizardContent() {
           <div className="bg-white rounded-2xl border border-slate-200/90 p-5 shadow-xs space-y-3">
             <div className="flex items-center justify-between">
               <span className="text-xs font-bold text-slate-900 flex items-center space-x-1.5">
-                <ShieldCheck className="w-4 h-4 text-emerald-600" />
+                <ShieldCheck className={`w-4 h-4 ${fatalShieldErrors.length === 0 ? 'text-emerald-600' : 'text-red-600'}`} />
                 <span>Pre-Flight Shield Radar</span>
               </span>
-              <span className="text-[10px] font-mono font-bold bg-emerald-100 text-emerald-800 px-2 py-0.5 rounded-full">
-                40 / 40 Active
+              <span className={`text-[10px] font-mono font-bold px-2 py-0.5 rounded-full ${
+                fatalShieldErrors.length === 0 ? 'bg-emerald-100 text-emerald-800' : 'bg-red-100 text-red-800'
+              }`}>
+                {fatalShieldErrors.length === 0 ? '40 / 40 Passed' : `${fatalShieldErrors.length} Fatal Errors`}
               </span>
             </div>
             <p className="text-xs text-slate-500 leading-relaxed">
@@ -1423,7 +1838,9 @@ function WizardContent() {
             </p>
             <div className="pt-2 border-t border-slate-100 flex items-center justify-between text-xs">
               <span className="text-slate-600">Rejection Probability:</span>
-              <span className="font-bold text-emerald-600">0.00%</span>
+              <span className={`font-bold ${fatalShieldErrors.length === 0 && balanceSheetVariance === 0 ? 'text-emerald-600' : 'text-red-600'}`}>
+                {fatalShieldErrors.length === 0 && balanceSheetVariance === 0 ? '0.00%' : '100.00%'}
+              </span>
             </div>
           </div>
 
@@ -1436,7 +1853,9 @@ function WizardContent() {
                   <TermExplainer termId="ct600" label="HMRC CT600 Estimate" />
                 </span>
               </span>
-              <span className="text-[10px] font-semibold text-slate-500">Small Profits (19%)</span>
+              <span className="text-[10px] font-semibold text-slate-600 bg-slate-100 px-2 py-0.5 rounded-full">
+                {taxRateLabel}
+              </span>
             </div>
 
             <div className="space-y-1.5 text-xs">
@@ -1448,7 +1867,15 @@ function WizardContent() {
                 <span>Box 155 (Trading Profit):</span>
                 <span className="font-semibold text-slate-900 num-tabular">£{operatingProfit.toLocaleString()}</span>
               </div>
-              <div className="flex justify-between text-slate-600">
+              <div className="flex justify-between text-slate-500 text-[11px] pl-2 border-l border-slate-200">
+                <span>+ Disallowables:</span>
+                <span className="font-semibold num-tabular">£{form.disallowables.toLocaleString()}</span>
+              </div>
+              <div className="flex justify-between text-slate-500 text-[11px] pl-2 border-l border-slate-200">
+                <span>- Capital Allowances (AIA):</span>
+                <span className="font-semibold num-tabular">(£{form.aiaClaimed.toLocaleString()})</span>
+              </div>
+              <div className="flex justify-between text-slate-600 pt-0.5 border-t border-slate-100 font-medium">
                 <span>Box 235 (Total Taxable):</span>
                 <span className="font-semibold text-slate-900 num-tabular">£{taxableProfit.toLocaleString()}</span>
               </div>
@@ -1456,11 +1883,23 @@ function WizardContent() {
                 <span>Box 440 (CT Due):</span>
                 <span className="text-emerald-700 num-tabular">£{taxPayable.toLocaleString()}</span>
               </div>
+              {s455TaxPayable > 0 && (
+                <div className="flex justify-between text-xs font-bold text-amber-700">
+                  <span>CT600A (s455 Tax):</span>
+                  <span className="num-tabular">£{s455TaxPayable.toLocaleString()}</span>
+                </div>
+              )}
+              {s455TaxPayable > 0 && (
+                <div className="pt-1 border-t border-slate-100 flex justify-between text-xs font-black text-slate-950">
+                  <span>Total HMRC Due:</span>
+                  <span className="text-emerald-700 num-tabular">£{totalHmrcPayable.toLocaleString()}</span>
+                </div>
+              )}
             </div>
 
             <div className="pt-2 border-t border-slate-100 text-[11px] text-slate-500 flex justify-between">
               <span>HMRC Payment Due:</span>
-              <span className="font-medium text-slate-700">01 Jul 2027</span>
+              <span className="font-medium text-slate-700">{paymentDueDate}</span>
             </div>
           </div>
 
@@ -1473,11 +1912,17 @@ function WizardContent() {
                   <TermExplainer termId="balance-sheet-symmetry" label="Balance Sheet Symmetry" />
                 </span>
               </span>
-              <span className="font-mono font-bold text-emerald-700">0.00p</span>
+              <span className={`font-mono font-bold ${balanceSheetVariance === 0 ? 'text-emerald-700' : 'text-red-600'}`}>
+                {balanceSheetVariance === 0 ? '0.00p' : `£${Math.abs(balanceSheetVariance).toLocaleString()} Imbalance`}
+              </span>
             </div>
 
             <div className="w-full bg-slate-100 h-2 rounded-full overflow-hidden">
-              <div className="bg-emerald-600 h-2 rounded-full w-full" />
+              <div
+                className={`h-2 rounded-full transition-all duration-300 ${
+                  balanceSheetVariance === 0 ? 'bg-emerald-600 w-full' : 'bg-red-500 w-1/2 animate-pulse'
+                }`}
+              />
             </div>
 
             <div className="text-[11px] text-slate-500 space-y-1">
@@ -1490,6 +1935,17 @@ function WizardContent() {
                 <span className="font-mono text-slate-800">£{totalEquity.toLocaleString()}</span>
               </div>
             </div>
+
+            {balanceSheetVariance !== 0 && (
+              <button
+                type="button"
+                onClick={autoReconcileCash}
+                className="w-full py-1.5 px-3 rounded-xl bg-red-50 hover:bg-red-100 text-red-800 border border-red-200 text-xs font-semibold flex items-center justify-center space-x-1.5 transition"
+              >
+                <RefreshCw className="w-3 h-3 text-red-600" />
+                <span>Auto-Balance via Cash</span>
+              </button>
+            )}
           </div>
 
           {/* Free Watermarked Drafts Pill Card */}
@@ -1497,14 +1953,14 @@ function WizardContent() {
             <span className="text-xs font-bold text-slate-900">Instant Free Previews</span>
             <div className="grid grid-cols-2 gap-2">
               <a
-                href="/api/documents/accounts-pdf?draft=true"
+                href={`/api/documents/accounts-pdf?draft=true&filingId=${filingId}`}
                 target="_blank"
                 className="bg-white hover:bg-slate-100 text-slate-800 border border-slate-200 text-center py-2 px-2.5 rounded-xl text-[11px] font-semibold transition truncate block"
               >
                 Accounts PDF
               </a>
               <a
-                href="/api/documents/ct600-pdf?draft=true"
+                href={`/api/documents/ct600-pdf?draft=true&filingId=${filingId}`}
                 target="_blank"
                 className="bg-white hover:bg-slate-100 text-slate-800 border border-slate-200 text-center py-2 px-2.5 rounded-xl text-[11px] font-semibold transition truncate block"
               >

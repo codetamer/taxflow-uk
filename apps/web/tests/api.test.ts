@@ -286,5 +286,143 @@ test('@taxflow/web: Core API & Service Integration Suite', async (t) => {
 
     closeDatabase();
   });
+
+  await t.test('Corporation Tax: Marginal Relief, Main Rate & Associated Companies', () => {
+    // 1. Small profits rate (< £50k)
+    const smallRes = computePeriod({
+      period: { start: '2025-10-01', end: '2026-09-30' },
+      daysInYearBasis: 365,
+      tradingProfitAfterAllowancesPence: GBP(49000),
+      nonTradingIncomePence: 0,
+      exemptDistributionsPence: 0,
+      tradingLossesBroughtForwardPence: 0,
+      setOffCurrentLossAgainstOtherProfits: false,
+      associatedCompanies: 0,
+      closeCompany: true,
+      directorLoans: []
+    });
+    assert.equal(smallRes.corporationTaxPence, GBP(49000 * 0.19)); // £9,310
+
+    // 2. Marginal relief band (£100k profit, £250k upper limit)
+    const marginalRes = computePeriod({
+      period: { start: '2025-10-01', end: '2026-09-30' },
+      daysInYearBasis: 365,
+      tradingProfitAfterAllowancesPence: GBP(100000),
+      nonTradingIncomePence: 0,
+      exemptDistributionsPence: 0,
+      tradingLossesBroughtForwardPence: 0,
+      setOffCurrentLossAgainstOtherProfits: false,
+      associatedCompanies: 0,
+      closeCompany: true,
+      directorLoans: []
+    });
+    // Main rate: 25% of 100k = £25,000. Marginal relief: 3/200 * (250000 - 100000) = £2,250. Net: £22,750
+    assert.equal(marginalRes.corporationTaxPence, GBP(22750));
+    assert.equal(marginalRes.marginalReliefPence, GBP(2250));
+
+    // 3. Main rate (> £250k)
+    const mainRes = computePeriod({
+      period: { start: '2025-10-01', end: '2026-09-30' },
+      daysInYearBasis: 365,
+      tradingProfitAfterAllowancesPence: GBP(280000),
+      nonTradingIncomePence: 0,
+      exemptDistributionsPence: 0,
+      tradingLossesBroughtForwardPence: 0,
+      setOffCurrentLossAgainstOtherProfits: false,
+      associatedCompanies: 0,
+      closeCompany: true,
+      directorLoans: []
+    });
+    // Full 25% on £280,000 = £70,000
+    assert.equal(mainRes.corporationTaxPence, GBP(70000));
+    assert.equal(mainRes.marginalReliefPence, 0);
+
+    // 4. Associated company halving the limits (£50k -> £25k, £250k -> £125k)
+    const assocRes = computePeriod({
+      period: { start: '2025-10-01', end: '2026-09-30' },
+      daysInYearBasis: 365,
+      tradingProfitAfterAllowancesPence: GBP(60000),
+      nonTradingIncomePence: 0,
+      exemptDistributionsPence: 0,
+      tradingLossesBroughtForwardPence: 0,
+      setOffCurrentLossAgainstOtherProfits: false,
+      associatedCompanies: 1, // 1 associated company => divisor 2
+      closeCompany: true,
+      directorLoans: []
+    });
+    // Main rate: 25% of 60k = £15,000. Relief: 3/200 * (125000 - 60000) = £975. Net: £14,025
+    assert.equal(assocRes.corporationTaxPence, GBP(14025));
+  });
+
+  await t.test('Section 455 Tax: Repayment Relief within Statutory 9-Month Window', () => {
+    // 1. Repaid within 9 months of year-end => outstanding at due date is 0 => tax £0.00
+    const repaidLoanRes = computePeriod({
+      period: { start: '2025-10-01', end: '2026-09-30' },
+      daysInYearBasis: 365,
+      tradingProfitAfterAllowancesPence: GBP(20000),
+      nonTradingIncomePence: 0,
+      exemptDistributionsPence: 0,
+      tradingLossesBroughtForwardPence: 0,
+      setOffCurrentLossAgainstOtherProfits: false,
+      associatedCompanies: 0,
+      closeCompany: true,
+      directorLoans: [
+        {
+          id: 'loan-1',
+          madeOn: '2026-02-15',
+          outstandingAtDueDatePence: 0 // fully repaid before due date
+        }
+      ]
+    });
+    assert.equal(repaidLoanRes.s455TaxPence, 0);
+    assert.equal(repaidLoanRes.corporationTaxPence, GBP(20000 * 0.19));
+
+    // 2. Unrepaid loan taken after 6 April 2026 => charged at 35.75%
+    const unrepaidLoanRes = computePeriod({
+      period: { start: '2025-10-01', end: '2026-09-30' },
+      daysInYearBasis: 365,
+      tradingProfitAfterAllowancesPence: GBP(20000),
+      nonTradingIncomePence: 0,
+      exemptDistributionsPence: 0,
+      tradingLossesBroughtForwardPence: 0,
+      setOffCurrentLossAgainstOtherProfits: false,
+      associatedCompanies: 0,
+      closeCompany: true,
+      directorLoans: [
+        {
+          id: 'loan-2',
+          madeOn: '2026-04-15', // post-6 April 2026 => 35.75%
+          outstandingAtDueDatePence: GBP(5000)
+        }
+      ]
+    });
+    assert.equal(unrepaidLoanRes.s455TaxPence, GBP(5000 * 0.3575)); // £1,787.50 = 178750p
+    assert.equal(unrepaidLoanRes.corporationTaxPence + unrepaidLoanRes.s455TaxPence, GBP(3800) + GBP(1787.50));
+  });
+
+  await t.test('Unified Benchmark Reconciled: £20,000 taxable profit -> £3,800 CT', () => {
+    // 4-line deduction bridge:
+    // Trading Profit: £31,900 + Disallowables: £3,100 - AIA: £15,000 = £20,000 Taxable Profit
+    const tradingProfit = GBP(31900);
+    const disallowables = GBP(3100);
+    const aia = GBP(15000);
+    const taxableProfit = tradingProfit + disallowables - aia;
+    assert.equal(taxableProfit, GBP(20000));
+
+    const ctRes = computePeriod({
+      period: { start: '2025-10-01', end: '2026-09-30' },
+      daysInYearBasis: 365,
+      tradingProfitAfterAllowancesPence: taxableProfit,
+      nonTradingIncomePence: 0,
+      exemptDistributionsPence: 0,
+      tradingLossesBroughtForwardPence: 0,
+      setOffCurrentLossAgainstOtherProfits: false,
+      associatedCompanies: 0,
+      closeCompany: true,
+      directorLoans: []
+    });
+    assert.equal(ctRes.totalTaxableProfitsPence, GBP(20000));
+    assert.equal(ctRes.corporationTaxPence, GBP(3800)); // exactly £3,800.00
+  });
 });
 

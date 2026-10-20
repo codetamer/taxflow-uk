@@ -14,6 +14,9 @@ export interface Frs105AccountsData {
   periodEnd: string;
   turnoverPence: number;
   costOfSalesPence: number;
+  otherIncomePence?: number;
+  staffCostsPence?: number;
+  depreciationPence?: number;
   otherChargesPence: number;
   taxOnProfitPence: number;
   profitOrLossPence: number;
@@ -28,6 +31,8 @@ export interface Frs105AccountsData {
   balanceSheetDateApproval: string;
   directorName: string;
   directorsLoanAdvancePence: number;
+  directorsLoanRepaidPence?: number;
+  directorsLoanClosingPence?: number;
 }
 
 function formatPounds(pence?: number): string {
@@ -151,13 +156,17 @@ export function generateAccountsPdf(
   });
   doc.drawLine(50, 735, 545, 735, { lineWidth: 1, color: [0.2, 0.2, 0.2] });
 
-  const grossProfitPence = data.turnoverPence - data.costOfSalesPence;
-  const operatingProfitPence = grossProfitPence - data.otherChargesPence;
+  const rawMaterialsPence = data.costOfSalesPence;
+  const otherIncomePence = data.otherIncomePence ?? 0;
+  const staffCostsPence = data.staffCostsPence ?? 0;
+  const depreciationPence = data.depreciationPence ?? 0;
 
   const plRows: [string, string, string, boolean][] = [
     ['Turnover', '', formatPounds(data.turnoverPence), false],
-    ['Cost of sales', '', formatPounds(-data.costOfSalesPence), false],
-    ['Gross profit', '', formatPounds(grossProfitPence), true],
+    ['Other income', '', otherIncomePence > 0 ? formatPounds(otherIncomePence) : '-', false],
+    ['Cost of raw materials and consumables', '', rawMaterialsPence > 0 ? formatPounds(-rawMaterialsPence) : '-', false],
+    ['Staff costs', '', staffCostsPence > 0 ? formatPounds(-staffCostsPence) : '-', false],
+    ['Depreciation and other amounts written off assets', '', depreciationPence > 0 ? formatPounds(-depreciationPence) : '-', false],
     ['Other charges', '', formatPounds(-data.otherChargesPence), false],
     ['Tax on profit', '', formatPounds(-data.taxOnProfitPence), false],
     ['Profit for the financial year', '', formatPounds(data.profitOrLossPence), true]
@@ -183,7 +192,7 @@ export function generateAccountsPdf(
     if (isBold) {
       doc.drawLine(440, plY - 3, 545, plY - 3, { lineWidth: isBold ? 1 : 0.5, color: [0.2, 0.2, 0.2] });
     }
-    plY -= 17;
+    plY -= 15;
   }
 
   // --- BALANCE SHEET ---
@@ -386,10 +395,23 @@ export function generateAccountsPdf(
     size: 8.5,
     color: [0.2, 0.2, 0.2]
   });
-  const dlaText =
-    data.directorsLoanAdvancePence > 0
-      ? `During the period, advances of £${(data.directorsLoanAdvancePence / 100).toLocaleString('en-GB')} were made to the director. The loan is unsecured, interest-free, and repayable upon demand.`
-      : 'No advances or loans were outstanding to directors at the balance sheet date.';
+  const closingBalance = data.directorsLoanClosingPence !== undefined
+    ? data.directorsLoanClosingPence
+    : Math.max(0, data.directorsLoanAdvancePence - (data.directorsLoanRepaidPence ?? 0));
+
+  let dlaText: string;
+  if (data.directorsLoanAdvancePence > 0) {
+    const advFmt = (data.directorsLoanAdvancePence / 100).toLocaleString('en-GB');
+    const repaidFmt = ((data.directorsLoanRepaidPence ?? 0) / 100).toLocaleString('en-GB');
+    const closeFmt = (closingBalance / 100).toLocaleString('en-GB');
+    if ((data.directorsLoanRepaidPence ?? 0) > 0) {
+      dlaText = `During the period, advances of £${advFmt} were made to ${data.directorName}. Repayments of £${repaidFmt} were made, leaving an outstanding balance of £${closeFmt}. The loan is unsecured and interest-free.`;
+    } else {
+      dlaText = `During the period, advances of £${advFmt} were made to ${data.directorName}. The loan is unsecured, interest-free, and repayable upon demand.`;
+    }
+  } else {
+    dlaText = 'No advances, credits or guarantee commitments were outstanding to directors at the balance sheet date.';
+  }
   doc.drawText(dlaText, 50, 268, { font: 'Helvetica', size: 8, color: [0.35, 0.35, 0.35] });
 
   // Footer on page 3

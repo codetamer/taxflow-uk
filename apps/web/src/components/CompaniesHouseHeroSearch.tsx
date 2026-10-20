@@ -176,10 +176,10 @@ export function CompaniesHouseHeroSearch() {
           </button>
           <button
             type="button"
-            onClick={() => setQuery('TINYTAX ALTERNATIVE LTD')}
+            onClick={() => setQuery('COVENTRY CLOUD TECH LTD')}
             className="px-2.5 py-1 rounded-full bg-stone-100/90 hover:bg-amber-50 hover:text-amber-800 hover:border-amber-200 border border-stone-200 text-stone-700 transition"
           >
-            TINYTAX ALTERNATIVE LTD
+            COVENTRY CLOUD TECH LTD (12345678)
           </button>
         </div>
       )}

@@ -15,31 +15,21 @@ export async function GET(req: NextRequest) {
       periodEnd: '2026-09-30',
       paymentDueDate: '2027-07-01',
       turnoverPence: 10000000,
-      tradingProfitPence: 2990000,
-      bankInterestPence: 200000,
-      totalTaxableProfitPence: 3190000,
-      smallProfitsTaxPence: 606100,
+      tradingProfitPence: 3190000,
+      bankInterestPence: 0,
+      totalTaxableProfitPence: 2000000,
+      smallProfitsTaxPence: 380000,
       marginalReliefPence: 0,
       mainRateTaxPence: 0,
-      corporationTaxChargeablePence: 606100,
-      s455TaxChargePence: 178750,
-      totalTaxPayablePence: 784850,
+      corporationTaxChargeablePence: 380000,
+      s455TaxChargePence: 0,
+      totalTaxPayablePence: 380000,
       aiaClaimedPence: 1500000,
       mainPoolWdaPence: 0,
       signatoryName: 'Muhammad Saif Raza',
       signatoryStatus: 'Director',
       declarationDate: '2026-10-15',
-      directorLoans: [
-        {
-          directorName: 'Muhammad Saif Raza',
-          advanceDate: '2026-05-01',
-          advancePence: 500000,
-          repaidPence: 0,
-          outstandingPence: 500000,
-          s455Rate: 0.3575,
-          s455TaxPence: 178750
-        }
-      ]
+      directorLoans: []
     };
 
     const filingId = searchParams.get('filingId');

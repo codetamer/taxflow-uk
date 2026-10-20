@@ -66,16 +66,16 @@ export default function DocumentsPage() {
     <ix:nonFraction name="uk-gaap:TurnoverGrossOperatingRevenue" unitRef="GBP" decimals="0" contextRef="ctx_current_period">100000</ix:nonFraction>
     <ix:nonFraction name="uk-gaap:CostSales" unitRef="GBP" decimals="0" contextRef="ctx_current_period">20000</ix:nonFraction>
     <ix:nonFraction name="uk-gaap:OtherOperatingChargesExpenses" unitRef="GBP" decimals="0" contextRef="ctx_current_period">48100</ix:nonFraction>
-    <ix:nonFraction name="uk-gaap:TaxTaxCreditOnProfitOrLossOnOrdinaryActivities" unitRef="GBP" decimals="0" contextRef="ctx_current_period">6061</ix:nonFraction>
-    <ix:nonFraction name="uk-gaap:ProfitLossForPeriod" unitRef="GBP" decimals="0" contextRef="ctx_current_period">25839</ix:nonFraction>
+    <ix:nonFraction name="uk-gaap:TaxTaxCreditOnProfitOrLossOnOrdinaryActivities" unitRef="GBP" decimals="0" contextRef="ctx_current_period">3800</ix:nonFraction>
+    <ix:nonFraction name="uk-gaap:ProfitLossForPeriod" unitRef="GBP" decimals="0" contextRef="ctx_current_period">28100</ix:nonFraction>
 
     <!-- FRS 105 Balance Sheet -->
     <ix:nonFraction name="uk-gaap:PropertyPlantEquipment" unitRef="GBP" decimals="0" contextRef="ctx_current_instant">15000</ix:nonFraction>
     <ix:nonFraction name="uk-gaap:Debtors" unitRef="GBP" decimals="0" contextRef="ctx_current_instant">10000</ix:nonFraction>
-    <ix:nonFraction name="uk-gaap:CashBankOnHand" unitRef="GBP" decimals="0" contextRef="ctx_current_instant">31139</ix:nonFraction>
+    <ix:nonFraction name="uk-gaap:CashBankOnHand" unitRef="GBP" decimals="0" contextRef="ctx_current_instant">33400</ix:nonFraction>
     <ix:nonFraction name="uk-gaap:CreditorsDueWithinOneYear" unitRef="GBP" decimals="0" contextRef="ctx_current_instant">25000</ix:nonFraction>
-    <ix:nonFraction name="uk-gaap:ShareholderFunds" unitRef="GBP" decimals="0" contextRef="ctx_current_instant">31139</ix:nonFraction>
-    <ix:nonFraction name="uk-gaap:ProfitLossAccountReserve" unitRef="GBP" decimals="0" contextRef="ctx_current_instant">31039</ix:nonFraction>
+    <ix:nonFraction name="uk-gaap:ShareholderFunds" unitRef="GBP" decimals="0" contextRef="ctx_current_instant">33400</ix:nonFraction>
+    <ix:nonFraction name="uk-gaap:ProfitLossAccountReserve" unitRef="GBP" decimals="0" contextRef="ctx_current_instant">33300</ix:nonFraction>
 
     <!-- Statutory Declarations -->
     <ix:nonNumeric name="uk-direp:DateApprovalAccounts" contextRef="ctx_current_instant">2026-10-15</ix:nonNumeric>
@@ -268,12 +268,20 @@ export default function DocumentsPage() {
                 <span className="font-mono font-semibold">£100,000</span>
               </div>
               <div className="flex justify-between py-1 text-slate-600">
-                <span>Cost of sales</span>
+                <span>Other income</span>
+                <span className="font-mono">-</span>
+              </div>
+              <div className="flex justify-between py-1 text-slate-600">
+                <span>Cost of raw materials and consumables</span>
                 <span className="font-mono">(£20,000)</span>
               </div>
-              <div className="flex justify-between py-1 font-bold border-t border-slate-200 text-slate-900">
-                <span>Gross profit</span>
-                <span className="font-mono">£80,000</span>
+              <div className="flex justify-between py-1 text-slate-600">
+                <span>Staff costs</span>
+                <span className="font-mono">-</span>
+              </div>
+              <div className="flex justify-between py-1 text-slate-600">
+                <span>Depreciation and other amounts written off assets</span>
+                <span className="font-mono">-</span>
               </div>
               <div className="flex justify-between py-1 text-slate-600">
                 <span>Other charges (Administrative expenses)</span>
@@ -281,11 +289,11 @@ export default function DocumentsPage() {
               </div>
               <div className="flex justify-between py-1 text-slate-600">
                 <span>Tax on profit (Corporation Tax provision)</span>
-                <span className="font-mono">(£6,061)</span>
+                <span className="font-mono">(£3,800)</span>
               </div>
               <div className="flex justify-between py-2 font-bold text-base border-t-2 border-b border-slate-900 text-slate-950">
                 <span>Profit for the financial year</span>
-                <span className="font-mono font-bold">£25,839</span>
+                <span className="font-mono font-bold">£28,100</span>
               </div>
             </div>
           </div>
@@ -314,11 +322,11 @@ export default function DocumentsPage() {
               </div>
               <div className="flex justify-between py-1 pl-4 text-slate-700">
                 <span>Cash at bank and in hand</span>
-                <span className="font-mono">£31,139</span>
+                <span className="font-mono">£33,400</span>
               </div>
               <div className="flex justify-between py-1 font-semibold border-t border-slate-200 text-slate-900">
                 <span>Total current assets</span>
-                <span className="font-mono">£41,139</span>
+                <span className="font-mono">£43,400</span>
               </div>
 
               <div className="flex justify-between py-1 text-slate-600">
@@ -329,14 +337,14 @@ export default function DocumentsPage() {
               </div>
               <div className="flex justify-between py-1 font-semibold border-t border-slate-200 text-slate-900">
                 <span>Net current assets (liabilities)</span>
-                <span className="font-mono">£16,139</span>
+                <span className="font-mono">£18,400</span>
               </div>
 
               <div className="flex justify-between py-2 font-bold text-base border-t-2 border-b-2 border-slate-900 text-slate-950">
                 <span>
                   <TermExplainer termId="balance-sheet-symmetry" label="Total assets less current liabilities (Net Assets)" />
                 </span>
-                <span className="font-mono font-bold">£31,139</span>
+                <span className="font-mono font-bold">£33,400</span>
               </div>
 
               <div className="text-[11px] font-bold text-slate-400 uppercase pt-3">Capital and Reserves</div>
@@ -348,12 +356,12 @@ export default function DocumentsPage() {
                 <span>
                   <TermExplainer termId="distributable-reserves" label="Profit and loss account (Retained earnings)" />
                 </span>
-                <span className="font-mono">£31,039</span>
+                <span className="font-mono">£33,300</span>
               </div>
 
               <div className="flex justify-between py-2 font-bold text-base border-t-2 border-b-2 border-slate-900 text-slate-950">
                 <span>Total Shareholders' Funds</span>
-                <span className="font-mono font-bold">£31,139</span>
+                <span className="font-mono font-bold">£33,400</span>
               </div>
             </div>
           </div>
@@ -377,6 +385,41 @@ export default function DocumentsPage() {
             </p>
             <div className="pt-2 border-t border-slate-200 text-slate-800 font-medium">
               Approved by the board of directors on 15 October 2026 and signed on its behalf by: <strong className="text-slate-950">Muhammad Saif Raza</strong>, Director.
+            </div>
+          </div>
+
+          {/* Statutory Notes to the Accounts (CA 2006 s411 & s413) */}
+          <div className="border border-slate-200 p-6 rounded-2xl space-y-4 text-xs font-sans text-slate-700">
+            <h3 className="font-bold text-sm text-slate-950 uppercase tracking-wider border-b border-slate-200 pb-2">
+              Notes to the Financial Statements for the Period Ended 30 September 2026
+            </h3>
+
+            <div className="space-y-1">
+              <h4 className="font-bold text-slate-900">1. Statutory Information</h4>
+              <p className="text-slate-600 leading-relaxed">
+                DROPLOGICX LTD is a private company limited by shares, incorporated in England and Wales under company number 15152081. Registered office: 71-75 Shelton Street, Covent Garden, London, WC2H 9JQ.
+              </p>
+            </div>
+
+            <div className="space-y-1">
+              <h4 className="font-bold text-slate-900">2. Basis of Preparation & Accounting Policies</h4>
+              <p className="text-slate-600 leading-relaxed">
+                These financial statements have been prepared in accordance with Financial Reporting Standard 105 "The Financial Reporting Standard applicable to the Micro-entities Regime" and the provisions of the Companies Act 2006 applicable to micro-entities. The financial statements have been prepared under the historical cost convention.
+              </p>
+            </div>
+
+            <div className="space-y-1">
+              <h4 className="font-bold text-slate-900">3. Average Number of Employees (CA 2006 s411)</h4>
+              <p className="text-slate-600 leading-relaxed">
+                The average number of persons employed by the company (including executive director) during the period was <strong className="text-slate-900 font-semibold">1</strong> (2025: nil).
+              </p>
+            </div>
+
+            <div className="space-y-1">
+              <h4 className="font-bold text-slate-900">4. Directors' Advances, Credits and Guarantees (CA 2006 s413)</h4>
+              <p className="text-slate-600 leading-relaxed">
+                During the period, advances of £0.00 were made to directors. No loans, advances, or credit arrangements with directors were outstanding at the balance sheet date.
+              </p>
             </div>
           </div>
         </div>
@@ -438,14 +481,30 @@ export default function DocumentsPage() {
               <span className="font-mono font-semibold text-slate-950">£31,900.00</span>
             </div>
 
-            <div className="p-4 flex items-center justify-between text-xs sm:text-sm">
+            <div className="p-4 flex items-center justify-between text-xs sm:text-sm bg-slate-50/50">
+              <div className="flex items-center space-x-3 pl-4">
+                <span className="font-mono text-slate-400 font-bold">+</span>
+                <span className="text-slate-600">Add: Disallowable Expenses (Client Entertaining)</span>
+              </div>
+              <span className="font-mono text-slate-700">£3,100.00</span>
+            </div>
+
+            <div className="p-4 flex items-center justify-between text-xs sm:text-sm bg-slate-50/50">
+              <div className="flex items-center space-x-3 pl-4">
+                <span className="font-mono text-slate-400 font-bold">-</span>
+                <span className="text-slate-600">Deduct: Capital Allowances (AIA claimed)</span>
+              </div>
+              <span className="font-mono text-slate-700">(£15,000.00)</span>
+            </div>
+
+            <div className="p-4 flex items-center justify-between text-xs sm:text-sm font-semibold">
               <div className="flex items-center space-x-3">
                 <span className="font-mono bg-slate-100 border border-slate-300 px-2 py-0.5 rounded text-xs font-bold text-slate-800">Box 235</span>
                 <span className="font-semibold text-slate-900">
                   <TermExplainer termId="disallowable-expenses" label="Total Taxable Profits (TTP)" />
                 </span>
               </div>
-              <span className="font-mono font-bold text-slate-950">£31,900.00</span>
+              <span className="font-mono font-bold text-slate-950">£20,000.00</span>
             </div>
 
             <div className="p-4 flex items-center justify-between text-xs sm:text-sm">
@@ -453,7 +512,7 @@ export default function DocumentsPage() {
                 <span className="font-mono bg-slate-100 border border-slate-300 px-2 py-0.5 rounded text-xs font-bold text-slate-800">Box 315</span>
                 <span>Profits chargeable at Small Profits Rate (19%)</span>
               </div>
-              <span className="font-mono font-semibold text-slate-950">£31,900.00</span>
+              <span className="font-mono font-semibold text-slate-950">£20,000.00</span>
             </div>
 
             <div className="p-4 flex items-center justify-between text-xs sm:text-sm bg-emerald-50/40">
@@ -463,7 +522,15 @@ export default function DocumentsPage() {
                   <TermExplainer termId="ct600" label="Corporation Tax Chargeable" />
                 </span>
               </div>
-              <span className="font-mono font-black text-base text-emerald-700">£6,061.00</span>
+              <span className="font-mono font-black text-base text-emerald-700">£3,800.00</span>
+            </div>
+
+            <div className="p-4 flex items-center justify-between text-xs sm:text-sm">
+              <div className="flex items-center space-x-3">
+                <span className="font-mono bg-slate-100 border border-slate-300 px-2 py-0.5 rounded text-xs font-bold text-slate-800">CT600A</span>
+                <span>Section 455 Tax Due on Director Loans</span>
+              </div>
+              <span className="font-mono font-semibold text-slate-950">£0.00</span>
             </div>
 
             <div className="p-4 flex items-center justify-between text-xs sm:text-sm">
