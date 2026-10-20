@@ -6,6 +6,7 @@
   "description": "TaxFlow UK - Web Application for Micro-Entity Accounts and CT600 Filing",
   "scripts": {
     "dev": "next dev --port 3000",
+    "prebuild": "node -e \"const fs=require('fs'); if(!fs.existsSync('node_modules/@swc/helpers') && fs.existsSync('../../node_modules/@swc/helpers')) { fs.mkdirSync('node_modules/@swc', {recursive:true}); fs.cpSync('../../node_modules/@swc/helpers', 'node_modules/@swc/helpers', {recursive:true}); }\"",
     "build": "next build",
     "start": "next start --port 3000",
     "lint": "next lint",
