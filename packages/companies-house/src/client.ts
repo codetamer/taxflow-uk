@@ -447,11 +447,11 @@ export class CompaniesHouseClient {
     const crn = companyNumber.trim().toUpperCase();
     const filings = await this.getFilingHistory(crn, 'accounts');
 
-    const accountsFiling = filings.find(
-      (f) => f.type === 'AA' || f.category.toLowerCase().includes('accounts')
+    const accountsFilings = filings.filter(
+      (f) => f.type === 'AA' || f.type === 'AAMD' || f.category.toLowerCase().includes('accounts')
     );
 
-    if (!accountsFiling) {
+    if (accountsFilings.length === 0) {
       return {
         crn,
         isAvailable: false,
@@ -459,60 +459,42 @@ export class CompaniesHouseClient {
       };
     }
 
-    const docMetaUrl = accountsFiling.links?.document_metadata;
-    if (!docMetaUrl) {
-      return {
-        crn,
-        transactionId: accountsFiling.transaction_id,
-        filingDate: accountsFiling.date,
-        periodEnd: accountsFiling.description_values?.made_up_date,
-        isAvailable: false,
-        reason: 'PAPER_PDF_ONLY'
-      };
+    // Try each filing to find one with available electronic iXBRL / XHTML
+    for (const filing of accountsFilings) {
+      const docMetaUrl = filing.links?.document_metadata;
+      if (!docMetaUrl) continue;
+
+      const docContent = await this.fetchDocumentContent(docMetaUrl);
+      if (!docContent || !docContent.content) continue;
+
+      const isXhtml =
+        docContent.contentType.includes('xhtml') ||
+        docContent.contentType.includes('xml') ||
+        docContent.content.includes('xmlns:ix');
+
+      if (isXhtml) {
+        return {
+          crn,
+          transactionId: filing.transaction_id,
+          filingDate: filing.date,
+          periodEnd: filing.description_values?.made_up_date || '2025-09-30',
+          documentMetadataUrl: docMetaUrl,
+          contentType: docContent.contentType,
+          rawXhtml: docContent.content,
+          isAvailable: true,
+          reason: 'SUCCESS'
+        };
+      }
     }
 
-    const docContent = await this.fetchDocumentContent(docMetaUrl);
-    if (!docContent || !docContent.content) {
-      return {
-        crn,
-        transactionId: accountsFiling.transaction_id,
-        filingDate: accountsFiling.date,
-        periodEnd: accountsFiling.description_values?.made_up_date,
-        documentMetadataUrl: docMetaUrl,
-        isAvailable: false,
-        reason: 'FETCH_ERROR'
-      };
-    }
-
-    // Check if document is iXBRL / XHTML
-    const isXhtml =
-      docContent.contentType.includes('xhtml') ||
-      docContent.contentType.includes('xml') ||
-      docContent.content.includes('xmlns:ix');
-
-    if (!isXhtml) {
-      return {
-        crn,
-        transactionId: accountsFiling.transaction_id,
-        filingDate: accountsFiling.date,
-        periodEnd: accountsFiling.description_values?.made_up_date,
-        documentMetadataUrl: docMetaUrl,
-        contentType: docContent.contentType,
-        isAvailable: false,
-        reason: 'PAPER_PDF_ONLY'
-      };
-    }
-
+    const first = accountsFilings[0];
     return {
       crn,
-      transactionId: accountsFiling.transaction_id,
-      filingDate: accountsFiling.date,
-      periodEnd: accountsFiling.description_values?.made_up_date || '2025-09-30',
-      documentMetadataUrl: docMetaUrl,
-      contentType: docContent.contentType,
-      rawXhtml: docContent.content,
-      isAvailable: true,
-      reason: 'SUCCESS'
+      transactionId: first.transaction_id,
+      filingDate: first.date,
+      periodEnd: first.description_values?.made_up_date,
+      isAvailable: false,
+      reason: 'PAPER_PDF_ONLY'
     };
   }
 }

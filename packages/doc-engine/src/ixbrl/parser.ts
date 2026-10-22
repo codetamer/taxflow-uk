@@ -92,46 +92,107 @@ export function parseFrs105Ixbrl(xhtml: string, fallbackPeriodEnd: string = '202
     throw new Error('Invalid iXBRL document: empty or non-string input');
   }
 
-  // Extract Profit & Loss
-  const turnoverPence = extractNonFractionTag(xhtml, 'uk-gaap:TurnoverGrossOperatingRevenue') ?? 0;
-  const costOfSalesPence = extractNonFractionTag(xhtml, 'uk-gaap:CostSales') ?? 0;
-  const otherChargesPence = extractNonFractionTag(xhtml, 'uk-gaap:OtherOperatingChargesExpenses') ?? 0;
-  const taxExpensePence = extractNonFractionTag(xhtml, 'uk-gaap:TaxTaxCreditOnProfitOrLossOnOrdinaryActivities') ?? 0;
+  // Extract Profit & Loss (supports uk-gaap and uk-core)
+  const turnoverPence =
+    extractNonFractionTag(xhtml, 'uk-gaap:TurnoverGrossOperatingRevenue') ??
+    extractNonFractionTag(xhtml, 'uk-core:TurnoverGrossOperatingRevenue') ??
+    0;
+
+  const costOfSalesPence =
+    extractNonFractionTag(xhtml, 'uk-gaap:CostSales') ??
+    extractNonFractionTag(xhtml, 'uk-core:CostSales') ??
+    0;
+
+  const otherChargesPence =
+    extractNonFractionTag(xhtml, 'uk-gaap:OtherOperatingChargesExpenses') ??
+    extractNonFractionTag(xhtml, 'uk-core:OtherOperatingChargesExpenses') ??
+    0;
+
+  const taxExpensePence =
+    extractNonFractionTag(xhtml, 'uk-gaap:TaxTaxCreditOnProfitOrLossOnOrdinaryActivities') ??
+    extractNonFractionTag(xhtml, 'uk-core:TaxTaxCreditOnProfitOrLossOnOrdinaryActivities') ??
+    0;
+
   const netProfitAfterTaxPence =
     extractNonFractionTag(xhtml, 'uk-gaap:ProfitLossForPeriod') ??
+    extractNonFractionTag(xhtml, 'uk-core:ProfitLossForPeriod') ??
     (turnoverPence - costOfSalesPence - otherChargesPence - taxExpensePence);
 
   // Extract Balance Sheet
-  const tangibleFixedAssetsPence = extractNonFractionTag(xhtml, 'uk-gaap:PropertyPlantEquipment') ?? 0;
-  const debtorsPence = extractNonFractionTag(xhtml, 'uk-gaap:Debtors') ?? 0;
-  const cashAtBankPence = extractNonFractionTag(xhtml, 'uk-gaap:CashBankOnHand') ?? 0;
-  const creditorsDueWithinOneYearPence = extractNonFractionTag(xhtml, 'uk-gaap:CreditorsDueWithinOneYear') ?? 0;
-  const calledUpShareCapitalPence = extractNonFractionTag(xhtml, 'uk-gaap:CalledUpShareCapital') ?? 10000; // default £100
-  const profitLossReservePence = extractNonFractionTag(xhtml, 'uk-gaap:ProfitLossAccountReserve') ?? 0;
+  const tangibleFixedAssetsPence =
+    extractNonFractionTag(xhtml, 'uk-gaap:PropertyPlantEquipment') ??
+    extractNonFractionTag(xhtml, 'uk-core:PropertyPlantEquipment') ??
+    0;
+
+  const debtorsPence =
+    extractNonFractionTag(xhtml, 'uk-gaap:Debtors') ??
+    extractNonFractionTag(xhtml, 'uk-core:Debtors') ??
+    0;
+
+  const cashAtBankPence =
+    extractNonFractionTag(xhtml, 'uk-gaap:CashBankOnHand') ??
+    extractNonFractionTag(xhtml, 'uk-core:CashBankOnHand') ??
+    0;
+
+  const creditorsDueWithinOneYearPence =
+    extractNonFractionTag(xhtml, 'uk-gaap:CreditorsDueWithinOneYear') ??
+    extractNonFractionTag(xhtml, 'uk-core:CreditorsDueWithinOneYear') ??
+    0;
+
+  const calledUpShareCapitalPence =
+    extractNonFractionTag(xhtml, 'uk-core:CalledUpShareCapitalNotPaidNotExpressedAsCurrentAsset') ??
+    extractNonFractionTag(xhtml, 'uk-gaap:CalledUpShareCapital') ??
+    extractNonFractionTag(xhtml, 'uk-core:CalledUpShareCapital') ??
+    10000; // default £100
+
+  const profitLossReservePence =
+    extractNonFractionTag(xhtml, 'uk-gaap:ProfitLossAccountReserve') ??
+    extractNonFractionTag(xhtml, 'uk-core:ProfitLossAccountReserve') ??
+    0;
 
   // Metadata
-  const approvalDate = extractNonNumericTag(xhtml, 'uk-direp:DateApprovalAccounts') || undefined;
-  const directorName = extractNonNumericTag(xhtml, 'uk-direp:NameEntityOfficer') || undefined;
+  const approvalDate =
+    extractNonNumericTag(xhtml, 'uk-direp:DateApprovalAccounts') ??
+    extractNonNumericTag(xhtml, 'uk-core:DateApprovalAccounts') ??
+    undefined;
+
+  const directorName =
+    extractNonNumericTag(xhtml, 'uk-direp:NameEntityOfficer') ??
+    extractNonNumericTag(xhtml, 'uk-core:NameEntityOfficer') ??
+    undefined;
 
   // Calculate Balance Sheet Identities
   const netCurrentAssetsPence = (debtorsPence + cashAtBankPence) - creditorsDueWithinOneYearPence;
-  const totalAssetsLessCurrentLiabilitiesPence = tangibleFixedAssetsPence + netCurrentAssetsPence;
-  const netAssetsPence = totalAssetsLessCurrentLiabilitiesPence;
+  const totalAssetsLessCurrentLiabilitiesPence =
+    extractNonFractionTag(xhtml, 'uk-core:TotalAssetsLessCurrentLiabilities') ??
+    (tangibleFixedAssetsPence + netCurrentAssetsPence);
+
+  const netAssetsPence =
+    extractNonFractionTag(xhtml, 'uk-core:NetAssetsLiabilities') ??
+    extractNonFractionTag(xhtml, 'uk-gaap:NetAssetsLiabilities') ??
+    totalAssetsLessCurrentLiabilitiesPence;
 
   // Extracted or derived Shareholder Funds
-  const taggedShareholderFunds = extractNonFractionTag(xhtml, 'uk-gaap:ShareholderFunds');
+  const taggedShareholderFunds =
+    extractNonFractionTag(xhtml, 'uk-core:Equity') ??
+    extractNonFractionTag(xhtml, 'uk-gaap:ShareholderFunds') ??
+    extractNonFractionTag(xhtml, 'uk-core:ShareholderFunds');
+
   const shareholderFundsPence = taggedShareholderFunds ?? (calledUpShareCapitalPence + profitLossReservePence);
 
-  const variancePence = netAssetsPence - (calledUpShareCapitalPence + profitLossReservePence);
+  const variancePence = netAssetsPence - shareholderFundsPence;
   const isBalanceSheetSymmetric = variancePence === 0;
 
-  // Infer period end from title or approval date or fallback
+  // Infer period end from instant or endDate context tag, or fallback
   let periodEnd = fallbackPeriodEnd;
-  const dateMatch = xhtml.match(/(\d{4}-\d{2}-\d{2})/);
-  if (approvalDate) {
+  const instantMatch = xhtml.match(/<xbrli:instant>(\d{4}-\d{2}-\d{2})<\/xbrli:instant>/i);
+  const endDateMatch = xhtml.match(/<xbrli:endDate>(\d{4}-\d{2}-\d{2})<\/xbrli:endDate>/i);
+  if (instantMatch) {
+    periodEnd = instantMatch[1];
+  } else if (endDateMatch) {
+    periodEnd = endDateMatch[1];
+  } else if (approvalDate) {
     periodEnd = fallbackPeriodEnd;
-  } else if (dateMatch) {
-    periodEnd = dateMatch[1];
   }
 
   return {
