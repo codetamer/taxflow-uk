@@ -6,6 +6,22 @@
 
 import { SimplePdfDocument } from './pdf_builder.ts';
 
+export interface Frs105PriorYearData {
+  periodEnd: string;
+  turnoverPence?: number;
+  costOfSalesPence?: number;
+  otherChargesPence?: number;
+  taxOnProfitPence?: number;
+  profitOrLossPence?: number;
+  tangibleFixedAssetsPence?: number;
+  debtorsPence?: number;
+  cashAtBankPence?: number;
+  creditorsDueWithinOneYearPence?: number;
+  calledUpShareCapitalPence?: number;
+  profitAndLossAccountReservePence?: number;
+  shareholderFundsPence?: number;
+}
+
 export interface Frs105AccountsData {
   companyName: string;
   companyNumber: string;
@@ -33,6 +49,7 @@ export interface Frs105AccountsData {
   directorsLoanAdvancePence: number;
   directorsLoanRepaidPence?: number;
   directorsLoanClosingPence?: number;
+  priorYearData?: Frs105PriorYearData;
 }
 
 function formatPounds(pence?: number): string {
@@ -146,51 +163,74 @@ export function generateAccountsPdf(
     color: [0.4, 0.4, 0.4]
   });
 
+  const hasPrior = !!data.priorYearData;
+  const currentYearColX = hasPrior ? 450 : 520;
+  const priorYearColX = 520;
+  const notesColX = hasPrior ? 330 : 380;
+  const lineStartX = hasPrior ? 380 : 440;
+
   // P&L Column headers
-  doc.drawText('Notes', 380, 740, { font: 'Helvetica-Bold', size: 9, color: [0.3, 0.3, 0.3] });
-  doc.drawText(`${data.periodEnd.substring(0, 4)} (£)`, 520, 740, {
+  doc.drawText('Notes', notesColX, 740, { font: 'Helvetica-Bold', size: 9, color: [0.3, 0.3, 0.3] });
+  doc.drawText(`${data.periodEnd.substring(0, 4)} (£)`, currentYearColX, 740, {
     font: 'Helvetica-Bold',
     size: 9,
     color: [0.3, 0.3, 0.3],
     align: 'right'
   });
+  if (hasPrior && data.priorYearData) {
+    doc.drawText(`${data.priorYearData.periodEnd.substring(0, 4)} (£)`, priorYearColX, 740, {
+      font: 'Helvetica-Bold',
+      size: 9,
+      color: [0.3, 0.3, 0.3],
+      align: 'right'
+    });
+  }
   doc.drawLine(50, 735, 545, 735, { lineWidth: 1, color: [0.2, 0.2, 0.2] });
 
   const rawMaterialsPence = data.costOfSalesPence;
   const otherIncomePence = data.otherIncomePence ?? 0;
   const staffCostsPence = data.staffCostsPence ?? 0;
   const depreciationPence = data.depreciationPence ?? 0;
+  const priorPnl = data.priorYearData;
 
-  const plRows: [string, string, string, boolean][] = [
-    ['Turnover', '', formatPounds(data.turnoverPence), false],
-    ['Other income', '', otherIncomePence > 0 ? formatPounds(otherIncomePence) : '-', false],
-    ['Cost of raw materials and consumables', '', rawMaterialsPence > 0 ? formatPounds(-rawMaterialsPence) : '-', false],
-    ['Staff costs', '', staffCostsPence > 0 ? formatPounds(-staffCostsPence) : '-', false],
-    ['Depreciation and other amounts written off assets', '', depreciationPence > 0 ? formatPounds(-depreciationPence) : '-', false],
-    ['Other charges', '', formatPounds(-data.otherChargesPence), false],
-    ['Tax on profit', '', formatPounds(-data.taxOnProfitPence), false],
-    ['Profit for the financial year', '', formatPounds(data.profitOrLossPence), true]
+  const plRows: [string, string, string, string, boolean][] = [
+    ['Turnover', '', formatPounds(data.turnoverPence), priorPnl ? formatPounds(priorPnl.turnoverPence) : '', false],
+    ['Other income', '', otherIncomePence > 0 ? formatPounds(otherIncomePence) : '-', '-', false],
+    ['Cost of raw materials and consumables', '', rawMaterialsPence > 0 ? formatPounds(-rawMaterialsPence) : '-', priorPnl?.costOfSalesPence ? formatPounds(-priorPnl.costOfSalesPence) : '-', false],
+    ['Staff costs', '', staffCostsPence > 0 ? formatPounds(-staffCostsPence) : '-', '-', false],
+    ['Depreciation and other amounts written off assets', '', depreciationPence > 0 ? formatPounds(-depreciationPence) : '-', '-', false],
+    ['Other charges', '', formatPounds(-data.otherChargesPence), priorPnl?.otherChargesPence ? formatPounds(-priorPnl.otherChargesPence) : '-', false],
+    ['Tax on profit', '', formatPounds(-data.taxOnProfitPence), priorPnl?.taxOnProfitPence ? formatPounds(-priorPnl.taxOnProfitPence) : '-', false],
+    ['Profit for the financial year', '', formatPounds(data.profitOrLossPence), priorPnl ? formatPounds(priorPnl.profitOrLossPence) : '', true]
   ];
 
   let plY = 720;
-  for (const [label, note, val, isBold] of plRows) {
+  for (const [label, note, val, priorVal, isBold] of plRows) {
     if (isBold) {
-      doc.drawLine(440, plY + 11, 545, plY + 11, { lineWidth: 0.5, color: [0.6, 0.6, 0.6] });
+      doc.drawLine(lineStartX, plY + 11, 545, plY + 11, { lineWidth: 0.5, color: [0.6, 0.6, 0.6] });
     }
     doc.drawText(label, 50, plY, {
       font: isBold ? 'Helvetica-Bold' : 'Helvetica',
       size: 9,
       color: [0.15, 0.15, 0.15]
     });
-    if (note) doc.drawText(note, 385, plY, { font: 'Helvetica', size: 9, color: [0.4, 0.4, 0.4] });
-    doc.drawText(val, 520, plY, {
+    if (note) doc.drawText(note, notesColX, plY, { font: 'Helvetica', size: 9, color: [0.4, 0.4, 0.4] });
+    doc.drawText(val, currentYearColX, plY, {
       font: isBold ? 'Helvetica-Bold' : 'Helvetica',
       size: 9,
       color: [0.15, 0.15, 0.15],
       align: 'right'
     });
+    if (hasPrior && priorVal) {
+      doc.drawText(priorVal, priorYearColX, plY, {
+        font: isBold ? 'Helvetica-Bold' : 'Helvetica',
+        size: 9,
+        color: [0.15, 0.15, 0.15],
+        align: 'right'
+      });
+    }
     if (isBold) {
-      doc.drawLine(440, plY - 3, 545, plY - 3, { lineWidth: isBold ? 1 : 0.5, color: [0.2, 0.2, 0.2] });
+      doc.drawLine(lineStartX, plY - 3, 545, plY - 3, { lineWidth: isBold ? 1 : 0.5, color: [0.2, 0.2, 0.2] });
     }
     plY -= 15;
   }
@@ -208,48 +248,72 @@ export function generateAccountsPdf(
     color: [0.4, 0.4, 0.4]
   });
 
-  doc.drawText('Notes', 380, bsStartY - 35, { font: 'Helvetica-Bold', size: 9, color: [0.3, 0.3, 0.3] });
-  doc.drawText(`${data.periodEnd.substring(0, 4)} (£)`, 520, bsStartY - 35, {
+  doc.drawText('Notes', notesColX, bsStartY - 35, { font: 'Helvetica-Bold', size: 9, color: [0.3, 0.3, 0.3] });
+  doc.drawText(`${data.periodEnd.substring(0, 4)} (£)`, currentYearColX, bsStartY - 35, {
     font: 'Helvetica-Bold',
     size: 9,
     color: [0.3, 0.3, 0.3],
     align: 'right'
   });
+  if (hasPrior && data.priorYearData) {
+    doc.drawText(`${data.priorYearData.periodEnd.substring(0, 4)} (£)`, priorYearColX, bsStartY - 35, {
+      font: 'Helvetica-Bold',
+      size: 9,
+      color: [0.3, 0.3, 0.3],
+      align: 'right'
+    });
+  }
   doc.drawLine(50, bsStartY - 40, 545, bsStartY - 40, { lineWidth: 1, color: [0.2, 0.2, 0.2] });
 
   const currentAssetsPence = data.debtorsPence + data.cashAtBankPence;
   const netCurrentAssetsPence = currentAssetsPence - data.creditorsDueWithinOneYearPence;
   const netAssetsPence = data.tangibleFixedAssetsPence + netCurrentAssetsPence;
 
-  const bsRows: [string, string, string, boolean][] = [
-    ['Fixed assets', '', formatPounds(data.tangibleFixedAssetsPence), false],
-    ['Current assets', '', '', false],
-    ['  Debtors', '', formatPounds(data.debtorsPence), false],
-    ['  Cash at bank and in hand', '', formatPounds(data.cashAtBankPence), false],
-    ['Total current assets', '', formatPounds(currentAssetsPence), true],
-    ['Creditors: amounts falling due within one year', '', formatPounds(-data.creditorsDueWithinOneYearPence), false],
-    ['Net current assets (liabilities)', '', formatPounds(netCurrentAssetsPence), true],
-    ['Total assets less current liabilities', '', formatPounds(netAssetsPence), true],
-    ['Net assets', '', formatPounds(netAssetsPence), true],
-    ['Capital and reserves', '', '', false],
-    ['  Called up share capital', '', formatPounds(data.calledUpShareCapitalPence), false],
-    ['  Profit and loss account', '', formatPounds(data.profitAndLossAccountReservePence), false],
-    ['Total shareholders\' funds', '', formatPounds(data.shareholderFundsPence), true]
+  const priorBs = data.priorYearData;
+  const priorCurrentAssetsPence = priorBs ? (priorBs.debtorsPence ?? 0) + (priorBs.cashAtBankPence ?? 0) : 0;
+  const priorNetCurrentAssetsPence = priorBs ? priorCurrentAssetsPence - (priorBs.creditorsDueWithinOneYearPence ?? 0) : 0;
+  const priorNetAssetsPence = priorBs ? (priorBs.tangibleFixedAssetsPence ?? 0) + priorNetCurrentAssetsPence : 0;
+  const priorShareholderFundsPence = priorBs
+    ? priorBs.shareholderFundsPence ?? ((priorBs.calledUpShareCapitalPence ?? 10000) + (priorBs.profitAndLossAccountReservePence ?? 0))
+    : 0;
+
+  const bsRows: [string, string, string, string, boolean][] = [
+    ['Fixed assets', '', formatPounds(data.tangibleFixedAssetsPence), priorBs ? formatPounds(priorBs.tangibleFixedAssetsPence) : '', false],
+    ['Current assets', '', '', '', false],
+    ['  Debtors', '', formatPounds(data.debtorsPence), priorBs ? formatPounds(priorBs.debtorsPence) : '', false],
+    ['  Cash at bank and in hand', '', formatPounds(data.cashAtBankPence), priorBs ? formatPounds(priorBs.cashAtBankPence) : '', false],
+    ['Total current assets', '', formatPounds(currentAssetsPence), priorBs ? formatPounds(priorCurrentAssetsPence) : '', true],
+    ['Creditors: amounts falling due within one year', '', formatPounds(-data.creditorsDueWithinOneYearPence), priorBs ? formatPounds(-(priorBs.creditorsDueWithinOneYearPence ?? 0)) : '', false],
+    ['Net current assets (liabilities)', '', formatPounds(netCurrentAssetsPence), priorBs ? formatPounds(priorNetCurrentAssetsPence) : '', true],
+    ['Total assets less current liabilities', '', formatPounds(netAssetsPence), priorBs ? formatPounds(priorNetAssetsPence) : '', true],
+    ['Net assets', '', formatPounds(netAssetsPence), priorBs ? formatPounds(priorNetAssetsPence) : '', true],
+    ['Capital and reserves', '', '', '', false],
+    ['  Called up share capital', '', formatPounds(data.calledUpShareCapitalPence), priorBs ? formatPounds(priorBs.calledUpShareCapitalPence ?? 10000) : '', false],
+    ['  Profit and loss account', '', formatPounds(data.profitAndLossAccountReservePence), priorBs ? formatPounds(priorBs.profitAndLossAccountReservePence ?? 0) : '', false],
+    ['Total shareholders\' funds', '', formatPounds(data.shareholderFundsPence), priorBs ? formatPounds(priorShareholderFundsPence) : '', true]
   ];
 
   let bsY = bsStartY - 55;
-  for (const [label, note, val, isBold] of bsRows) {
+  for (const [label, note, val, priorVal, isBold] of bsRows) {
     if (isBold && val) {
-      doc.drawLine(440, bsY + 11, 545, bsY + 11, { lineWidth: 0.5, color: [0.6, 0.6, 0.6] });
+      doc.drawLine(lineStartX, bsY + 11, 545, bsY + 11, { lineWidth: 0.5, color: [0.6, 0.6, 0.6] });
     }
     doc.drawText(label, 50, bsY, {
       font: isBold ? 'Helvetica-Bold' : 'Helvetica',
       size: 9,
       color: [0.15, 0.15, 0.15]
     });
-    if (note) doc.drawText(note, 385, bsY, { font: 'Helvetica', size: 9, color: [0.4, 0.4, 0.4] });
+    if (note) doc.drawText(note, notesColX, bsY, { font: 'Helvetica', size: 9, color: [0.4, 0.4, 0.4] });
     if (val) {
-      doc.drawText(val, 520, bsY, {
+      doc.drawText(val, currentYearColX, bsY, {
+        font: isBold ? 'Helvetica-Bold' : 'Helvetica',
+        size: 9,
+        color: [0.15, 0.15, 0.15],
+        align: 'right'
+      });
+    }
+    if (hasPrior && priorVal) {
+      doc.drawText(priorVal, priorYearColX, bsY, {
         font: isBold ? 'Helvetica-Bold' : 'Helvetica',
         size: 9,
         color: [0.15, 0.15, 0.15],
@@ -257,7 +321,7 @@ export function generateAccountsPdf(
       });
     }
     if (isBold && val) {
-      doc.drawLine(440, bsY - 3, 545, bsY - 3, { lineWidth: 1, color: [0.2, 0.2, 0.2] });
+      doc.drawLine(lineStartX, bsY - 3, 545, bsY - 3, { lineWidth: 1, color: [0.2, 0.2, 0.2] });
     }
     bsY -= 15;
   }

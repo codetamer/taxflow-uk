@@ -1,8 +1,25 @@
 import type { ShieldInput } from '../../../shield/src/types.ts';
 
+export interface IxbrlPriorYearData {
+  periodStart?: string;
+  periodEnd: string;
+  turnoverPence?: number;
+  costOfSalesPence?: number;
+  staffCostsPence?: number;
+  otherChargesPence?: number;
+  tangibleFixedAssetsPence?: number;
+  debtorsPence?: number;
+  cashAtBankPence?: number;
+  creditorsDueWithinOneYearPence?: number;
+  calledUpShareCapitalPence?: number;
+  profitAndLossAccountReservePence?: number;
+  shareholderFundsPence?: number;
+}
+
 export interface IxbrlOptions {
   includeProfitAndLoss: boolean; // true for HMRC and post-ECCTA Companies House; false for legacy filleted
   watermarkText?: string;        // e.g. "DRAFT — NOT FOR SUBMISSION"
+  priorYearData?: IxbrlPriorYearData;
 }
 
 /**
@@ -98,6 +115,24 @@ export function generateFrs105Ixbrl(input: ShieldInput, options: IxbrlOptions = 
           <xbrli:instant>${period.periodEnd}</xbrli:instant>
         </xbrli:period>
       </xbrli:context>
+      ${options.priorYearData ? `
+      <xbrli:context id="ctx_prior_duration">
+        <xbrli:entity>
+          <xbrli:identifier scheme="http://www.companieshouse.gov.uk/">${entity.crn}</xbrli:identifier>
+        </xbrli:entity>
+        <xbrli:period>
+          <xbrli:startDate>${options.priorYearData.periodStart || '2024-10-01'}</xbrli:startDate>
+          <xbrli:endDate>${options.priorYearData.periodEnd}</xbrli:endDate>
+        </xbrli:period>
+      </xbrli:context>
+      <xbrli:context id="ctx_prior_instant">
+        <xbrli:entity>
+          <xbrli:identifier scheme="http://www.companieshouse.gov.uk/">${entity.crn}</xbrli:identifier>
+        </xbrli:entity>
+        <xbrli:period>
+          <xbrli:instant>${options.priorYearData.periodEnd}</xbrli:instant>
+        </xbrli:period>
+      </xbrli:context>` : ''}
       <xbrli:unit id="unit_gbp">
         <xbrli:measure>iso4217:GBP</xbrli:measure>
       </xbrli:unit>

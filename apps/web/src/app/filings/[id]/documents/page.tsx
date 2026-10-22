@@ -69,13 +69,21 @@ export default function DocumentsPage() {
     <ix:nonFraction name="uk-gaap:TaxTaxCreditOnProfitOrLossOnOrdinaryActivities" unitRef="GBP" decimals="0" contextRef="ctx_current_period">3800</ix:nonFraction>
     <ix:nonFraction name="uk-gaap:ProfitLossForPeriod" unitRef="GBP" decimals="0" contextRef="ctx_current_period">28100</ix:nonFraction>
 
-    <!-- FRS 105 Balance Sheet -->
+    <!-- FRS 105 Balance Sheet (Current Period: 2026) -->
     <ix:nonFraction name="uk-gaap:PropertyPlantEquipment" unitRef="GBP" decimals="0" contextRef="ctx_current_instant">15000</ix:nonFraction>
     <ix:nonFraction name="uk-gaap:Debtors" unitRef="GBP" decimals="0" contextRef="ctx_current_instant">10000</ix:nonFraction>
     <ix:nonFraction name="uk-gaap:CashBankOnHand" unitRef="GBP" decimals="0" contextRef="ctx_current_instant">33400</ix:nonFraction>
     <ix:nonFraction name="uk-gaap:CreditorsDueWithinOneYear" unitRef="GBP" decimals="0" contextRef="ctx_current_instant">25000</ix:nonFraction>
     <ix:nonFraction name="uk-gaap:ShareholderFunds" unitRef="GBP" decimals="0" contextRef="ctx_current_instant">33400</ix:nonFraction>
     <ix:nonFraction name="uk-gaap:ProfitLossAccountReserve" unitRef="GBP" decimals="0" contextRef="ctx_current_instant">33300</ix:nonFraction>
+
+    <!-- FRS 105 Balance Sheet (Prior Period: 2025 retrieved from Companies House) -->
+    <ix:nonFraction name="uk-gaap:PropertyPlantEquipment" unitRef="GBP" decimals="0" contextRef="ctx_prior_instant">10000</ix:nonFraction>
+    <ix:nonFraction name="uk-gaap:Debtors" unitRef="GBP" decimals="0" contextRef="ctx_prior_instant">8000</ix:nonFraction>
+    <ix:nonFraction name="uk-gaap:CashBankOnHand" unitRef="GBP" decimals="0" contextRef="ctx_prior_instant">12000</ix:nonFraction>
+    <ix:nonFraction name="uk-gaap:CreditorsDueWithinOneYear" unitRef="GBP" decimals="0" contextRef="ctx_prior_instant">14700</ix:nonFraction>
+    <ix:nonFraction name="uk-gaap:ShareholderFunds" unitRef="GBP" decimals="0" contextRef="ctx_prior_instant">15300</ix:nonFraction>
+    <ix:nonFraction name="uk-gaap:ProfitLossAccountReserve" unitRef="GBP" decimals="0" contextRef="ctx_prior_instant">15200</ix:nonFraction>
 
     <!-- Official Declarations -->
     <ix:nonNumeric name="uk-direp:DateApprovalAccounts" contextRef="ctx_current_instant">2026-10-15</ix:nonNumeric>
@@ -300,68 +308,89 @@ export default function DocumentsPage() {
 
           {/* Statement of Financial Position (Balance Sheet) */}
           <div className="space-y-4">
-            <div className="border-b border-slate-200 pb-2">
-              <h3 className="font-sans font-bold text-xs uppercase tracking-wider text-slate-800">
-                Statement of Financial Position (Balance Sheet)
-              </h3>
-              <p className="text-[11px] font-sans text-slate-500">As at 30 September 2026</p>
+            <div className="border-b border-slate-200 pb-2 flex items-center justify-between">
+              <div>
+                <h3 className="font-sans font-bold text-xs uppercase tracking-wider text-slate-800">
+                  Statement of Financial Position (Balance Sheet)
+                </h3>
+                <p className="text-[11px] font-sans text-slate-500">As at 30 September 2026 (with 2025 Comparatives)</p>
+              </div>
+              <span className="text-[10px] font-semibold bg-indigo-50 text-indigo-700 border border-indigo-200 px-2.5 py-0.5 rounded-full">
+                Comparative FRS 105
+              </span>
             </div>
 
             <div className="space-y-2 text-xs sm:text-sm font-sans max-w-2xl">
-              <div className="flex justify-between py-1 font-bold text-slate-900">
-                <span>
+              <div className="grid grid-cols-12 pb-1 border-b border-slate-200 font-bold text-[11px] text-slate-400 uppercase">
+                <span className="col-span-8">Item</span>
+                <span className="col-span-2 text-right">2026 (£)</span>
+                <span className="col-span-2 text-right">2025 (£)</span>
+              </div>
+
+              <div className="grid grid-cols-12 py-1 font-bold text-slate-900">
+                <span className="col-span-8">
                   <TermExplainer termId="capital-allowances-aia" label="Fixed assets (Tangible assets)" />
                 </span>
-                <span className="font-mono">£15,000</span>
+                <span className="col-span-2 text-right font-mono">15,000</span>
+                <span className="col-span-2 text-right font-mono text-slate-500">10,000</span>
               </div>
 
               <div className="text-[11px] font-bold text-slate-400 uppercase pt-2">Current Assets</div>
-              <div className="flex justify-between py-1 pl-4 text-slate-700">
-                <span>Debtors</span>
-                <span className="font-mono">£10,000</span>
+              <div className="grid grid-cols-12 py-1 pl-4 text-slate-700">
+                <span className="col-span-8">Debtors</span>
+                <span className="col-span-2 text-right font-mono">10,000</span>
+                <span className="col-span-2 text-right font-mono text-slate-500">8,000</span>
               </div>
-              <div className="flex justify-between py-1 pl-4 text-slate-700">
-                <span>Cash at bank and in hand</span>
-                <span className="font-mono">£33,400</span>
+              <div className="grid grid-cols-12 py-1 pl-4 text-slate-700">
+                <span className="col-span-8">Cash at bank and in hand</span>
+                <span className="col-span-2 text-right font-mono">33,400</span>
+                <span className="col-span-2 text-right font-mono text-slate-500">12,000</span>
               </div>
-              <div className="flex justify-between py-1 font-semibold border-t border-slate-200 text-slate-900">
-                <span>Total current assets</span>
-                <span className="font-mono">£43,400</span>
+              <div className="grid grid-cols-12 py-1 font-semibold border-t border-slate-200 text-slate-900">
+                <span className="col-span-8">Total current assets</span>
+                <span className="col-span-2 text-right font-mono">43,400</span>
+                <span className="col-span-2 text-right font-mono text-slate-600">20,000</span>
               </div>
 
-              <div className="flex justify-between py-1 text-slate-600">
-                <span>
+              <div className="grid grid-cols-12 py-1 text-slate-600">
+                <span className="col-span-8">
                   <TermExplainer termId="creditors-under-one-year" label="Creditors: amounts falling due within one year" />
                 </span>
-                <span className="font-mono">(£25,000)</span>
+                <span className="col-span-2 text-right font-mono">(25,000)</span>
+                <span className="col-span-2 text-right font-mono text-slate-500">(14,700)</span>
               </div>
-              <div className="flex justify-between py-1 font-semibold border-t border-slate-200 text-slate-900">
-                <span>Net current assets (liabilities)</span>
-                <span className="font-mono">£18,400</span>
+              <div className="grid grid-cols-12 py-1 font-semibold border-t border-slate-200 text-slate-900">
+                <span className="col-span-8">Net current assets (liabilities)</span>
+                <span className="col-span-2 text-right font-mono">18,400</span>
+                <span className="col-span-2 text-right font-mono text-slate-600">5,300</span>
               </div>
 
-              <div className="flex justify-between py-2 font-bold text-base border-t-2 border-b-2 border-slate-900 text-slate-950">
-                <span>
+              <div className="grid grid-cols-12 py-2 font-bold text-sm sm:text-base border-t-2 border-b-2 border-slate-900 text-slate-950">
+                <span className="col-span-8">
                   <TermExplainer termId="balance-sheet-symmetry" label="Total assets less current liabilities (Net Assets)" />
                 </span>
-                <span className="font-mono font-bold">£33,400</span>
+                <span className="col-span-2 text-right font-mono font-bold">£33,400</span>
+                <span className="col-span-2 text-right font-mono font-bold text-slate-700">£15,300</span>
               </div>
 
               <div className="text-[11px] font-bold text-slate-400 uppercase pt-3">Capital and Reserves</div>
-              <div className="flex justify-between py-1 pl-4 text-slate-700">
-                <span>Called up share capital</span>
-                <span className="font-mono">£100</span>
+              <div className="grid grid-cols-12 py-1 pl-4 text-slate-700">
+                <span className="col-span-8">Called up share capital</span>
+                <span className="col-span-2 text-right font-mono">100</span>
+                <span className="col-span-2 text-right font-mono text-slate-500">100</span>
               </div>
-              <div className="flex justify-between py-1 pl-4 text-slate-700">
-                <span>
+              <div className="grid grid-cols-12 py-1 pl-4 text-slate-700">
+                <span className="col-span-8">
                   <TermExplainer termId="distributable-reserves" label="Profit and loss account (Retained earnings)" />
                 </span>
-                <span className="font-mono">£33,300</span>
+                <span className="col-span-2 text-right font-mono">33,300</span>
+                <span className="col-span-2 text-right font-mono text-slate-500">15,200</span>
               </div>
 
-              <div className="flex justify-between py-2 font-bold text-base border-t-2 border-b-2 border-slate-900 text-slate-950">
-                <span>Total Shareholders' Funds</span>
-                <span className="font-mono font-bold">£33,400</span>
+              <div className="grid grid-cols-12 py-2 font-bold text-sm sm:text-base border-t-2 border-b-2 border-slate-900 text-slate-950">
+                <span className="col-span-8">Total Shareholders' Funds</span>
+                <span className="col-span-2 text-right font-mono font-bold">£33,400</span>
+                <span className="col-span-2 text-right font-mono font-bold text-slate-700">£15,300</span>
               </div>
             </div>
           </div>

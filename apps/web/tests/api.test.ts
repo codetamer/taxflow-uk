@@ -3,7 +3,7 @@ import assert from 'node:assert/strict';
 import { getRepositories, getDatabase, verifyPassword, hashPassword } from '@taxflow/db';
 import { CompaniesHouseClient } from '@taxflow/companies-house';
 import { computePeriod } from '@taxflow/ct-engine';
-import { generateFrs105Ixbrl, generateAccountsPdf, generateCt600Pdf } from '@taxflow/doc-engine';
+import { generateFrs105Ixbrl, parseFrs105Ixbrl, generateAccountsPdf, generateCt600Pdf } from '@taxflow/doc-engine';
 import type { ShieldInput } from '@taxflow/shield';
 
 const GBP = (pounds: number) => Math.round(pounds * 100);
@@ -423,6 +423,54 @@ test('@taxflow/web: Core API & Service Integration Suite', async (t) => {
     });
     assert.equal(ctRes.totalTaxableProfitsPence, GBP(20000));
     assert.equal(ctRes.corporationTaxPence, GBP(3800)); // exactly £3,800.00
+  });
+
+  await t.test('Inbound Companies House iXBRL: Historical Accounts Retrieval & Parsing', async () => {
+    const ch = new CompaniesHouseClient();
+    const docResult = await ch.getLatestAccountsDocument('15152081');
+    assert.equal(docResult.isAvailable, true);
+    assert.equal(docResult.reason, 'SUCCESS');
+    assert.ok(docResult.rawXhtml);
+
+    // Parse the iXBRL
+    const parsed = parseFrs105Ixbrl(docResult.rawXhtml, docResult.periodEnd);
+    assert.equal(parsed.periodEnd, '2025-09-30');
+    assert.equal(parsed.turnoverPence, GBP(80000));
+    assert.equal(parsed.tangibleFixedAssetsPence, GBP(15000));
+    assert.equal(parsed.netAssetsPence, GBP(30000));
+    assert.equal(parsed.shareholderFundsPence, GBP(30000));
+    assert.equal(parsed.isBalanceSheetSymmetric, true);
+
+    // Cache in database
+    const company = repos.companies.upsert({
+      crn: '15152081',
+      name: 'DROPLOGICX LTD',
+      registeredAddress: '71-75 Shelton Street, London',
+      companyType: 'ltd',
+      isCloseCompany: true
+    });
+
+    const cached = repos.priorYears.upsert({
+      companyId: company.id,
+      periodEnd: parsed.periodEnd,
+      turnoverPence: parsed.turnoverPence,
+      costOfSalesPence: parsed.costOfSalesPence,
+      tangibleFixedAssetsPence: parsed.tangibleFixedAssetsPence,
+      debtorsPence: parsed.debtorsPence,
+      cashAtBankPence: parsed.cashAtBankPence,
+      creditorsDueWithinOneYearPence: parsed.creditorsDueWithinOneYearPence,
+      calledUpShareCapitalPence: parsed.calledUpShareCapitalPence,
+      profitAndLossReservePence: parsed.profitAndLossReservePence
+    });
+
+    assert.ok(cached.id);
+    assert.equal(cached.periodEnd, '2025-09-30');
+    assert.equal(cached.turnoverPence, GBP(80000));
+
+    // Verify retrieval from DB
+    const fetched = repos.priorYears.getByPeriod(company.id, '2025-09-30');
+    assert.ok(fetched);
+    assert.equal(fetched.tangibleFixedAssetsPence, GBP(15000));
   });
 });
 

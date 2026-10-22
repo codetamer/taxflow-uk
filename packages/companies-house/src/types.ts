@@ -70,3 +70,34 @@ export interface NormalizedCompanyDetails {
   isCloseCompany: boolean;
 }
 
+export interface CompaniesHouseFilingHistoryItem {
+  transaction_id: string;
+  category: string;
+  type: string;
+  date: string;
+  description: string;
+  description_values?: Record<string, string>;
+  links: {
+    self?: string;
+    document_metadata?: string;
+  };
+}
+
+export interface CompaniesHouseFilingHistoryResponse {
+  total_count: number;
+  items: CompaniesHouseFilingHistoryItem[];
+}
+
+export interface AccountsDocumentResult {
+  crn: string;
+  transactionId?: string;
+  filingDate?: string;
+  periodEnd?: string;
+  documentMetadataUrl?: string;
+  isAvailable: boolean;
+  contentType?: string;
+  rawXhtml?: string;
+  reason: 'SUCCESS' | 'PAPER_PDF_ONLY' | 'NO_ACCOUNTS_FILED' | 'FETCH_ERROR';
+}
+
+

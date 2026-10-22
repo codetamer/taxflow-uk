@@ -4,6 +4,7 @@ import {
   stripExistingIRmark,
   extractGovTalkBody,
   generateFrs105Ixbrl,
+  parseFrs105Ixbrl,
   generateAccountsPdf,
   generateCt600Pdf
 } from '../src/index.ts';
@@ -280,6 +281,71 @@ test('generateCt600Pdf produces official HMRC box-numbered PDF with s455 loan sc
   assert.ok(pdfString.includes('1234567890'));
   assert.ok(pdfString.includes('CT600A'));
   assert.ok(pdfString.includes('DRAFT - NOT FOR FILING'));
+});
+
+// 4. Inbound iXBRL Parser Testing
+test('parseFrs105Ixbrl extracts all P&L and Balance Sheet figures into exact integer pence', () => {
+  const sampleIxbrl = `<?xml version="1.0" encoding="UTF-8"?>
+<html xmlns="http://www.w3.org/1999/xhtml"
+      xmlns:ix="http://www.xbrl.org/2013/inlineXBRL"
+      xmlns:uk-gaap="http://www.xbrl.org/uk/fr/gaap/core/2019-01-01"
+      xmlns:uk-direp="http://xbrl.frc.org.uk/reports/2019-01-01/direp"
+      xmlns:frs-105="http://xbrl.frc.org.uk/frs/105/2019-01-01">
+  <head>
+    <title>DROPLOGICX LTD - Micro-Entity Annual Accounts 2025</title>
+  </head>
+  <body>
+    <!-- Income Statement -->
+    <ix:nonFraction name="uk-gaap:TurnoverGrossOperatingRevenue" unitRef="GBP" decimals="0" contextRef="ctx_2025">80000</ix:nonFraction>
+    <ix:nonFraction name="uk-gaap:CostSales" unitRef="GBP" decimals="0" contextRef="ctx_2025">15000</ix:nonFraction>
+    <ix:nonFraction name="uk-gaap:OtherOperatingChargesExpenses" unitRef="GBP" decimals="0" contextRef="ctx_2025">35100</ix:nonFraction>
+    <ix:nonFraction name="uk-gaap:TaxTaxCreditOnProfitOrLossOnOrdinaryActivities" unitRef="GBP" decimals="0" contextRef="ctx_2025">5681</ix:nonFraction>
+    <ix:nonFraction name="uk-gaap:ProfitLossForPeriod" unitRef="GBP" decimals="0" contextRef="ctx_2025">24219</ix:nonFraction>
+
+    <!-- Balance Sheet -->
+    <ix:nonFraction name="uk-gaap:PropertyPlantEquipment" unitRef="GBP" decimals="0" contextRef="ctx_2025">15000</ix:nonFraction>
+    <ix:nonFraction name="uk-gaap:Debtors" unitRef="GBP" decimals="0" contextRef="ctx_2025">10000</ix:nonFraction>
+    <ix:nonFraction name="uk-gaap:CashBankOnHand" unitRef="GBP" decimals="0" contextRef="ctx_2025">20000</ix:nonFraction>
+    <ix:nonFraction name="uk-gaap:CreditorsDueWithinOneYear" unitRef="GBP" decimals="0" contextRef="ctx_2025">15000</ix:nonFraction>
+    <ix:nonFraction name="uk-gaap:CalledUpShareCapital" unitRef="GBP" decimals="0" contextRef="ctx_2025">100</ix:nonFraction>
+    <ix:nonFraction name="uk-gaap:ProfitLossAccountReserve" unitRef="GBP" decimals="0" contextRef="ctx_2025">29900</ix:nonFraction>
+    <ix:nonFraction name="uk-gaap:ShareholderFunds" unitRef="GBP" decimals="0" contextRef="ctx_2025">30000</ix:nonFraction>
+
+    <!-- Approvals -->
+    <ix:nonNumeric name="uk-direp:DateApprovalAccounts" contextRef="ctx_2025">2025-10-15</ix:nonNumeric>
+    <ix:nonNumeric name="uk-direp:NameEntityOfficer" contextRef="ctx_2025">Muhammad Saif Raza</ix:nonNumeric>
+  </body>
+</html>`;
+
+  const parsed = parseFrs105Ixbrl(sampleIxbrl, '2025-09-30');
+  assert.equal(parsed.periodEnd, '2025-09-30');
+  assert.equal(parsed.turnoverPence, 8000000);
+  assert.equal(parsed.costOfSalesPence, 1500000);
+  assert.equal(parsed.otherChargesPence, 3510000);
+  assert.equal(parsed.taxExpensePence, 568100);
+  assert.equal(parsed.netProfitAfterTaxPence, 2421900);
+  assert.equal(parsed.tangibleFixedAssetsPence, 1500000);
+  assert.equal(parsed.debtorsPence, 1000000);
+  assert.equal(parsed.cashAtBankPence, 2000000);
+  assert.equal(parsed.creditorsDueWithinOneYearPence, 1500000);
+  assert.equal(parsed.calledUpShareCapitalPence, 10000);
+  assert.equal(parsed.profitLossReservePence, 2990000);
+  assert.equal(parsed.netAssetsPence, 3000000);
+  assert.equal(parsed.shareholderFundsPence, 3000000);
+  assert.equal(parsed.isBalanceSheetSymmetric, true);
+  assert.equal(parsed.variancePence, 0);
+  assert.equal(parsed.approvalDate, '2025-10-15');
+  assert.equal(parsed.directorName, 'Muhammad Saif Raza');
+});
+
+test('parseFrs105Ixbrl round-trips generated outbound iXBRL accurately', () => {
+  const generated = generateFrs105Ixbrl(sampleShieldInput);
+  const parsed = parseFrs105Ixbrl(generated, '2026-09-30');
+  assert.equal(parsed.turnoverPence, 10000000);
+  assert.equal(parsed.costOfSalesPence, 4500000);
+  assert.equal(parsed.tangibleFixedAssetsPence, 500000);
+  assert.equal(parsed.calledUpShareCapitalPence, 10000);
+  assert.equal(parsed.isBalanceSheetSymmetric, true);
 });
 
 console.log(`\nAll ${passed} @taxflow/doc-engine tests passed successfully!`);

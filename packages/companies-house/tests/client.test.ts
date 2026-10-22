@@ -60,5 +60,30 @@ test('@taxflow/companies-house: client operations in sandbox mode', async (t) =>
     assert.equal(details.periodStart, '2025-04-01');
     assert.equal(details.periodEnd, '2026-03-31');
   });
+
+  await t.test('retrieves filing history for DropLogicX Ltd', async () => {
+    const filings = await client.getFilingHistory('15152081', 'accounts');
+    assert.ok(filings.length >= 1);
+    assert.equal(filings[0]?.type, 'AA');
+    assert.equal(filings[0]?.category, 'accounts');
+    assert.ok(filings[0]?.links?.document_metadata);
+  });
+
+  await t.test('retrieves latest accounts document and raw iXBRL XHTML for DropLogicX Ltd', async () => {
+    const result = await client.getLatestAccountsDocument('15152081');
+    assert.equal(result.isAvailable, true);
+    assert.equal(result.reason, 'SUCCESS');
+    assert.equal(result.periodEnd, '2025-09-30');
+    assert.ok(result.rawXhtml);
+    assert.ok(result.rawXhtml.includes('DROPLOGICX LTD'));
+    assert.ok(result.rawXhtml.includes('uk-gaap:TurnoverGrossOperatingRevenue'));
+    assert.ok(result.rawXhtml.includes('uk-gaap:PropertyPlantEquipment'));
+  });
+
+  await t.test('handles company with no accounts filed gracefully', async () => {
+    const result = await client.getLatestAccountsDocument('99999999');
+    assert.equal(result.isAvailable, false);
+    assert.equal(result.reason, 'NO_ACCOUNTS_FILED');
+  });
 });
 

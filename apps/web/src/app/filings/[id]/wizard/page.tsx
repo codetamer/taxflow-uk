@@ -12,6 +12,7 @@ import {
   ShieldCheck,
   CheckCircle2,
   AlertCircle,
+  FileText,
   FileDown,
   ArrowRight,
   ArrowLeft,
@@ -140,6 +141,35 @@ function WizardContent() {
   const [detectedBank, setDetectedBank] = useState<string>('');
   const [parsedIngestion, setParsedIngestion] = useState<IngestionSummary | null>(null);
   const [isIngestingSample, setIsIngestingSample] = useState<boolean>(false);
+  const [priorYearData, setPriorYearData] = useState<any>(null);
+  const [isFetchingPriorYear, setIsFetchingPriorYear] = useState<boolean>(false);
+  const [priorYearStatus, setPriorYearStatus] = useState<string>('');
+
+  const fetchPriorYearAccounts = async (crnOverride?: string) => {
+    const targetCrn = crnOverride || form.crn;
+    if (!targetCrn) return;
+    setIsFetchingPriorYear(true);
+    setPriorYearStatus('Retrieving historical iXBRL from Companies House...');
+    try {
+      const res = await fetch(`/api/companies-house/company/${targetCrn}/prior-accounts`);
+      const data = await res.json();
+      if (data.success && data.isAvailable && data.figures) {
+        setPriorYearData(data);
+        setPriorYearStatus(`Successfully synced prior year accounts (Period ended ${data.periodEnd})`);
+      } else {
+        setPriorYearStatus(data.message || 'No prior year accounts available.');
+      }
+    } catch {
+      setPriorYearStatus('Failed to sync prior accounts.');
+    } finally {
+      setIsFetchingPriorYear(false);
+    }
+  };
+
+  // Initial fetch of prior year accounts on load for default company
+  useEffect(() => {
+    fetchPriorYearAccounts('15152081');
+  }, []);
 
   const openGlossaryWith = (termId: string) => {
     setInitialGlossaryTerm(termId);
@@ -190,6 +220,7 @@ function WizardContent() {
         setChVerified(true);
         setChQuery('');
         setChResults([]);
+        fetchPriorYearAccounts(c.company_number);
       }
     } catch {
       // ignore
@@ -807,6 +838,68 @@ function WizardContent() {
                   />
                   <p className="text-[11px] text-slate-400 mt-1">Mandatory note in FRS 105 accounts (default 1 for single-director micro-entity)</p>
                 </div>
+              </div>
+
+              {/* Companies House Prior Year Accounts Auto-Sync Card */}
+              <div className="bg-gradient-to-br from-indigo-50/70 via-white to-purple-50/50 p-5 rounded-2xl border border-indigo-100 shadow-2xs space-y-3">
+                <div className="flex items-start justify-between">
+                  <div className="flex items-center space-x-2.5">
+                    <div className="w-8 h-8 rounded-xl bg-indigo-600/10 flex items-center justify-center text-indigo-700">
+                      <Sparkles className="w-4 h-4" />
+                    </div>
+                    <div>
+                      <h3 className="text-xs font-bold text-slate-900">
+                        Prior Year Accounts Sync (Companies House iXBRL)
+                      </h3>
+                      <p className="text-[11px] text-slate-500">
+                        Automatically retrieves your official prior-period balance sheet figures directly from Companies House.
+                      </p>
+                    </div>
+                  </div>
+                  <button
+                    type="button"
+                    onClick={() => fetchPriorYearAccounts()}
+                    disabled={isFetchingPriorYear || !form.crn}
+                    className="inline-flex items-center space-x-1 px-2.5 py-1 text-[11px] font-semibold text-indigo-700 bg-white hover:bg-indigo-50 border border-indigo-200 rounded-lg transition disabled:opacity-50"
+                  >
+                    <RefreshCw className={`w-3 h-3 ${isFetchingPriorYear ? 'animate-spin' : ''}`} />
+                    <span>{isFetchingPriorYear ? 'Retrieving...' : 'Sync Now'}</span>
+                  </button>
+                </div>
+
+                {priorYearData && priorYearData.figures && (
+                  <div className="bg-white/80 p-3 rounded-xl border border-indigo-50 text-[11px] space-y-1.5">
+                    <div className="flex items-center justify-between text-indigo-950 font-semibold">
+                      <span>Period ended {priorYearData.periodEnd} ({priorYearData.source || 'Companies House'})</span>
+                      <span className="text-[10px] bg-emerald-100 text-emerald-800 px-2 py-0.5 rounded-full font-bold">
+                        Verified iXBRL
+                      </span>
+                    </div>
+                    <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 pt-1 text-slate-600">
+                      <div>Fixed Assets: <span className="font-mono font-semibold text-slate-900">£{(priorYearData.figures.fixedAssetsPence / 100).toLocaleString()}</span></div>
+                      <div>Current Assets: <span className="font-mono font-semibold text-slate-900">£{(priorYearData.figures.currentAssetsPence / 100).toLocaleString()}</span></div>
+                      <div>Net Assets: <span className="font-mono font-semibold text-slate-900">£{(priorYearData.figures.netCurrentAssetsPence / 100).toLocaleString()}</span></div>
+                      <div>Retained Reserves: <span className="font-mono font-semibold text-slate-900">£{(priorYearData.figures.profitAndLossReservePence / 100).toLocaleString()}</span></div>
+                    </div>
+                    {priorYearData.figures.profitAndLossReservePence > 0 && form.openingRetainedEarnings === 0 && (
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setForm((prev) => ({
+                            ...prev,
+                            openingRetainedEarnings: Math.round(priorYearData.figures.profitAndLossReservePence / 100)
+                          }));
+                        }}
+                        className="text-xs text-indigo-600 hover:text-indigo-800 font-semibold underline mt-1 block"
+                      >
+                        Auto-populate Step 4 Opening Retained Earnings (£{(priorYearData.figures.profitAndLossReservePence / 100).toLocaleString()})
+                      </button>
+                    )}
+                  </div>
+                )}
+                {priorYearStatus && !priorYearData?.figures && (
+                  <p className="text-[11px] text-slate-500 italic">{priorYearStatus}</p>
+                )}
               </div>
 
               {/* Legal Exemption Declaration Checkbox */}
@@ -1444,6 +1537,125 @@ function WizardContent() {
                   >
                     {balanceSheetVariance === 0 ? 'BALANCED' : 'IMBALANCE'}
                   </span>
+                </div>
+              </div>
+
+              {/* FRS 105 Comparative Statement of Financial Position Table */}
+              <div className="bg-slate-50/70 p-5 rounded-2xl border border-slate-200/80 space-y-3">
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center space-x-2">
+                    <FileText className="w-4 h-4 text-slate-700" />
+                    <h3 className="text-xs font-bold text-slate-900 uppercase tracking-wider">
+                      Comparative Statement of Financial Position (FRS 105)
+                    </h3>
+                  </div>
+                  <span className="text-[10px] text-slate-500 font-medium">
+                    {priorYearData?.figures ? 'Dual Column Comparative Mode' : 'Single Period Mode'}
+                  </span>
+                </div>
+
+                <div className="overflow-x-auto">
+                  <table className="w-full text-left text-xs border-collapse">
+                    <thead>
+                      <tr className="border-b border-slate-200 text-slate-500 text-[11px]">
+                        <th className="py-2 font-medium">Balance Sheet Item</th>
+                        <th className="py-2 text-right font-semibold text-slate-900">
+                          Current Year ({form.periodEnd ? new Date(form.periodEnd).getFullYear() : '2026'}) (£)
+                        </th>
+                        <th className="py-2 text-right font-semibold text-slate-600">
+                          {priorYearData?.periodEnd
+                            ? `Prior Year (${new Date(priorYearData.periodEnd).getFullYear()}) (£)`
+                            : 'Prior Year (£)'}
+                        </th>
+                      </tr>
+                    </thead>
+                    <tbody className="divide-y divide-slate-100 font-mono text-[11px]">
+                      <tr>
+                        <td className="py-2 font-sans text-slate-700">Fixed Assets</td>
+                        <td className="py-2 text-right font-semibold text-slate-900">
+                          £{Number(form.fixedAssets || 0).toLocaleString()}
+                        </td>
+                        <td className="py-2 text-right text-slate-600">
+                          {priorYearData?.figures
+                            ? `£${(priorYearData.figures.fixedAssetsPence / 100).toLocaleString()}`
+                            : '—'}
+                        </td>
+                      </tr>
+                      <tr>
+                        <td className="py-2 font-sans text-slate-700">Current Assets (Debtors + Cash)</td>
+                        <td className="py-2 text-right font-semibold text-slate-900">
+                          £{(Number(form.debtors || 0) + Number(form.cashAtBank || 0)).toLocaleString()}
+                        </td>
+                        <td className="py-2 text-right text-slate-600">
+                          {priorYearData?.figures
+                            ? `£${(priorYearData.figures.currentAssetsPence / 100).toLocaleString()}`
+                            : '—'}
+                        </td>
+                      </tr>
+                      <tr>
+                        <td className="py-2 font-sans text-slate-700">Creditors: amounts falling due within one year</td>
+                        <td className="py-2 text-right font-semibold text-slate-900">
+                          (£{Number(form.creditorsUnderOneYear || 0).toLocaleString()})
+                        </td>
+                        <td className="py-2 text-right text-slate-600">
+                          {priorYearData?.figures
+                            ? `(£${(priorYearData.figures.creditorsDueWithinOneYearPence / 100).toLocaleString()})`
+                            : '—'}
+                        </td>
+                      </tr>
+                      <tr className="bg-slate-100/50 font-bold">
+                        <td className="py-2 font-sans text-slate-900">Net Current Assets (Liabilities)</td>
+                        <td className="py-2 text-right text-slate-900">
+                          £{(Number(form.debtors || 0) + Number(form.cashAtBank || 0) - Number(form.creditorsUnderOneYear || 0)).toLocaleString()}
+                        </td>
+                        <td className="py-2 text-right text-slate-700">
+                          {priorYearData?.figures
+                            ? `£${(priorYearData.figures.netCurrentAssetsPence / 100).toLocaleString()}`
+                            : '—'}
+                        </td>
+                      </tr>
+                      <tr className="bg-slate-200/40 font-bold border-t border-b border-slate-300">
+                        <td className="py-2 font-sans text-slate-900">Total Assets Less Current Liabilities (Net Assets)</td>
+                        <td className="py-2 text-right text-slate-900">£{netAssets.toLocaleString()}</td>
+                        <td className="py-2 text-right text-slate-800">
+                          {priorYearData?.figures
+                            ? `£${(priorYearData.figures.netAssetsPence / 100).toLocaleString()}`
+                            : '—'}
+                        </td>
+                      </tr>
+                      <tr>
+                        <td className="py-2 font-sans text-slate-700">Called Up Share Capital</td>
+                        <td className="py-2 text-right font-semibold text-slate-900">
+                          £{Number(form.shareCapital || 0).toLocaleString()}
+                        </td>
+                        <td className="py-2 text-right text-slate-600">
+                          {priorYearData?.figures
+                            ? `£${(priorYearData.figures.calledUpShareCapitalPence / 100).toLocaleString()}`
+                            : '—'}
+                        </td>
+                      </tr>
+                      <tr>
+                        <td className="py-2 font-sans text-slate-700">Profit and Loss Account (Reserves)</td>
+                        <td className="py-2 text-right font-semibold text-slate-900">
+                          £{closingRetainedEarnings.toLocaleString()}
+                        </td>
+                        <td className="py-2 text-right text-slate-600">
+                          {priorYearData?.figures
+                            ? `£${(priorYearData.figures.profitAndLossReservePence / 100).toLocaleString()}`
+                            : '—'}
+                        </td>
+                      </tr>
+                      <tr className="bg-slate-200/40 font-bold border-t border-b border-slate-300">
+                        <td className="py-2 font-sans text-slate-900">Total Shareholders' Funds</td>
+                        <td className="py-2 text-right text-slate-900">£{totalEquity.toLocaleString()}</td>
+                        <td className="py-2 text-right text-slate-800">
+                          {priorYearData?.figures
+                            ? `£${(priorYearData.figures.totalShareholdersFundsPence / 100).toLocaleString()}`
+                            : '—'}
+                        </td>
+                      </tr>
+                    </tbody>
+                  </table>
                 </div>
               </div>
             </div>
