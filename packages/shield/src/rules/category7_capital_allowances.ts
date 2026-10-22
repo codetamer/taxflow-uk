@@ -65,35 +65,46 @@ export function evaluateCategory7(input: ShieldInput): RuleEvaluation[] {
   }
 
   // RULE 33: Main Pool WDA Rate Accuracy (Fixing TinyTax's stale 18% flaw)
-  const expectedWdaRate = mainPoolWdaRatePct({ start: period.periodStart, end: period.periodEnd });
-  const wdaDiff = Math.abs(tax.mainPoolWdaRatePct - expectedWdaRate);
-
-  if (wdaDiff < 0.01) {
+  if (tax.mainPoolBalancePence !== undefined && tax.mainPoolBalancePence === 0) {
     evaluations.push({
       id: 'RULE_33',
       name: 'Main Pool WDA Statutory Rate (14% Post-April 2026)',
       category: 'Capital Allowances & Add-Backs',
       severity: 'FATAL',
       status: 'PASS',
-      message: `Main Pool WDA rate (${tax.mainPoolWdaRatePct.toFixed(
-        2
-      )}%) matches the statutory rate (14% effective 1 April 2026, or day-weighted hybrid for straddling periods).`,
+      message: 'Not applicable (no main pool balance subject to Writing Down Allowance; full AIA claimed).',
     });
   } else {
-    evaluations.push({
-      id: 'RULE_33',
-      name: 'Main Pool WDA Statutory Rate (14% Post-April 2026)',
-      category: 'Capital Allowances & Add-Backs',
-      severity: 'FATAL',
-      status: 'FAIL',
-      message: `Stale WDA Rate Detected: Main Pool WDA applied at ${tax.mainPoolWdaRatePct.toFixed(
-        2
-      )}%, but statutory rate for this period is ${expectedWdaRate.toFixed(
-        2
-      )}%. (HMRC reduced Main Pool WDA from 18% to 14% on 1 April 2026; straddling periods require day-weighting).`,
-      remediation: `Update Main Pool WDA rate to the statutory day-weighted hybrid rate: ${expectedWdaRate.toFixed(2)}%.`,
-      offendingFields: ['mainPoolWdaRatePct'],
-    });
+    const expectedWdaRate = mainPoolWdaRatePct({ start: period.periodStart, end: period.periodEnd });
+    const wdaDiff = Math.abs(tax.mainPoolWdaRatePct - expectedWdaRate);
+
+    if (wdaDiff < 0.01) {
+      evaluations.push({
+        id: 'RULE_33',
+        name: 'Main Pool WDA Statutory Rate (14% Post-April 2026)',
+        category: 'Capital Allowances & Add-Backs',
+        severity: 'FATAL',
+        status: 'PASS',
+        message: `Main Pool WDA rate (${tax.mainPoolWdaRatePct.toFixed(
+          2
+        )}%) matches the statutory rate (14% effective 1 April 2026, or day-weighted hybrid for straddling periods).`,
+      });
+    } else {
+      evaluations.push({
+        id: 'RULE_33',
+        name: 'Main Pool WDA Statutory Rate (14% Post-April 2026)',
+        category: 'Capital Allowances & Add-Backs',
+        severity: 'FATAL',
+        status: 'FAIL',
+        message: `Stale WDA Rate Detected: Main Pool WDA applied at ${tax.mainPoolWdaRatePct.toFixed(
+          2
+        )}%, but statutory rate for this period is ${expectedWdaRate.toFixed(
+          2
+        )}%. (HMRC reduced Main Pool WDA from 18% to 14% on 1 April 2026; straddling periods require day-weighting).`,
+        remediation: `Update Main Pool WDA rate to the statutory day-weighted hybrid rate: ${expectedWdaRate.toFixed(2)}%.`,
+        offendingFields: ['mainPoolWdaRatePct'],
+      });
+    }
   }
 
   // RULE 34: Depreciation 100% Add-Back

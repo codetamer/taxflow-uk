@@ -8,8 +8,17 @@ import type {
 } from './types.ts';
 import { formatAddress, formatOfficerName } from './formatters.ts';
 
-const CH_API_BASE = 'https://api.company-information.service.gov.uk';
-const CH_DOC_API_BASE = 'https://document-api.company-information.service.gov.uk';
+const CH_API_BASE =
+  process.env.COMPANIES_HOUSE_API_BASE ||
+  (process.env.COMPANIES_HOUSE_ENV === 'sandbox'
+    ? 'https://api-sandbox.company-information.service.gov.uk'
+    : 'https://api.company-information.service.gov.uk');
+
+const CH_DOC_API_BASE =
+  process.env.COMPANIES_HOUSE_DOC_API_BASE ||
+  (process.env.COMPANIES_HOUSE_ENV === 'sandbox'
+    ? 'https://document-api-sandbox.company-information.service.gov.uk'
+    : 'https://document-api.company-information.service.gov.uk');
 
 export const MOCK_DROPLOGICX_IXBRL_2025 = `<?xml version="1.0" encoding="UTF-8"?>
 <html xmlns="http://www.w3.org/1999/xhtml"

@@ -197,6 +197,18 @@ test('Shield catches stale 18% WDA rate on straddling period and requires hybrid
   assert.ok(rule33.message.includes('Stale WDA Rate Detected'));
 });
 
+test('Shield passes RULE_33 when main pool balance is zero (full AIA claimed)', () => {
+  const input = createValidInput();
+  input.tax.mainPoolBalancePence = 0;
+  input.tax.mainPoolWdaRatePct = 0; // Even if rate is unset or 0
+
+  const report = runPreFlightShield(input);
+  const rule33 = report.evaluations.find((r) => r.id === 'RULE_33');
+  assert.ok(rule33);
+  assert.equal(rule33.status, 'PASS');
+  assert.ok(rule33.message.includes('Not applicable'));
+});
+
 // TEST 9: Missing Director Approval (RULE_40)
 test('Shield blocks submission if director legal declaration is not checked', () => {
   const input = createValidInput();

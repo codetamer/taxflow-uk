@@ -17,11 +17,20 @@ export async function GET(
       if (filing) {
         const company = repos.companies.getById(filing.companyId);
         const auditLogs = repos.auditLogs.listByFiling(id);
+        let formData = null;
+        if (filing.trialBalanceJson) {
+          try {
+            formData = JSON.parse(filing.trialBalanceJson);
+          } catch {
+            // ignore
+          }
+        }
 
         return NextResponse.json({
           success: true,
           filing: {
             ...filing,
+            formData,
             company: company || MOCK_REVIEW_FILING.company,
             auditLogs
           }
@@ -81,13 +90,28 @@ export async function PUT(
 
     try {
       const repos = getRepositories();
-      const existing = repos.filings.getById(id);
+      let existing = repos.filings.getById(id);
+      if (!existing && (id === 'drop-logicx' || id === 'demo' || id === 'fil_demo')) {
+        const company = repos.companies.getByCrn('15152081') || repos.companies.list()[0];
+        if (company) {
+          existing = repos.filings.create({
+            companyId: company.id,
+            periodStart: body.periodStart || '2025-10-01',
+            periodEnd: body.periodEnd || '2026-09-30',
+            directorName: body.directorName || 'Muhammad Saif Raza',
+            status: 'DRAFT',
+            trialBalanceJson: JSON.stringify(body.formData || body)
+          });
+        }
+      }
+
       if (existing) {
         const updatePayload: any = {};
         if (body.status !== undefined) updatePayload.status = body.status;
         if (body.directorName !== undefined) updatePayload.directorName = body.directorName;
         if (body.directorApprovalDate !== undefined) updatePayload.directorApprovalDate = body.directorApprovalDate;
         if (body.directorLegalDeclaration !== undefined) updatePayload.directorLegalDeclaration = body.directorLegalDeclaration;
+        if (body.isDirectorApproved !== undefined) updatePayload.directorLegalDeclaration = body.isDirectorApproved;
         if (body.isPaid !== undefined) updatePayload.isPaid = body.isPaid;
         if (body.paymentReference !== undefined) updatePayload.paymentReference = body.paymentReference;
         if (body.paidAmountPence !== undefined) updatePayload.paidAmountPence = body.paidAmountPence;
@@ -98,13 +122,30 @@ export async function PUT(
         if (body.irmarkBase64 !== undefined) updatePayload.irmarkBase64 = body.irmarkBase64;
         if (body.irmarkBase32 !== undefined) updatePayload.irmarkBase32 = body.irmarkBase32;
 
-        const updated = repos.filings.update(id, updatePayload);
+        const formData = body.formData || (body.turnover !== undefined ? body : null);
+        if (formData) {
+          updatePayload.trialBalanceJson = JSON.stringify(formData);
+        }
+
+        const updated = repos.filings.update(existing.id, updatePayload);
         const action = body.auditAction || 'FILING_UPDATED';
-        repos.auditLogs.append(id, action, body.auditDetails || { updatedFields: Object.keys(updatePayload) });
+        repos.auditLogs.append(existing.id, action, body.auditDetails || { updatedFields: Object.keys(updatePayload) });
+
+        let parsedFormData = null;
+        if (updated?.trialBalanceJson) {
+          try {
+            parsedFormData = JSON.parse(updated.trialBalanceJson);
+          } catch {
+            // ignore
+          }
+        }
 
         return NextResponse.json({
           success: true,
-          filing: updated
+          filing: {
+            ...updated,
+            formData: parsedFormData
+          }
         });
       }
     } catch {

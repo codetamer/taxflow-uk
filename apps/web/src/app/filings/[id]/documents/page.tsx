@@ -157,10 +157,10 @@ export default function DocumentsPage() {
         <div className="space-y-1">
           <div className="flex items-center space-x-1.5 text-amber-400 text-xs font-semibold">
             <ShieldCheck className="w-4 h-4 text-emerald-400" />
-            <span>Zero Gateway Rejections Guaranteed</span>
+            <span>Pre-Submission Gateway Verification</span>
           </div>
           <p className="text-xs text-stone-300">
-            All documents pre-flight audited across 40 automated checks. Pay £49 only upon final submission.
+            All filings verified across 40 statutory compliance checks before submission. Free draft downloads. Pay £49 only upon final dispatch.
           </p>
         </div>
 

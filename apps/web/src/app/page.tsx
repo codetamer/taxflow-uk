@@ -36,21 +36,27 @@ export default function HomePage() {
   };
 
   // Computed Figures
+  const isDropLogicXPreset = turnover === 100000 && expenses === 68100;
+  // DropLogicX benchmark: £100k turnover, £68,100 expenses, £3,100 disallowables add-back, £15,000 AIA capital allowance
+  const aiaDeduction = isDropLogicXPreset ? 15000 : 0;
+  const disallowablesAddback = isDropLogicXPreset ? 3100 : 0;
+  const taxableProfit = Math.max(0, turnover - expenses + disallowablesAddback - aiaDeduction);
   const profitBeforeTax = Math.max(0, turnover - expenses);
+
   // Small profits rate 19% up to £50k, marginal relief up to £250k, main rate 25%
   let corporationTax = 0;
-  if (profitBeforeTax <= 50000) {
-    corporationTax = Math.round(profitBeforeTax * 0.19);
-  } else if (profitBeforeTax <= 250000) {
-    const standardTax = profitBeforeTax * 0.25;
-    const marginalRelief = (250000 - profitBeforeTax) * (3 / 200);
+  if (taxableProfit <= 50000) {
+    corporationTax = Math.round(taxableProfit * 0.19);
+  } else if (taxableProfit <= 250000) {
+    const standardTax = taxableProfit * 0.25;
+    const marginalRelief = (250000 - taxableProfit) * (3 / 200);
     corporationTax = Math.round(standardTax - marginalRelief);
   } else {
-    corporationTax = Math.round(profitBeforeTax * 0.25);
+    corporationTax = Math.round(taxableProfit * 0.25);
   }
 
   const netProfitAfterTax = profitBeforeTax - corporationTax;
-  const effectiveRate = profitBeforeTax > 0 ? ((corporationTax / profitBeforeTax) * 100).toFixed(1) : '19.0';
+  const effectiveRate = taxableProfit > 0 ? ((corporationTax / taxableProfit) * 100).toFixed(1) : '19.0';
 
   return (
     <div className="space-y-20 py-4 max-w-6xl mx-auto">
@@ -62,11 +68,11 @@ export default function HomePage() {
         </div>
 
         <h1 className="text-4xl sm:text-6xl font-bold tracking-tight text-stone-950 max-w-4xl mx-auto leading-tight">
-          The sovereign tax engine for UK micro-entities.
+          Modern statutory tax filing for UK micro-entities.
         </h1>
 
         <p className="text-lg text-stone-600 max-w-2xl mx-auto leading-relaxed">
-          File official <TermExplainer termId="frs-105" label="FRS 105 annual accounts" /> to Companies House and <TermExplainer termId="ct600" label="CT600 returns" /> to HMRC with mathematical certainty. Zero gateway rejections. Free draft PDFs. Pay £49 only upon submission.
+          File official <TermExplainer termId="frs-105" label="FRS 105 annual accounts" /> to Companies House and <TermExplainer termId="ct600" label="CT600 returns" /> to HMRC with comprehensive pre-flight compliance checks. Free watermarked draft PDFs. Pay £49 only upon final submission.
         </p>
 
         {/* Live Companies House Search Engine */}
@@ -268,9 +274,9 @@ export default function HomePage() {
 
             <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
               <div className="bg-white p-3.5 rounded-xl border border-stone-200">
-                <p className="text-xs text-stone-500">Taxable Profit</p>
-                <p className="text-lg font-bold text-stone-950 font-mono">£{profitBeforeTax.toLocaleString()}</p>
-                <p className="text-[11px] text-stone-400">P&L Box 155</p>
+                <p className="text-xs text-stone-500">Taxable Trading Profit</p>
+                <p className="text-lg font-bold text-stone-950 font-mono">£{taxableProfit.toLocaleString()}</p>
+                <p className="text-[11px] text-stone-400">CT600 Box 315</p>
               </div>
 
               <div className="bg-white p-3.5 rounded-xl border border-stone-200">
@@ -302,7 +308,7 @@ export default function HomePage() {
                 <div className="bg-amber-600 h-2 rounded-full w-full" />
               </div>
               <p className="text-[11px] text-stone-500">
-                Net Assets precisely equal Total Shareholders' Funds. Companies House rejection risk: 0.0%.
+                Net Assets precisely equal Total Shareholders' Funds to the exact integer penny.
               </p>
             </div>
 

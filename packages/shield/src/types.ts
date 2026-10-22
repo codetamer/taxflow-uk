@@ -85,6 +85,8 @@ export interface TaxComputationData {
   
   // Capital allowances specifics
   mainPoolWdaRatePct: number;
+  mainPoolBalancePence?: Pence;
+  wdaClaimedPence?: Pence;
   carAiaClaimedPence: Pence;
   zeroEmissionFyaClaimedPence: Pence;
   zeroEmissionPurchaseDate?: string;

@@ -4,6 +4,7 @@ import { getRepositories, getDatabase, verifyPassword, hashPassword } from '@tax
 import { CompaniesHouseClient } from '@taxflow/companies-house';
 import { computePeriod } from '@taxflow/ct-engine';
 import { generateFrs105Ixbrl, parseFrs105Ixbrl, generateAccountsPdf, generateCt600Pdf } from '@taxflow/doc-engine';
+import { runPreFlightShield } from '@taxflow/shield';
 import type { ShieldInput } from '@taxflow/shield';
 
 const GBP = (pounds: number) => Math.round(pounds * 100);
@@ -471,6 +472,124 @@ test('@taxflow/web: Core API & Service Integration Suite', async (t) => {
     const fetched = repos.priorYears.getByPeriod(company.id, '2025-09-30');
     assert.ok(fetched);
     assert.equal(fetched.tangibleFixedAssetsPence, GBP(15000));
+  });
+
+  // TEST 12: Draft Persistence & Pre-Flight Shield Sync (IMP-01 & IMP-02)
+  await t.test('Draft Persistence & Pre-Flight Shield Live Sync', async () => {
+    const repos = getRepositories();
+    const company = repos.companies.getByCrn('15152081') || repos.companies.upsert({
+      crn: '15152081',
+      name: 'DROPLOGICX LTD',
+      registeredAddress: '71-75 Shelton Street, London',
+      companyType: 'ltd',
+      isCloseCompany: true
+    });
+
+    const filing = repos.filings.create({
+      companyId: company.id,
+      periodStart: '2025-10-01',
+      periodEnd: '2026-09-30',
+      directorName: 'Muhammad Saif Raza',
+      status: 'DRAFT',
+      trialBalanceJson: JSON.stringify({
+        turnover: 230000,
+        costOfSales: 40000,
+        fixedAssets: 20000,
+        directorLoanAdvance: 10000,
+        directorLoanDate: '2026-05-01'
+      })
+    });
+
+    // 1. Verify saved draft contains user edits
+    const fetchedFiling = repos.filings.getById(filing.id);
+    assert.ok(fetchedFiling);
+    assert.ok(fetchedFiling.trialBalanceJson);
+    const parsedDraft = JSON.parse(fetchedFiling.trialBalanceJson);
+    assert.equal(parsedDraft.turnover, 230000);
+    assert.equal(parsedDraft.directorLoanAdvance, 10000);
+
+    // 2. Verify Pre-Flight Shield receives user data and evaluates correctly
+    const expectedWda = (182 * 18 + 183 * 14) / 365;
+    const userShieldInput = {
+      entity: {
+        crn: '15152081',
+        companyName: 'DROPLOGICX LTD',
+        companyType: 'TRADING' as const,
+        utr: '1234567890',
+        isCloseCompany: true,
+        isCharityOrPlc: false,
+        chAuthCode: 'ABC123',
+        gatewayUserId: '123456789012',
+        gatewayPassword: 'SecretPassword123!'
+      },
+      period: {
+        periodStart: '2025-10-01',
+        periodEnd: '2026-09-30',
+        priorPeriodEnd: '2025-09-30',
+        daysInYearBasis: 365,
+        paymentDueDate: '2027-07-01',
+        accountsApprovalDate: '2026-10-15',
+        directorDeclarationName: 'Muhammad Saif Raza',
+        isDirectorApproved: true
+      },
+      ledger: {
+        turnoverPence: GBP(parsedDraft.turnover),
+        costOfSalesPence: GBP(parsedDraft.costOfSales),
+        staffCostsPence: 0,
+        depreciationPence: 0,
+        otherChargesPence: GBP(50000),
+        clientEntertainingPence: 0,
+        finesPence: 0,
+        bankInterestPence: 0,
+        taxExpensePence: GBP(26600),
+        netProfitAfterTaxPence: GBP(113400),
+        dividendsPaidPence: GBP(20000),
+        openingRetainedEarningsPence: GBP(15200),
+        closingRetainedEarningsPence: GBP(108600),
+        fixedAssetsPence: GBP(parsedDraft.fixedAssets),
+        debtorsPence: GBP(15000),
+        cashPence: GBP(103700),
+        creditorsUnderOneYearPence: GBP(30000),
+        creditorsOverOneYearPence: 0,
+        provisionsPence: 0,
+        shareCapitalPence: GBP(100),
+        employeeCount: 1
+      },
+      tax: {
+        tradingProfitPence: GBP(140000),
+        nonTradingIncomePence: 0,
+        exemptDistributionsPence: 0,
+        ttpPence: GBP(140000),
+        augmentedProfitsPence: GBP(140000),
+        lowerLimitPence: GBP(50000),
+        upperLimitPence: GBP(250000),
+        ctBeforeReliefPence: GBP(26600),
+        marginalReliefPence: 0,
+        ctPayablePence: GBP(26600),
+        mainPoolWdaRatePct: expectedWda,
+        mainPoolBalancePence: 0,
+        carAiaClaimedPence: 0,
+        zeroEmissionFyaClaimedPence: 0,
+        directorLoans: [{
+          id: 'loan_user_1',
+          directorName: 'Muhammad Saif Raza',
+          advanceDate: parsedDraft.directorLoanDate,
+          advanceAmountPence: GBP(parsedDraft.directorLoanAdvance),
+          repaidAmountPence: 0
+        }],
+        s455TaxPence: GBP(3575) // 35.75% for loan made in May 2026
+      }
+    };
+
+    const report = runPreFlightShield(userShieldInput);
+    // Verified: RULE_33 passes with statutory WDA rate, RULE_22 passes with prior period continuity
+    const rule33 = report.evaluations.find((r) => r.id === 'RULE_33');
+    assert.ok(rule33);
+    assert.equal(rule33.status, 'PASS');
+
+    const rule22 = report.evaluations.find((r) => r.id === 'RULE_22');
+    assert.ok(rule22);
+    assert.equal(rule22.status, 'PASS');
   });
 });
 

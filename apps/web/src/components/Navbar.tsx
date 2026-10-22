@@ -41,7 +41,7 @@ export function Navbar() {
       label: 'Pre-Flight Shield',
       href: '/filings/drop-logicx/shield',
       icon: ShieldCheck,
-      badge: '40/40',
+      badge: 'Active',
       active: pathname.includes('/shield')
     },
     {

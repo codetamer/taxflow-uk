@@ -1,7 +1,9 @@
 'use client';
 
-import { useState, useMemo } from 'react';
+import { useState, useMemo, useEffect } from 'react';
 import Link from 'next/link';
+import { useParams } from 'next/navigation';
+import { mainPoolWdaRatePct } from '@taxflow/ct-engine';
 import {
   ShieldCheck,
   ShieldAlert,
@@ -45,6 +47,7 @@ const cleanBenchmarkInput: ShieldInput = {
   period: {
     periodStart: '2025-10-01',
     periodEnd: '2026-09-30',
+    priorPeriodEnd: '2025-09-30',
     daysInYearBasis: 365,
     paymentDueDate: '2027-07-01',
     accountsApprovalDate: '2026-10-15',
@@ -85,7 +88,8 @@ const cleanBenchmarkInput: ShieldInput = {
     ctBeforeReliefPence: GBP(3800),
     marginalReliefPence: 0,
     ctPayablePence: GBP(3800),
-    mainPoolWdaRatePct: 14.0,
+    mainPoolWdaRatePct: (182 * 18 + 183 * 14) / 365,
+    mainPoolBalancePence: 0,
     carAiaClaimedPence: 0,
     zeroEmissionFyaClaimedPence: 0,
     directorLoans: [],
@@ -170,13 +174,31 @@ const categoryExplanations: Record<string, CategoryDetail> = {
 };
 
 export default function ShieldDashboardPage() {
-  const [activeScenario, setActiveScenario] = useState<'clean' | 'imbalance' | 'dividend' | 'car_aia' | 'credentials'>('clean');
+  const params = useParams();
+  const filingId = (params?.id as string) || 'fil_demo';
+  const [userFilingData, setUserFilingData] = useState<any>(null);
+  const [activeScenario, setActiveScenario] = useState<'user_filing' | 'clean' | 'imbalance' | 'dividend' | 'car_aia' | 'credentials'>('user_filing');
   const [statusFilter, setStatusFilter] = useState<'all' | 'fail' | 'fatal' | 'warn'>('all');
   const [selectedCategory, setSelectedCategory] = useState<string>('ALL');
   const [expandedRuleIds, setExpandedRuleIds] = useState<Set<string>>(new Set());
   const [searchQuery, setSearchQuery] = useState<string>('');
   const [isGlossaryOpen, setIsGlossaryOpen] = useState<boolean>(false);
   const [initialGlossaryTerm, setInitialGlossaryTerm] = useState<string>('');
+
+  useEffect(() => {
+    async function loadFiling() {
+      try {
+        const res = await fetch(`/api/filings/${filingId}`);
+        const data = await res.json();
+        if (data.success && data.filing?.formData) {
+          setUserFilingData(data.filing);
+        }
+      } catch {
+        // Fall back to clean benchmark
+      }
+    }
+    loadFiling();
+  }, [filingId]);
 
   const openGlossary = (termId: string) => {
     setInitialGlossaryTerm(termId);
@@ -193,6 +215,111 @@ export default function ShieldDashboardPage() {
   };
 
   const getScenarioInput = (scenario: typeof activeScenario): ShieldInput => {
+    if (scenario === 'user_filing' && userFilingData?.formData) {
+      const f = userFilingData.formData;
+      const periodStart = f.periodStart || '2025-10-01';
+      const periodEnd = f.periodEnd || '2026-09-30';
+      const turnoverPence = Math.round((f.turnover ?? 100000) * 100);
+      const costOfSalesPence = Math.round((f.costOfSales ?? 20000) * 100);
+      const otherChargesPence = Math.round((f.otherCharges ?? 48100) * 100);
+      const clientEntertainingPence = Math.round((f.disallowables ?? 3100) * 100);
+      const fixedAssetsPence = Math.round((f.fixedAssets ?? 15000) * 100);
+      const debtorsPence = Math.round((f.debtors ?? 10000) * 100);
+      const cashPence = Math.round((f.cashAtBank ?? 33400) * 100);
+      const creditorsUnderOneYearPence = Math.round((f.creditorsUnderOneYear ?? 25000) * 100);
+      const shareCapitalPence = Math.round((f.shareCapital ?? 100) * 100);
+      const openingRetainedEarningsPence = Math.round((f.openingRetainedEarnings ?? 15200) * 100);
+      const dividendsPaidPence = Math.round((f.dividendsPaid ?? 10000) * 100);
+
+      const operatingProfitPence = turnoverPence - costOfSalesPence - otherChargesPence;
+      const capitalAdditionsPence = Math.round((f.capitalAdditions ?? f.fixedAssets ?? 15000) * 100);
+      const aiaClaimedPence = Math.round((f.aiaClaimed ?? 15000) * 100);
+      const mainPoolBalancePence = Math.max(0, capitalAdditionsPence - aiaClaimedPence);
+
+      const taxableProfitPence = Math.max(0, operatingProfitPence + clientEntertainingPence - aiaClaimedPence);
+      const ctPayablePence = Math.round(taxableProfitPence * 0.19);
+      const netProfitAfterTaxPence = operatingProfitPence - ctPayablePence;
+      const closingRetainedEarningsPence = openingRetainedEarningsPence + netProfitAfterTaxPence - dividendsPaidPence;
+
+      const statutoryWda = mainPoolWdaRatePct({ start: periodStart, end: periodEnd });
+
+      const outstandingPence = Math.max(0, Math.round(((f.directorLoanAdvance || 0) - (f.directorLoanRepaidAmount || 0)) * 100));
+      const directorLoansList = (f.directorLoanAdvance && f.directorLoanAdvance > 0)
+        ? [{
+            id: 'loan_user_1',
+            madeOn: f.directorLoanDate || periodStart,
+            outstandingAtDueDatePence: outstandingPence,
+          }]
+        : [];
+
+      return {
+        entity: {
+          crn: f.crn || userFilingData.company?.crn || '15152081',
+          companyName: f.companyName || userFilingData.company?.companyName || 'DROPLOGICX LTD',
+          companyType: 'TRADING',
+          utr: f.utr || '1234567890',
+          isCloseCompany: true,
+          isCharityOrPlc: false,
+          chAuthCode: 'ABC123',
+          gatewayUserId: '123456789012',
+          gatewayPassword: 'SecretPassword123!'
+        },
+        period: {
+          periodStart,
+          periodEnd,
+          priorPeriodEnd: f.priorPeriodEnd || (f.crn === '15152081' ? '2025-09-30' : undefined),
+          daysInYearBasis: 365,
+          paymentDueDate: '2027-07-01',
+          accountsApprovalDate: '2026-10-15',
+          directorDeclarationName: f.directorName || 'Muhammad Saif Raza',
+          isDirectorApproved: f.isDirectorApproved ?? true
+        },
+        ledger: {
+          turnoverPence,
+          costOfSalesPence,
+          staffCostsPence: 0,
+          depreciationPence: 0,
+          otherChargesPence,
+          clientEntertainingPence,
+          finesPence: 0,
+          bankInterestPence: 0,
+          taxExpensePence: ctPayablePence,
+          netProfitAfterTaxPence,
+          dividendsPaidPence,
+          openingRetainedEarningsPence,
+          closingRetainedEarningsPence,
+          fixedAssetsPence,
+          debtorsPence,
+          cashPence,
+          creditorsUnderOneYearPence,
+          creditorsOverOneYearPence: 0,
+          provisionsPence: 0,
+          shareCapitalPence,
+          employeeCount: f.averageEmployees || 1
+        },
+        tax: {
+          tradingProfitPence: taxableProfitPence,
+          nonTradingIncomePence: 0,
+          exemptDistributionsPence: 0,
+          ttpPence: taxableProfitPence,
+          augmentedProfitsPence: taxableProfitPence,
+          lowerLimitPence: GBP(50000),
+          upperLimitPence: GBP(250000),
+          ctBeforeReliefPence: ctPayablePence,
+          marginalReliefPence: 0,
+          ctPayablePence,
+          mainPoolWdaRatePct: statutoryWda,
+          mainPoolBalancePence,
+          carAiaClaimedPence: 0,
+          zeroEmissionFyaClaimedPence: 0,
+          directorLoans: directorLoansList,
+          s455TaxPence: directorLoansList.length > 0 && !(f.directorLoanRepaidAmount >= f.directorLoanAdvance)
+            ? Math.round((f.directorLoanAdvance - (f.directorLoanRepaidAmount || 0)) * 35.75)
+            : 0
+        }
+      };
+    }
+
     const input = JSON.parse(JSON.stringify(cleanBenchmarkInput)) as ShieldInput;
     if (scenario === 'imbalance') {
       input.ledger.cashPence += 1;
@@ -332,6 +459,22 @@ export default function ShieldDashboardPage() {
         </div>
 
         <div className="flex flex-wrap gap-2">
+          {userFilingData?.formData && (
+            <button
+              onClick={() => setActiveScenario('user_filing')}
+              className={`px-3.5 py-2 rounded-xl text-xs font-semibold transition flex items-center space-x-1.5 ${
+                activeScenario === 'user_filing'
+                  ? 'bg-emerald-700 text-white shadow-xs'
+                  : 'bg-emerald-50 hover:bg-emerald-100 text-emerald-900 border border-emerald-200'
+              }`}
+            >
+              <ShieldCheck className="w-3.5 h-3.5" />
+              <span>
+                My Live Filing ({userFilingData.formData.companyName || 'DROPLOGICX LTD'})
+              </span>
+            </button>
+          )}
+
           <button
             onClick={() => setActiveScenario('clean')}
             className={`px-3.5 py-2 rounded-xl text-xs font-semibold transition flex items-center space-x-1.5 ${
