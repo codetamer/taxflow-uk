@@ -6,7 +6,10 @@
   "types": "src/index.ts",
   "type": "module",
   "scripts": {
-    "test": "node --experimental-strip-types tests/ingestion.test.ts"
+    "test": "node --experimental-strip-types tests/ingestion.test.ts && node --experimental-strip-types --test tests/pdf_ingestion.test.ts"
+  },
+  "dependencies": {
+    "unpdf": "^1.9.1"
   },
   "keywords": [
     "csv-normalizer",

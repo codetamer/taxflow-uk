@@ -10,7 +10,8 @@
   },
   "dependencies": {
     "@taxflow/ct-engine": "*",
-    "@taxflow/shield": "*"
+    "@taxflow/shield": "*",
+    "pdf-lib": "^1.17.1"
   },
   "keywords": [
     "ixbrl",

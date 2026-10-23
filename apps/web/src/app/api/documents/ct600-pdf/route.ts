@@ -144,7 +144,7 @@ export async function GET(req: NextRequest) {
       }
     }
 
-    const pdfBuffer = generateCt600Pdf(ct600Data, { isDraft });
+    const pdfBuffer = await generateCt600Pdf(ct600Data, { isDraft });
 
     return new NextResponse(new Uint8Array(pdfBuffer), {
       status: 200,

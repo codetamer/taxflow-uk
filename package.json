@@ -33,6 +33,8 @@
   "author": "Muhammad Bilal / Bilal Jabbar",
   "license": "UNLICENSED",
   "dependencies": {
-    "@swc/helpers": "^0.5.15"
+    "@swc/helpers": "^0.5.15",
+    "pdf-lib": "^1.17.1",
+    "unpdf": "^1.9.1"
   }
 }

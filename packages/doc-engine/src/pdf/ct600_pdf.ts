@@ -4,7 +4,8 @@
  * capital allowances, director declaration, and dynamic draft watermark.
  */
 
-import { SimplePdfDocument } from './pdf_builder.ts';
+import { rgb } from 'pdf-lib';
+import { EnterprisePdfDocument, type TableColumn, type TableRow } from './pdf_builder.ts';
 
 export interface Ct600PdfData {
   companyName: string;
@@ -16,6 +17,7 @@ export interface Ct600PdfData {
   turnoverPence: number;
   tradingProfitPence: number;
   bankInterestPence: number;
+  propertyIncomePence?: number;
   totalTaxableProfitPence: number;
   smallProfitsTaxPence: number;
   marginalReliefPence: number;
@@ -28,6 +30,9 @@ export interface Ct600PdfData {
   signatoryName: string;
   signatoryStatus: string;
   declarationDate: string;
+  clientEntertainingPence?: number;
+  depreciationPence?: number;
+  finesPence?: number;
   directorLoans?: Array<{
     directorName: string;
     advanceDate: string;
@@ -39,296 +44,382 @@ export interface Ct600PdfData {
   }>;
 }
 
-function fmt(pence?: number): string {
+function fmt(pence?: number | null): string {
   if (pence === undefined || pence === null) return '£0.00';
   const val = Math.round(pence) / 100;
+  if (val < 0) {
+    return `(£${Math.abs(val).toLocaleString('en-GB', { minimumFractionDigits: 2, maximumFractionDigits: 2 })})`;
+  }
   return `£${val.toLocaleString('en-GB', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
 }
 
-export function generateCt600Pdf(
+function formatDateBritish(isoDate?: string): string {
+  if (!isoDate) return '30 September 2026';
+  try {
+    const d = new Date(isoDate);
+    if (isNaN(d.getTime())) return isoDate;
+    return d.toLocaleDateString('en-GB', { day: 'numeric', month: 'long', year: 'numeric' });
+  } catch {
+    return isoDate;
+  }
+}
+
+export async function generateCt600Pdf(
   data: Ct600PdfData,
   options?: { isDraft?: boolean }
-): Buffer {
-  const doc = new SimplePdfDocument();
+): Promise<Buffer> {
+  const doc = await EnterprisePdfDocument.create();
 
   if (options?.isDraft) {
     doc.setWatermark('DRAFT - NOT FOR FILING');
   }
 
-  // --- PAGE 1: HMRC CT600 COMPANY TAX RETURN (PAGES 1-4 COMPACT STATUTORY VIEW) ---
-  // HMRC Banner
-  doc.drawRect(50, 780, 495, 30, { fillColor: [0.0, 0.44, 0.38] }); // HMRC Forest Green
-  doc.drawText('HM Revenue & Customs', 65, 792, {
-    font: 'Helvetica-Bold',
-    size: 13,
-    color: [1, 1, 1]
-  });
-  doc.drawText('CT600 (2026/27) Company Tax Return', 310, 792, {
-    font: 'Helvetica-Bold',
-    size: 10,
-    color: [1, 1, 1]
-  });
+  const periodEndFormatted = formatDateBritish(data.periodEnd);
+  const periodStartFormatted = formatDateBritish(data.periodStart);
+  const paymentDueDateFormatted = formatDateBritish(data.paymentDueDate);
+  const declarationDateFormatted = formatDateBritish(data.declarationDate);
 
-  // Company Details Block
-  doc.drawRect(50, 680, 495, 90, {
-    fillColor: [0.98, 0.98, 0.98],
-    strokeColor: [0.8, 0.8, 0.8],
-    lineWidth: 1
-  });
-
-  doc.drawText('COMPANY IDENTIFICATION', 65, 750, {
-    font: 'Helvetica-Bold',
-    size: 9,
-    color: [0.0, 0.44, 0.38]
-  });
-
-  doc.drawText('[ 1 ] UTR:', 65, 730, { font: 'Helvetica', size: 8, color: [0.4, 0.4, 0.4] });
-  doc.drawText(data.utr, 140, 730, { font: 'Helvetica-Bold', size: 9, color: [0.1, 0.1, 0.1] });
-
-  doc.drawText('[ 3 ] CRN:', 310, 730, { font: 'Helvetica', size: 8, color: [0.4, 0.4, 0.4] });
-  doc.drawText(data.companyNumber, 370, 730, { font: 'Helvetica-Bold', size: 9, color: [0.1, 0.1, 0.1] });
-
-  doc.drawText('[ 2 ] Name:', 65, 712, { font: 'Helvetica', size: 8, color: [0.4, 0.4, 0.4] });
-  doc.drawText(data.companyName.toUpperCase(), 140, 712, { font: 'Helvetica-Bold', size: 9, color: [0.1, 0.1, 0.1] });
-
-  doc.drawText('[ 30 ] Period Start:', 65, 694, { font: 'Helvetica', size: 8, color: [0.4, 0.4, 0.4] });
-  doc.drawText(data.periodStart, 140, 694, { font: 'Helvetica-Bold', size: 9, color: [0.1, 0.1, 0.1] });
-
-  doc.drawText('[ 35 ] Period End:', 310, 694, { font: 'Helvetica', size: 8, color: [0.4, 0.4, 0.4] });
-  doc.drawText(data.periodEnd, 390, 694, { font: 'Helvetica-Bold', size: 9, color: [0.1, 0.1, 0.1] });
-
-  // Tax Computation Table
-  doc.drawRect(50, 420, 495, 250, {
-    fillColor: [1, 1, 1],
-    strokeColor: [0.8, 0.8, 0.8],
-    lineWidth: 1
-  });
-
-  doc.drawRect(50, 645, 495, 25, { fillColor: [0.93, 0.95, 0.94] });
-  doc.drawText('INCOME & CHARGEABLE PROFITS COMPUTATION', 65, 653, {
-    font: 'Helvetica-Bold',
-    size: 9,
-    color: [0.0, 0.44, 0.38]
-  });
-
-  const compRows: [string, string, string, boolean][] = [
-    ['145', 'Turnover / gross operating revenue', fmt(data.turnoverPence), false],
-    ['155', 'Trading profits before capital allowances', fmt(data.tradingProfitPence), false],
-    ['705', 'Main pool capital allowances (WDA)', fmt(-data.mainPoolWdaPence), false],
-    ['730', 'Annual Investment Allowance (AIA) claimed', fmt(-data.aiaClaimedPence), false],
-    ['170', 'Non-trading bank interest received', fmt(data.bankInterestPence), false],
-    ['235', 'Total Taxable Profits', fmt(data.totalTaxableProfitPence), true],
-    ['315', 'Profits chargeable at Small Profits Rate (19%)', fmt(data.totalTaxableProfitPence), false],
-    ['435', 'Marginal Relief deduction', fmt(-data.marginalReliefPence), false],
-    ['440', 'Corporation Tax chargeable for period', fmt(data.corporationTaxChargeablePence), true],
-    ['475', 'Tax payable on loans to participators (s455)', fmt(data.s455TaxChargePence), false],
-    ['500', 'NET TAX PAYABLE TO HMRC', fmt(data.totalTaxPayablePence), true],
-    ['510', 'Statutory payment due date', data.paymentDueDate, false]
-  ];
-
-  let compY = 625;
-  for (const [box, desc, val, isBold] of compRows) {
-    if (isBold) {
-      doc.drawRect(51, compY - 3, 493, 17, { fillColor: [0.96, 0.97, 0.98] });
-    }
-    // Box number pill
-    doc.drawRect(65, compY - 2, 28, 13, {
-      fillColor: [0.9, 0.92, 0.9],
-      strokeColor: [0.7, 0.75, 0.7],
-      lineWidth: 0.5
-    });
-    doc.drawText(box, 79, compY + 2, {
-      font: 'Helvetica-Bold',
-      size: 7.5,
-      color: [0.1, 0.1, 0.1],
-      align: 'center'
-    });
-
-    doc.drawText(desc, 105, compY + 2, {
-      font: isBold ? 'Helvetica-Bold' : 'Helvetica',
-      size: 8,
-      color: [0.15, 0.15, 0.15]
-    });
-    doc.drawText(val, 520, compY + 2, {
-      font: isBold ? 'Helvetica-Bold' : 'Helvetica',
-      size: 8.5,
-      color: isBold ? [0.0, 0.44, 0.38] : [0.15, 0.15, 0.15],
-      align: 'right'
-    });
-
-    compY -= 18;
-  }
-
-  // Declaration Block
-  doc.drawRect(50, 310, 495, 95, {
-    fillColor: [0.98, 0.99, 1.0],
-    strokeColor: [0.82, 0.86, 0.9],
-    lineWidth: 1
-  });
-
-  doc.drawText('DECLARATION (HMRC STATUTORY RETURN)', 65, 385, {
-    font: 'Helvetica-Bold',
-    size: 9,
-    color: [0.12, 0.23, 0.36]
-  });
-
-  doc.drawText(
-    'I declare that the information given in this company tax return and accompanying documents is correct and complete to the best of my knowledge and belief.',
-    65,
-    370,
-    { font: 'Helvetica-Oblique', size: 7.5, color: [0.35, 0.35, 0.35] }
-  );
-
-  doc.drawText('[ 985 ] Name of Signatory:', 65, 345, { font: 'Helvetica', size: 8, color: [0.4, 0.4, 0.4] });
-  doc.drawText(data.signatoryName.toUpperCase(), 180, 345, {
-    font: 'Helvetica-Bold',
-    size: 8.5,
-    color: [0.1, 0.1, 0.1]
-  });
-
-  doc.drawText('[ 990 ] Status / Capacity:', 65, 328, { font: 'Helvetica', size: 8, color: [0.4, 0.4, 0.4] });
-  doc.drawText(data.signatoryStatus, 180, 328, { font: 'Helvetica-Bold', size: 8.5, color: [0.1, 0.1, 0.1] });
-
-  doc.drawText('[ 995 ] Date of Declaration:', 350, 328, {
-    font: 'Helvetica',
-    size: 8,
-    color: [0.4, 0.4, 0.4]
-  });
-  doc.drawText(data.declarationDate, 440, 328, { font: 'Helvetica-Bold', size: 8.5, color: [0.1, 0.1, 0.1] });
-
-  // Footer on page 1
-  doc.drawLine(50, 70, 545, 70, { color: [0.8, 0.8, 0.8] });
-  doc.drawText(`HMRC CT600 (2026/27) — UTR: ${data.utr} — Company: ${data.companyName}`, 50, 55, {
-    font: 'Helvetica',
-    size: 8,
-    color: [0.5, 0.5, 0.5]
-  });
-  doc.drawText('Page 1 of 2', 545, 55, {
-    font: 'Helvetica',
-    size: 8,
-    color: [0.5, 0.5, 0.5],
-    align: 'right'
-  });
-
-  // --- PAGE 2: CT600A SCHEDULE (LOANS TO PARTICIPATORS - s455 TAX) ---
+  // =========================================================================
+  // PAGE 1: HMRC CT600 (2026/27) COMPANY TAX RETURN
+  // =========================================================================
   doc.addPage();
 
-  doc.drawRect(50, 780, 495, 30, { fillColor: [0.0, 0.44, 0.38] });
-  doc.drawText('CT600A (2026/27) Loans to Participators', 65, 792, {
-    font: 'Helvetica-Bold',
-    size: 11,
-    color: [1, 1, 1]
+  // HMRC Forest Green Header
+  doc.drawRect(45, 770, 505, 38, { fillColor: rgb(0.0, 0.44, 0.35) }); // HMRC Emerald
+  doc.drawText('HM Revenue & Customs', 60, 785, {
+    font: 'bold',
+    size: 13,
+    color: rgb(1, 1, 1)
   });
-  doc.drawText('Close Company Section 455 CTA 2010 Tax Computation', 270, 792, {
-    font: 'Helvetica',
-    size: 9,
-    color: [1, 1, 1]
+  doc.drawText('CT600 (2026/27) Company Tax Return', 535, 785, {
+    font: 'bold',
+    size: 10,
+    color: rgb(1, 1, 1),
+    align: 'right'
+  });
+
+  // Company Identification Card
+  doc.drawRect(45, 680, 505, 80, {
+    fillColor: rgb(0.98, 0.99, 1.0),
+    borderColor: rgb(0.82, 0.86, 0.9),
+    borderWidth: 1
+  });
+
+  doc.drawText('COMPANY IDENTIFICATION & STATUTORY DATES', 60, 745, {
+    font: 'bold',
+    size: 8.5,
+    color: rgb(0.0, 0.44, 0.35)
+  });
+
+  // Box 1: UTR
+  doc.drawText('[ 1 ] Unique Taxpayer Reference (UTR):', 60, 727, { font: 'bold', size: 8, color: rgb(0.3, 0.35, 0.4) });
+  doc.drawText(data.utr, 220, 727, { font: 'monoBold', size: 9, color: rgb(0.06, 0.15, 0.28) });
+
+  // Box 3: CRN
+  doc.drawText('[ 3 ] Registration Number (CRN):', 340, 727, { font: 'bold', size: 8, color: rgb(0.3, 0.35, 0.4) });
+  doc.drawText(data.companyNumber, 480, 727, { font: 'monoBold', size: 9, color: rgb(0.06, 0.15, 0.28) });
+
+  // Box 2: Company Name
+  doc.drawText('[ 2 ] Company Name:', 60, 709, { font: 'bold', size: 8, color: rgb(0.3, 0.35, 0.4) });
+  doc.drawText(data.companyName.toUpperCase(), 220, 709, { font: 'bold', size: 8.5, color: rgb(0.06, 0.15, 0.28) });
+
+  // Box 30 & 35: Period dates
+  doc.drawText('[ 30 ] Accounting Period Start:', 60, 691, { font: 'bold', size: 8, color: rgb(0.3, 0.35, 0.4) });
+  doc.drawText(data.periodStart, 220, 691, { font: 'regular', size: 8, color: rgb(0.1, 0.15, 0.2) });
+
+  doc.drawText('[ 35 ] Period End:', 340, 691, { font: 'bold', size: 8, color: rgb(0.3, 0.35, 0.4) });
+  doc.drawText(data.periodEnd, 480, 691, { font: 'regular', size: 8, color: rgb(0.1, 0.15, 0.2) });
+
+  // Core Tax Computation Table (CT600 Boxes)
+  doc.drawText('CORPORATION TAX COMPUTATION (BOXES 145 – 525)', 45, 665, {
+    font: 'bold',
+    size: 9.5,
+    color: rgb(0.06, 0.15, 0.28)
+  });
+
+  const ctColumns: TableColumn[] = [
+    { header: 'HMRC Box', width: 65, align: 'center' },
+    { header: 'Statutory Description / Tax Regime Section', width: 330, align: 'left' },
+    { header: 'Amount (£)', width: 110, align: 'right' }
+  ];
+
+  const ctRows: TableRow[] = [
+    {
+      cells: ['Box 145', 'Total turnover from trade or profession', fmt(data.turnoverPence)],
+      bold: true
+    },
+    {
+      cells: ['Box 155', 'Trading profit (after capital allowances & statutory tax adjustments)', fmt(data.tradingProfitPence)]
+    },
+    {
+      cells: ['Box 190', 'Property income / non-trading loan relationships & interest', fmt((data.propertyIncomePence ?? 0) + (data.bankInterestPence || 0))]
+    },
+    {
+      cells: ['Box 315', 'Total Taxable Profits (TTP)', fmt(data.totalTaxableProfitPence)],
+      isSubtotal: true,
+      bold: true
+    },
+    {
+      cells: ['Box 440', 'Corporation Tax chargeable (Small Profits Rate 19% / Main Rate 25%)', fmt(data.corporationTaxChargeablePence)],
+      bold: true
+    },
+    {
+      cells: ['Box 480', 'Tax payable under Section 455 CTA 2010 (loans to participators)', fmt(data.s455TaxChargePence)]
+    },
+    {
+      cells: ['Box 525', 'Total amount of Corporation Tax payable for period', fmt(data.totalTaxPayablePence)],
+      isTotal: true,
+      bold: true
+    }
+  ];
+
+  const ctEndY = doc.drawTable(45, 650, ctColumns, ctRows, { rowHeight: 22 });
+
+  // Capital Allowances Table
+  const capY = ctEndY - 15;
+  doc.drawText('CAPITAL ALLOWANCES & PLANT RELIEFS (CAA 2001)', 45, capY, {
+    font: 'bold',
+    size: 9.5,
+    color: rgb(0.06, 0.15, 0.28)
+  });
+
+  const capColumns: TableColumn[] = [
+    { header: 'HMRC Box', width: 65, align: 'center' },
+    { header: 'Capital Allowance Classification', width: 330, align: 'left' },
+    { header: 'Claimed (£)', width: 110, align: 'right' }
+  ];
+
+  const capRows: TableRow[] = [
+    {
+      cells: ['Box 690', 'Annual Investment Allowance (AIA) claimed (100% first year relief)', fmt(data.aiaClaimedPence)],
+      bold: true
+    },
+    {
+      cells: ['Box 705', 'Main Pool Writing Down Allowance (WDA) claimed (statutory rate)', fmt(data.mainPoolWdaPence)]
+    }
+  ];
+
+  const capEndY = doc.drawTable(45, capY - 14, capColumns, capRows, { rowHeight: 22 });
+
+  // Payment Notice Callout Box
+  const noticeY = capEndY - 18;
+  doc.drawRect(45, noticeY - 45, 505, 52, {
+    fillColor: rgb(0.96, 0.98, 0.96),
+    borderColor: rgb(0.7, 0.85, 0.75),
+    borderWidth: 1
+  });
+
+  doc.drawText('[ 80 ] STATUTORY CORPORATION TAX PAYMENT DEADLINE', 60, noticeY - 6, {
+    font: 'bold',
+    size: 8,
+    color: rgb(0.0, 0.44, 0.35)
   });
 
   doc.drawText(
-    'Complete this supplementary schedule if the company is a close company and made loans or advances to participators or associates during the accounting period that remained outstanding at the end of the period.',
-    50,
-    755,
-    { font: 'Helvetica', size: 8, color: [0.35, 0.35, 0.35] }
+    `Corporation Tax payment of ${fmt(data.totalTaxPayablePence)} is due by: ${paymentDueDateFormatted} (9 months and 1 day after ARD).`,
+    60,
+    noticeY - 22,
+    { font: 'bold', size: 9, color: rgb(0.1, 0.15, 0.2) }
   );
 
-  // Table header
-  doc.drawRect(50, 720, 495, 20, { fillColor: [0.92, 0.94, 0.96] });
-  doc.drawText('Director / Participator', 55, 727, { font: 'Helvetica-Bold', size: 7.5, color: [0.2, 0.2, 0.2] });
-  doc.drawText('Advance Date', 170, 727, { font: 'Helvetica-Bold', size: 7.5, color: [0.2, 0.2, 0.2] });
-  doc.drawText('Advance (£)', 255, 727, { font: 'Helvetica-Bold', size: 7.5, color: [0.2, 0.2, 0.2], align: 'right' });
-  doc.drawText('Repaid (£)', 335, 727, { font: 'Helvetica-Bold', size: 7.5, color: [0.2, 0.2, 0.2], align: 'right' });
-  doc.drawText('Outstanding (£)', 425, 727, { font: 'Helvetica-Bold', size: 7.5, color: [0.2, 0.2, 0.2], align: 'right' });
-  doc.drawText('s455 Rate', 475, 727, { font: 'Helvetica-Bold', size: 7.5, color: [0.2, 0.2, 0.2], align: 'right' });
-  doc.drawText('Tax Due (£)', 535, 727, { font: 'Helvetica-Bold', size: 7.5, color: [0.2, 0.2, 0.2], align: 'right' });
+  doc.drawText(
+    `Quote Company UTR ${data.utr} and payment reference code on all BACS / CHAPS bank transfers to HMRC.`,
+    60,
+    noticeY - 36,
+    { font: 'regular', size: 7.5, color: rgb(0.4, 0.45, 0.5) }
+  );
 
-  let loanY = 705;
-  const loans = data.directorLoans && data.directorLoans.length > 0 ? data.directorLoans : [];
+  doc.drawRunningFooter(1, 3, data.companyNumber);
 
-  if (loans.length === 0) {
-    doc.drawText('No loans or advances made to participators during this return period.', 55, loanY, {
-      font: 'Helvetica-Oblique',
-      size: 8.5,
-      color: [0.5, 0.5, 0.5]
+  // =========================================================================
+  // PAGE 2: CT600A SUPPLEMENTARY PAGES (LOANS TO PARTICIPATORS)
+  // =========================================================================
+  doc.addPage();
+  doc.drawRunningHeader(data.companyName.toUpperCase(), 'CT600A — Loans to Participators (s455 CTA 2010)');
+
+  doc.drawText('CT600A SUPPLEMENTARY PAGES: LOANS TO PARTICIPATORS', 45, 770, {
+    font: 'bold',
+    size: 13,
+    color: rgb(0.06, 0.15, 0.28)
+  });
+
+  doc.drawText('CORPORATION TAX ACT 2010 PART 10 SECTION 455 SCHEDULE', 45, 755, {
+    font: 'bold',
+    size: 9,
+    color: rgb(0.0, 0.44, 0.35)
+  });
+
+  const rawLoans = data.directorLoans || [];
+
+  if (rawLoans.length > 0) {
+    const loanCols: TableColumn[] = [
+      { header: 'Participator Name', width: 145, align: 'left' },
+      { header: 'Advance Date', width: 75, align: 'center' },
+      { header: 'Advanced (£)', width: 75, align: 'right' },
+      { header: 'Repaid 9M (£)', width: 75, align: 'right' },
+      { header: 'Outstanding (£)', width: 75, align: 'right' },
+      { header: 'Rate', width: 60, align: 'right' }
+    ];
+
+    const loanRows: TableRow[] = rawLoans.map((l) => ({
+      cells: [
+        l.directorName,
+        formatDateBritish(l.advanceDate),
+        fmt(l.advancePence),
+        fmt(l.repaidPence),
+        fmt(l.outstandingPence),
+        `${l.s455Rate.toFixed(2)}%`
+      ]
+    }));
+
+    const totalAdvances = rawLoans.reduce((acc, l) => acc + l.advancePence, 0);
+    const totalRepaid = rawLoans.reduce((acc, l) => acc + l.repaidPence, 0);
+    const totalOutstanding = rawLoans.reduce((acc, l) => acc + l.outstandingPence, 0);
+
+    loanRows.push({
+      cells: [
+        'Total Loans to Participators (Carried to Box 480)',
+        '',
+        fmt(totalAdvances),
+        fmt(totalRepaid),
+        fmt(totalOutstanding),
+        fmt(data.s455TaxChargePence)
+      ],
+      isTotal: true,
+      bold: true
     });
-    loanY -= 25;
+
+    const loansEndY = doc.drawTable(45, 735, loanCols, loanRows, { rowHeight: 22 });
+
+    // Bed and breakfasting declaration
+    doc.drawRect(45, loansEndY - 60, 505, 55, {
+      fillColor: rgb(0.98, 0.99, 1.0),
+      borderColor: rgb(0.85, 0.88, 0.92),
+      borderWidth: 0.75
+    });
+
+    doc.drawText('BED & BREAKFASTING ANTI-AVOIDANCE DISCLOSURE (CTA 2010 s464C)', 60, loansEndY - 20, {
+      font: 'bold',
+      size: 8,
+      color: rgb(0.06, 0.22, 0.4)
+    });
+
+    doc.drawText(
+      '•  No repaid amounts have been redrawn within 30 days under section 464C of the Corporation Tax Act 2010.',
+      60,
+      loansEndY - 34,
+      { font: 'regular', size: 7.5, color: rgb(0.3, 0.35, 0.4) }
+    );
+    doc.drawText(
+      '•  Section 455 tax payable is refundable by HMRC under CTA 2010 s458 upon repayment or waiver of the loan.',
+      60,
+      loansEndY - 47,
+      { font: 'regular', size: 7.5, color: rgb(0.3, 0.35, 0.4) }
+    );
   } else {
-    for (const loan of loans) {
-      doc.drawText(loan.directorName, 55, loanY, { font: 'Helvetica', size: 8, color: [0.15, 0.15, 0.15] });
-      doc.drawText(loan.advanceDate, 170, loanY, { font: 'Helvetica', size: 8, color: [0.3, 0.3, 0.3] });
-      doc.drawText(fmt(loan.advancePence), 255, loanY, {
-        font: 'Helvetica',
-        size: 8,
-        color: [0.15, 0.15, 0.15],
-        align: 'right'
-      });
-      doc.drawText(fmt(loan.repaidPence), 335, loanY, {
-        font: 'Helvetica',
-        size: 8,
-        color: [0.15, 0.15, 0.15],
-        align: 'right'
-      });
-      doc.drawText(fmt(loan.outstandingPence), 425, loanY, {
-        font: 'Helvetica-Bold',
-        size: 8,
-        color: [0.15, 0.15, 0.15],
-        align: 'right'
-      });
-      doc.drawText(`${(loan.s455Rate * 100).toFixed(2)}%`, 475, loanY, {
-        font: 'Helvetica',
-        size: 8,
-        color: [0.3, 0.3, 0.3],
-        align: 'right'
-      });
-      doc.drawText(fmt(loan.s455TaxPence), 535, loanY, {
-        font: 'Helvetica-Bold',
-        size: 8,
-        color: [0.0, 0.44, 0.38],
-        align: 'right'
-      });
-      doc.drawLine(50, loanY - 4, 545, loanY - 4, { lineWidth: 0.5, color: [0.85, 0.85, 0.85] });
-      loanY -= 20;
-    }
+    doc.drawRect(45, 680, 505, 60, {
+      fillColor: rgb(0.98, 0.99, 1.0),
+      borderColor: rgb(0.85, 0.88, 0.92),
+      borderWidth: 0.75
+    });
+
+    doc.drawText('NO LOANS TO PARTICIPATORS REPORTABLE', 60, 720, {
+      font: 'bold',
+      size: 9,
+      color: rgb(0.0, 0.44, 0.35)
+    });
+
+    doc.drawText(
+      'The company had no loans, advances, or credit arrangements outstanding to directors or participators during the accounting period. Section 455 tax charge is £0.00.',
+      60,
+      702,
+      { font: 'regular', size: 8, color: rgb(0.3, 0.35, 0.4) }
+    );
   }
 
-  // Summary box
-  doc.drawRect(50, loanY - 60, 495, 60, {
-    fillColor: [0.97, 0.98, 0.99],
-    strokeColor: [0.8, 0.85, 0.9],
-    lineWidth: 1
+  doc.drawRunningFooter(2, 3, data.companyNumber);
+
+  // =========================================================================
+  // PAGE 3: TAX COMPUTATION BRIDGE & DECLARATION
+  // =========================================================================
+  doc.addPage();
+  doc.drawRunningHeader(data.companyName.toUpperCase(), 'Tax Computation Bridge & Sign-Off');
+
+  doc.drawText('TAX COMPUTATION BRIDGE & STATUTORY DECLARATION', 45, 770, {
+    font: 'bold',
+    size: 13,
+    color: rgb(0.06, 0.15, 0.28)
   });
 
-  doc.drawText('CT600A SUMMARY RECONCILIATION', 65, loanY - 15, {
-    font: 'Helvetica-Bold',
-    size: 8.5,
-    color: [0.12, 0.23, 0.36]
+  doc.drawText('RECONCILIATION OF ACCOUNTING PROFIT TO TAXABLE PROFIT', 45, 755, {
+    font: 'bold',
+    size: 9,
+    color: rgb(0.4, 0.45, 0.5)
   });
 
-  doc.drawText('[ A15 ] Total s455 Tax Chargeable on Participator Loans:', 65, loanY - 35, {
-    font: 'Helvetica',
-    size: 8.5,
-    color: [0.3, 0.3, 0.3]
+  const bridgeCols: TableColumn[] = [
+    { header: 'Reconciliation Step', width: 395, align: 'left' },
+    { header: 'Amount (£)', width: 110, align: 'right' }
+  ];
+
+  const clientEnt = data.clientEntertainingPence || 0;
+  const dep = data.depreciationPence || 0;
+  const fines = data.finesPence || 0;
+
+  const bridgeRows: TableRow[] = [
+    { cells: ['Net trading profit per accounts before taxation', fmt(data.tradingProfitPence + (data.aiaClaimedPence || 0) - dep - clientEnt - fines)], bold: true },
+    { cells: ['Add: Depreciation charged in financial statements (statutory add-back)', fmt(dep)] },
+    { cells: ['Add: Client entertaining expenditure (disallowable under CTA 2009 s1298)', fmt(clientEnt)] },
+    { cells: ['Add: Fines and penalties (disallowable under CTA 2009 s1303)', fmt(fines)] },
+    { cells: ['Less: Annual Investment Allowance (AIA) claimed (Box 690)', fmt(-(data.aiaClaimedPence || 0))] },
+    { cells: ['Equals: Adjusted Trading Profit for Corporation Tax (Box 155)', fmt(data.tradingProfitPence)], isTotal: true, bold: true }
+  ];
+
+  const bridgeEndY = doc.drawTable(45, 735, bridgeCols, bridgeRows, { rowHeight: 21 });
+
+  // Statutory Declaration & Sign-off Block
+  const declY = bridgeEndY - 25;
+
+  doc.drawRect(45, declY - 140, 505, 145, {
+    fillColor: rgb(0.98, 0.99, 1.0),
+    borderColor: rgb(0.82, 0.86, 0.9),
+    borderWidth: 1
   });
-  doc.drawText(fmt(data.s455TaxChargePence), 520, loanY - 35, {
-    font: 'Helvetica-Bold',
-    size: 9.5,
-    color: [0.0, 0.44, 0.38],
+
+  doc.drawText('STATUTORY DECLARATION (TAXES MANAGEMENT ACT 1970 s108)', 60, declY - 6, {
+    font: 'bold',
+    size: 9,
+    color: rgb(0.0, 0.44, 0.35)
+  });
+
+  doc.drawLine(60, declY - 14, 535, declY - 14, { color: rgb(0.85, 0.88, 0.92), thickness: 0.75 });
+
+  const declText =
+    'I declare that the information I have given on this company tax return and any supplementary pages is correct and complete to the best of my knowledge and belief. I understand that giving false information can lead to prosecution.';
+
+  doc.drawText(declText, 60, declY - 30, { font: 'bold', size: 8, color: rgb(0.1, 0.15, 0.2) });
+
+  doc.drawText('Signatory Name:', 60, declY - 55, { font: 'bold', size: 8, color: rgb(0.35, 0.4, 0.45) });
+  doc.drawText(data.signatoryName.toUpperCase(), 160, declY - 55, { font: 'bold', size: 8.5, color: rgb(0.06, 0.15, 0.28) });
+
+  doc.drawText('Status / Capacity:', 60, declY - 72, { font: 'bold', size: 8, color: rgb(0.35, 0.4, 0.45) });
+  doc.drawText(data.signatoryStatus || 'Director', 160, declY - 72, { font: 'regular', size: 8.5, color: rgb(0.1, 0.15, 0.2) });
+
+  doc.drawText('Date of Declaration:', 60, declY - 89, { font: 'bold', size: 8, color: rgb(0.35, 0.4, 0.45) });
+  doc.drawText(declarationDateFormatted, 160, declY - 89, { font: 'regular', size: 8.5, color: rgb(0.1, 0.15, 0.2) });
+
+  doc.drawText('Signature:', 60, declY - 110, { font: 'bold', size: 8, color: rgb(0.35, 0.4, 0.45) });
+  doc.drawLine(160, declY - 110, 320, declY - 110, { color: rgb(0.6, 0.65, 0.7), thickness: 1 });
+  doc.drawText(data.signatoryName, 165, declY - 105, { font: 'oblique', size: 9, color: rgb(0.1, 0.2, 0.4) });
+
+  doc.drawText('Electronically Signed via TaxFlow UK GovTalk Gateway', 525, declY - 110, {
+    font: 'mono',
+    size: 7,
+    color: rgb(0.0, 0.44, 0.35),
     align: 'right'
   });
 
-  // Footer on page 2
-  doc.drawLine(50, 70, 545, 70, { color: [0.8, 0.8, 0.8] });
-  doc.drawText(`HMRC CT600A (2026/27) — UTR: ${data.utr} — Company: ${data.companyName}`, 50, 55, {
-    font: 'Helvetica',
-    size: 8,
-    color: [0.5, 0.5, 0.5]
-  });
-  doc.drawText('Page 2 of 2', 545, 55, {
-    font: 'Helvetica',
-    size: 8,
-    color: [0.5, 0.5, 0.5],
-    align: 'right'
-  });
+  doc.drawRunningFooter(3, 3, data.companyNumber);
 
-  return doc.build();
+  return await doc.toBuffer();
 }

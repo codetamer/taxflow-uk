@@ -203,8 +203,10 @@ test('generateFrs105Ixbrl embeds watermark when requested and omits when not', (
   assert.ok(!finalIxbrl.includes('DRAFT — NOT FOR SUBMISSION'));
 });
 
+import { extractText } from 'unpdf';
+
 // 3. Statutory PDF Generation Suite Testing
-test('generateAccountsPdf produces valid ISO 32000-1 PDF Buffer with draft watermark', () => {
+test('generateAccountsPdf produces valid ISO 32000-1 PDF Buffer with draft watermark', async () => {
   const accountsData = {
     companyName: 'DROPLOGICX LTD',
     companyNumber: '15152081',
@@ -228,16 +230,18 @@ test('generateAccountsPdf produces valid ISO 32000-1 PDF Buffer with draft water
     directorsLoanAdvancePence: 500000
   };
 
-  const pdfBuffer = generateAccountsPdf(accountsData, { isDraft: true });
+  const pdfBuffer = await generateAccountsPdf(accountsData, { isDraft: true });
   assert.ok(Buffer.isBuffer(pdfBuffer));
-  const pdfString = pdfBuffer.toString('utf-8');
-  assert.ok(pdfString.startsWith('%PDF-1.4'));
-  assert.ok(pdfString.includes('%%EOF'));
-  assert.ok(pdfString.includes('DROPLOGICX LTD'));
-  assert.ok(pdfString.includes('DRAFT - FOR REVIEW ONLY'));
+  assert.ok(pdfBuffer.subarray(0, 4).toString().startsWith('%PDF'));
+  assert.ok(pdfBuffer.length > 2000);
+
+  const { text } = await extractText(new Uint8Array(pdfBuffer));
+  const fullText = text.join(' ');
+  assert.ok(fullText.includes('DROPLOGICX LTD'));
+  assert.ok(fullText.includes('DRAFT - FOR REVIEW ONLY'));
 });
 
-test('generateCt600Pdf produces official HMRC box-numbered PDF with s455 loan schedule', () => {
+test('generateCt600Pdf produces official HMRC box-numbered PDF with s455 loan schedule', async () => {
   const ct600Data = {
     companyName: 'DROPLOGICX LTD',
     companyNumber: '15152081',
@@ -267,20 +271,22 @@ test('generateCt600Pdf produces official HMRC box-numbered PDF with s455 loan sc
         advancePence: 500000,
         repaidPence: 0,
         outstandingPence: 500000,
-        s455Rate: 0.3575,
+        s455Rate: 35.75,
         s455TaxPence: 178750
       }
     ]
   };
 
-  const pdfBuffer = generateCt600Pdf(ct600Data, { isDraft: true });
+  const pdfBuffer = await generateCt600Pdf(ct600Data, { isDraft: true });
   assert.ok(Buffer.isBuffer(pdfBuffer));
-  const pdfString = pdfBuffer.toString('utf-8');
-  assert.ok(pdfString.startsWith('%PDF-1.4'));
-  assert.ok(pdfString.includes('%%EOF'));
-  assert.ok(pdfString.includes('1234567890'));
-  assert.ok(pdfString.includes('CT600A'));
-  assert.ok(pdfString.includes('DRAFT - NOT FOR FILING'));
+  assert.ok(pdfBuffer.subarray(0, 4).toString().startsWith('%PDF'));
+  assert.ok(pdfBuffer.length > 2000);
+
+  const { text } = await extractText(new Uint8Array(pdfBuffer));
+  const fullText = text.join(' ');
+  assert.ok(fullText.includes('1234567890'));
+  assert.ok(fullText.includes('CT600A'));
+  assert.ok(fullText.includes('DRAFT - NOT FOR FILING'));
 });
 
 // 4. Inbound iXBRL Parser Testing

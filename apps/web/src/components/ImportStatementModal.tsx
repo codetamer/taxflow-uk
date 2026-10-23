@@ -24,8 +24,10 @@ export function ImportStatementModal({
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [parsedSummary, setParsedSummary] = useState<{
+    format: 'pdf' | 'csv';
     bankOrType: string;
     transactionCount: number;
+    pageCount?: number;
     turnoverPence: number;
     expensesPence: number;
     capitalAdditionsPence: number;
@@ -46,64 +48,55 @@ export function ImportStatementModal({
     }
   };
 
-  const processCsvFile = async (file: File) => {
+  const processFile = async (file: File) => {
     setLoading(true);
     setError(null);
     setParsedSummary(null);
 
     try {
-      const text = await file.text();
-      const isTrialBalance = text.toLowerCase().includes('debit') && text.toLowerCase().includes('credit');
-      const mode = isTrialBalance ? 'trial_balance' : 'bank';
+      const formData = new FormData();
+      formData.append('file', file);
 
       const res = await fetch('/api/ingest', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ csvContent: text, mode })
+        body: formData
       });
 
       const data = await res.json();
       if (!res.ok || !data.success) {
-        throw new Error(data.error || 'Failed to parse CSV file');
+        throw new Error(data.error || 'Failed to parse financial document');
       }
 
       if (data.type === 'trial_balance') {
         const tb = data.result;
+        const s = tb.frs105Summary || tb;
         setParsedSummary({
-          bankOrType: 'Trial Balance CSV',
-          transactionCount: tb.rows?.length || 0,
-          turnoverPence: tb.turnoverPence || 0,
-          expensesPence: (tb.costOfSalesPence || 0) + (tb.otherChargesPence || 0),
-          capitalAdditionsPence: tb.tangibleFixedAssetsPence || 0,
-          netCashPence: tb.cashAtBankPence || 0
+          format: data.format || 'csv',
+          bankOrType: data.format === 'pdf' ? 'Trial Balance (PDF Nominal Ledger)' : 'Trial Balance (CSV)',
+          transactionCount: tb.lines?.length || tb.rows?.length || 0,
+          pageCount: data.pageCount,
+          turnoverPence: s.turnoverPence || 0,
+          expensesPence: (s.costOfSalesPence || 0) + (s.otherChargesPence || 0),
+          capitalAdditionsPence: s.tangibleFixedAssetsPence || 0,
+          netCashPence: s.cashAtBankPence || 0
         });
       } else {
         const norm = data.result;
-        // Group transactions by category
-        let turnoverPence = 0;
-        let expensesPence = 0;
-        let capitalAdditionsPence = 0;
-
-        for (const tx of norm.transactions || []) {
-          if (tx.amountPence > 0) {
-            turnoverPence += tx.amountPence;
-          } else {
-            const absAmount = Math.abs(tx.amountPence);
-            if (tx.suggestedCategory === 'CAPITAL_ASSETS') {
-              capitalAdditionsPence += absAmount;
-            } else {
-              expensesPence += absAmount;
-            }
-          }
-        }
+        const txCount = norm.importedTransactions?.length ?? (norm.transactions?.length || 0);
+        const turnover = norm.totalInflowPence ?? (norm.totalCreditsPence || 0);
+        const expenses = norm.totalOutflowPence ?? (norm.totalDebitsPence || 0);
+        const capital = norm.capitalAssetTotalPence || 0;
+        const netCash = norm.netCashFlowPence ?? (norm.netMovementPence || (turnover - expenses));
 
         setParsedSummary({
-          bankOrType: norm.detectedBank || 'UK Bank Statement',
-          transactionCount: norm.transactions?.length || 0,
-          turnoverPence,
-          expensesPence,
-          capitalAdditionsPence,
-          netCashPence: turnoverPence - expensesPence - capitalAdditionsPence
+          format: data.format || 'pdf',
+          bankOrType: `${data.detectedBank || norm.detectedBank || 'UK'} Bank Statement (${data.format?.toUpperCase() || 'PDF'})`,
+          transactionCount: txCount,
+          pageCount: data.pageCount,
+          turnoverPence: turnover,
+          expensesPence: expenses,
+          capitalAdditionsPence: capital,
+          netCashPence: netCash
         });
       }
     } catch (err: any) {
@@ -119,13 +112,13 @@ export function ImportStatementModal({
     setDragActive(false);
 
     if (e.dataTransfer.files && e.dataTransfer.files[0]) {
-      processCsvFile(e.dataTransfer.files[0]);
+      processFile(e.dataTransfer.files[0]);
     }
   };
 
   const handleFileInput = (e: React.ChangeEvent<HTMLInputElement>) => {
     if (e.target.files && e.target.files[0]) {
-      processCsvFile(e.target.files[0]);
+      processFile(e.target.files[0]);
     }
   };
 
@@ -161,7 +154,7 @@ export function ImportStatementModal({
                 Import Bank Statement or Trial Balance
               </h3>
               <p className="text-xs text-slate-300">
-                Supports Monzo, Starling, Revolut, Barclays, Lloyds, and CSV Trial Balances
+                Supports Monzo, Starling, Revolut, Barclays, Lloyds, HSBC, NatWest &amp; Xero / QuickBooks PDFs &amp; CSVs
               </p>
             </div>
           </div>
@@ -191,7 +184,7 @@ export function ImportStatementModal({
               <input
                 ref={fileInputRef}
                 type="file"
-                accept=".csv,.txt"
+                accept=".pdf,.csv,.txt"
                 className="hidden"
                 onChange={handleFileInput}
               />
@@ -203,10 +196,10 @@ export function ImportStatementModal({
                 )}
               </div>
               <p className="text-sm font-semibold text-slate-800">
-                {loading ? 'Analyzing CSV & Categorizing Transactions...' : 'Click to upload or drag & drop bank export'}
+                {loading ? 'Analyzing PDF / CSV & Categorizing Transactions...' : 'Click to upload or drag & drop PDF or CSV export'}
               </p>
               <p className="text-xs text-slate-500 mt-1 max-w-sm mx-auto">
-                Automatic SHA-256 deduplication and tax-disallowable expense tagging.
+                Automatic optical text extraction, SHA-256 deduplication, and tax-disallowable expense tagging.
               </p>
             </div>
           )}
@@ -227,7 +220,7 @@ export function ImportStatementModal({
                   <span>Successfully Ingested: {parsedSummary.bankOrType}</span>
                 </span>
                 <span className="font-mono text-[11px] bg-emerald-100 text-emerald-900 px-2 py-0.5 rounded-full font-semibold">
-                  {parsedSummary.transactionCount} transactions parsed
+                  {parsedSummary.transactionCount} items {parsedSummary.pageCount ? `(${parsedSummary.pageCount} page${parsedSummary.pageCount > 1 ? 's' : ''})` : ''}
                 </span>
               </div>
 

@@ -1,8 +1,18 @@
 /**
- * TaxFlow UK Document Engine - Pure TypeScript PDF Document Builder
- * Generates ISO 32000-1 compliant vector PDF documents with zero external runtime dependencies.
- * Fast, deterministic, serverless-ready, and lightweight.
+ * TaxFlow UK Document Engine - Enterprise PDF Canvas & Layout Engine
+ * Generates ISO 32000-1 compliant vector PDFs using pdf-lib.
+ * Precise sub-pixel font measurement, zero syntax errors, and high-trust British FinTech styling.
  */
+
+import {
+  PDFDocument,
+  PDFFont,
+  PDFPage,
+  StandardFonts,
+  rgb,
+  degrees,
+  type RGB
+} from 'pdf-lib';
 
 export interface PageSize {
   width: number;
@@ -14,111 +24,118 @@ export const A4: PageSize = {
   height: 841.89
 };
 
-interface PdfObject {
-  id: number;
-  content: string;
-  stream?: string;
+export interface TextStyleOptions {
+  font?: 'regular' | 'bold' | 'oblique' | 'mono' | 'monoBold';
+  size?: number;
+  color?: RGB;
+  align?: 'left' | 'right' | 'center';
 }
 
-export class SimplePdfDocument {
-  private objects: PdfObject[] = [];
-  private pageObjectIds: number[] = [];
-  private currentPageStream: string[] = [];
-  private pageSize: PageSize;
+export interface BoxStyleOptions {
+  fillColor?: RGB;
+  borderColor?: RGB;
+  borderWidth?: number;
+}
+
+export interface TableColumn {
+  header: string;
+  width: number;
+  align: 'left' | 'right' | 'center';
+}
+
+export interface TableRow {
+  cells: string[];
+  isHeader?: boolean;
+  isTotal?: boolean;
+  isSubtotal?: boolean;
+  bold?: boolean;
+  italic?: boolean;
+  color?: RGB;
+  bgFill?: RGB;
+}
+
+export class EnterprisePdfDocument {
+  public pdfDoc!: PDFDocument;
+  public fontRegular!: PDFFont;
+  public fontBold!: PDFFont;
+  public fontOblique!: PDFFont;
+  public fontMono!: PDFFont;
+  public fontMonoBold!: PDFFont;
+
+  public currentPage!: PDFPage;
+  public pages: PDFPage[] = [];
+  public pageSize: PageSize = A4;
   private watermarkText?: string;
 
-  constructor(pageSize: PageSize = A4) {
-    this.pageSize = pageSize;
+  public static async create(pageSize: PageSize = A4): Promise<EnterprisePdfDocument> {
+    const doc = new EnterprisePdfDocument();
+    doc.pageSize = pageSize;
+    doc.pdfDoc = await PDFDocument.create();
+
+    // Embed standard Type1 vector fonts
+    doc.fontRegular = await doc.pdfDoc.embedFont(StandardFonts.Helvetica);
+    doc.fontBold = await doc.pdfDoc.embedFont(StandardFonts.HelveticaBold);
+    doc.fontOblique = await doc.pdfDoc.embedFont(StandardFonts.HelveticaOblique);
+    doc.fontMono = await doc.pdfDoc.embedFont(StandardFonts.Courier);
+    doc.fontMonoBold = await doc.pdfDoc.embedFont(StandardFonts.CourierBold);
+
+    return doc;
   }
 
   public setWatermark(text: string): void {
     this.watermarkText = text;
   }
 
-  public addPage(): void {
-    this.finalizeCurrentPage();
+  public addPage(): PDFPage {
+    this.currentPage = this.pdfDoc.addPage([this.pageSize.width, this.pageSize.height]);
+    this.pages.push(this.currentPage);
+    return this.currentPage;
   }
 
-  private finalizeCurrentPage(): void {
-    // If watermark enabled, draw it on the page
-    if (this.watermarkText) {
-      this.drawWatermark(this.watermarkText);
+  public getFont(type?: 'regular' | 'bold' | 'oblique' | 'mono' | 'monoBold'): PDFFont {
+    switch (type) {
+      case 'bold':
+        return this.fontBold;
+      case 'oblique':
+        return this.fontOblique;
+      case 'mono':
+        return this.fontMono;
+      case 'monoBold':
+        return this.fontMonoBold;
+      default:
+        return this.fontRegular;
     }
-
-    const streamContent = this.currentPageStream.join('\n');
-    const streamObjId = this.objects.length + 1;
-    this.objects.push({
-      id: streamObjId,
-      content: `<< /Length ${Buffer.byteLength(streamContent, 'utf-8')} >>\nstream\n${streamContent}\nendstream`
-    });
-
-    const pageObjId = this.objects.length + 1;
-    this.objects.push({
-      id: pageObjId,
-      content: `<< /Type /Page /Parent 2 0 R /MediaBox [0 0 ${this.pageSize.width} ${this.pageSize.height}] /Contents ${streamObjId} 0 R /Resources << /Font << /F1 3 0 R /F2 4 0 R /F3 5 0 R >> >> >>`
-    });
-
-    this.pageObjectIds.push(pageObjId);
-    this.currentPageStream = [];
   }
 
-  // Graphics and text commands
   public drawText(
     text: string,
     x: number,
     y: number,
-    options?: {
-      font?: 'Helvetica' | 'Helvetica-Bold' | 'Helvetica-Oblique';
-      size?: number;
-      color?: [number, number, number]; // [r, g, b] 0..1
-      align?: 'left' | 'right' | 'center';
-    }
+    options?: TextStyleOptions
   ): void {
-    const fontCode =
-      options?.font === 'Helvetica-Bold'
-        ? '/F2'
-        : options?.font === 'Helvetica-Oblique'
-        ? '/F3'
-        : '/F1';
+    if (!this.currentPage) this.addPage();
+
+    const font = this.getFont(options?.font);
     const size = options?.size || 10;
-    const color = options?.color || [0.1, 0.1, 0.1];
+    const color = options?.color || rgb(0.1, 0.1, 0.1);
+    const align = options?.align || 'left';
 
+    const textWidth = font.widthOfTextAtSize(text, size);
     let renderX = x;
-    const cleanText = text.replace(/\\/g, '\\\\').replace(/\(/g, '\\(').replace(/\)/g, '\\)');
 
-    // Estimate text width for alignment (average character width ~ 0.5 * size)
-    const estimatedWidth = cleanText.length * (size * 0.52);
-    if (options?.align === 'right') {
-      renderX = x - estimatedWidth;
-    } else if (options?.align === 'center') {
-      renderX = x - estimatedWidth / 2;
+    if (align === 'right') {
+      renderX = x - textWidth;
+    } else if (align === 'center') {
+      renderX = x - textWidth / 2;
     }
 
-    this.currentPageStream.push('BT');
-    this.currentPageStream.push(`${fontCode} ${size} Tf`);
-    this.currentPageStream.push(`${color[0]} ${color[1]} ${color[2]} rg`);
-    this.currentPageStream.push(`1 0 0 1 ${renderX.toFixed(2)} ${y.toFixed(2)} Tm`);
-    this.currentPageStream.push(`(${cleanText}) Tj`);
-    this.currentPageStream.push('ET');
-  }
-
-  public drawLine(
-    x1: number,
-    y1: number,
-    x2: number,
-    y2: number,
-    options?: { lineWidth?: number; color?: [number, number, number] }
-  ): void {
-    const width = options?.lineWidth || 0.75;
-    const color = options?.color || [0.7, 0.7, 0.7];
-
-    this.currentPageStream.push('q');
-    this.currentPageStream.push(`${color[0]} ${color[1]} ${color[2]} RG`);
-    this.currentPageStream.push(`${width} w`);
-    this.currentPageStream.push(`${x1.toFixed(2)} ${y1.toFixed(2)} m`);
-    this.currentPageStream.push(`${x2.toFixed(2)} ${y2.toFixed(2)} l`);
-    this.currentPageStream.push('S');
-    this.currentPageStream.push('Q');
+    this.currentPage.drawText(text, {
+      x: renderX,
+      y,
+      size,
+      font,
+      color
+    });
   }
 
   public drawRect(
@@ -126,131 +143,214 @@ export class SimplePdfDocument {
     y: number,
     width: number,
     height: number,
-    options?: {
-      fillColor?: [number, number, number];
-      strokeColor?: [number, number, number];
-      lineWidth?: number;
-    }
+    options?: BoxStyleOptions
   ): void {
-    this.currentPageStream.push('q');
-    if (options?.fillColor) {
-      this.currentPageStream.push(
-        `${options.fillColor[0]} ${options.fillColor[1]} ${options.fillColor[2]} rg`
-      );
-    }
-    if (options?.strokeColor) {
-      this.currentPageStream.push(
-        `${options.strokeColor[0]} ${options.strokeColor[1]} ${options.strokeColor[2]} RG`
-      );
-      this.currentPageStream.push(`${options.lineWidth || 1} w`);
-    }
+    if (!this.currentPage) this.addPage();
 
-    this.currentPageStream.push(`${x.toFixed(2)} ${y.toFixed(2)} ${width.toFixed(2)} ${height.toFixed(2)} re`);
-
-    if (options?.fillColor && options?.strokeColor) {
-      this.currentPageStream.push('B');
-    } else if (options?.fillColor) {
-      this.currentPageStream.push('f');
-    } else if (options?.strokeColor) {
-      this.currentPageStream.push('S');
-    }
-    this.currentPageStream.push('Q');
+    this.currentPage.drawRectangle({
+      x,
+      y,
+      width,
+      height,
+      color: options?.fillColor,
+      borderColor: options?.borderColor,
+      borderWidth: options?.borderWidth || 0
+    });
   }
 
-  private drawWatermark(text: string): void {
-    this.currentPageStream.push('q');
-    this.currentPageStream.push('0.85 0.85 0.85 rg'); // Very light grey
-    this.currentPageStream.push('/F2 32 Tf');
-    // Rotate 45 degrees: cos(45) ~ 0.7071, sin(45) ~ 0.7071
-    // Tm: [a b c d e f] -> [0.7071 0.7071 -0.7071 0.7071 x y]
-    const centerX = this.pageSize.width / 2 - 180;
-    const centerY = this.pageSize.height / 2 - 50;
-    this.currentPageStream.push('BT');
-    this.currentPageStream.push(`0.7071 0.7071 -0.7071 0.7071 ${centerX.toFixed(2)} ${centerY.toFixed(2)} Tm`);
-    this.currentPageStream.push(`(${text}) Tj`);
-    this.currentPageStream.push('ET');
-    this.currentPageStream.push('Q');
+  public drawLine(
+    x1: number,
+    y1: number,
+    x2: number,
+    y2: number,
+    options?: { color?: RGB; thickness?: number }
+  ): void {
+    if (!this.currentPage) this.addPage();
+
+    this.currentPage.drawLine({
+      start: { x: x1, y: y1 },
+      end: { x: x2, y: y2 },
+      color: options?.color || rgb(0.8, 0.8, 0.8),
+      thickness: options?.thickness || 1
+    });
   }
 
-  public build(): Buffer {
-    if (this.currentPageStream.length > 0) {
-      this.finalizeCurrentPage();
+  public drawTable(
+    startX: number,
+    startY: number,
+    columns: TableColumn[],
+    rows: TableRow[],
+    options?: {
+      rowHeight?: number;
+      headerBg?: RGB;
+      headerColor?: RGB;
+      zebraColor?: RGB;
+      borderColor?: RGB;
+    }
+  ): number {
+    const rowHeight = options?.rowHeight || 20;
+    const headerBg = options?.headerBg || rgb(0.95, 0.96, 0.98);
+    const headerColor = options?.headerColor || rgb(0.12, 0.23, 0.36);
+    const zebraColor = options?.zebraColor || rgb(0.98, 0.99, 1.0);
+    const borderColor = options?.borderColor || rgb(0.88, 0.9, 0.93);
+
+    const totalWidth = columns.reduce((acc, col) => acc + col.width, 0);
+    let currentY = startY;
+
+    // 1. Draw Table Header
+    this.drawRect(startX, currentY - rowHeight + 5, totalWidth, rowHeight, {
+      fillColor: headerBg,
+      borderColor,
+      borderWidth: 0.5
+    });
+
+    let colX = startX;
+    for (let c = 0; c < columns.length; c++) {
+      const col = columns[c];
+      const targetX = col.align === 'right' ? colX + col.width - 6 : col.align === 'center' ? colX + col.width / 2 : colX + 6;
+      this.drawText(col.header, targetX, currentY - rowHeight + 11, {
+        font: 'bold',
+        size: 8.5,
+        color: headerColor,
+        align: col.align
+      });
+      colX += col.width;
     }
 
-    const header = '%PDF-1.4\n%âãÏÓ\n';
-    let output = header;
-    const offsets: number[] = [];
+    currentY -= rowHeight;
 
-    // Obj 1: Catalog
-    // Obj 2: Pages Root
-    // Obj 3: Font Helvetica
-    // Obj 4: Font Helvetica-Bold
-    // Obj 5: Font Helvetica-Oblique
-    const rootPagesId = 2;
-    const catalogId = 1;
+    // 2. Draw Table Rows
+    for (let r = 0; r < rows.length; r++) {
+      const row = rows[r];
 
-    const baseObjects: { id: number; content: string }[] = [
-      { id: catalogId, content: `<< /Type /Catalog /Pages ${rootPagesId} 0 R >>` },
-      {
-        id: rootPagesId,
-        content: `<< /Type /Pages /Kids [${this.pageObjectIds.map((id) => `${id} 0 R`).join(' ')}] /Count ${this.pageObjectIds.length} >>`
-      },
-      { id: 3, content: '<< /Type /Font /Subtype /Type1 /BaseFont /Helvetica >>' },
-      { id: 4, content: '<< /Type /Font /Subtype /Type1 /BaseFont /Helvetica-Bold >>' },
-      { id: 5, content: '<< /Type /Font /Subtype /Type1 /BaseFont /Helvetica-Oblique >>' }
-    ];
-
-    // Renumber dynamic objects to start after base objects (6 onwards)
-    const allObjects: { id: number; content: string }[] = [...baseObjects];
-    const offsetMap = new Map<number, number>();
-    let nextId = 6;
-
-    for (const obj of this.objects) {
-      offsetMap.set(obj.id, nextId);
-      nextId++;
-    }
-
-    // Replace old IDs in page objects
-    for (const obj of this.objects) {
-      let content = obj.content;
-      for (const [oldId, newId] of offsetMap.entries()) {
-        const regex = new RegExp(`\\b${oldId} 0 R\\b`, 'g');
-        content = content.replace(regex, `${newId} 0 R`);
+      // Zebra striping
+      if (row.bgFill) {
+        this.drawRect(startX, currentY - rowHeight + 5, totalWidth, rowHeight, {
+          fillColor: row.bgFill
+        });
+      } else if (r % 2 === 1 && !row.isTotal) {
+        this.drawRect(startX, currentY - rowHeight + 5, totalWidth, rowHeight, {
+          fillColor: zebraColor
+        });
       }
-      allObjects.push({ id: offsetMap.get(obj.id)!, content });
+
+      // Top rule for totals
+      if (row.isTotal || row.isSubtotal) {
+        this.drawLine(startX, currentY + 5, startX + totalWidth, currentY + 5, {
+          color: rgb(0.4, 0.4, 0.4),
+          thickness: 0.75
+        });
+      }
+
+      colX = startX;
+      for (let c = 0; c < columns.length; c++) {
+        const col = columns[c];
+        const val = row.cells[c] || '';
+        const targetX = col.align === 'right' ? colX + col.width - 6 : col.align === 'center' ? colX + col.width / 2 : colX + 6;
+
+        this.drawText(val, targetX, currentY - rowHeight + 11, {
+          font: row.bold || row.isTotal ? 'bold' : row.italic ? 'oblique' : 'regular',
+          size: row.isTotal ? 9.5 : 8.5,
+          color: row.color || (row.isTotal ? rgb(0.05, 0.1, 0.15) : rgb(0.2, 0.2, 0.2)),
+          align: col.align
+        });
+
+        colX += col.width;
+      }
+
+      // Bottom double rule for total
+      if (row.isTotal) {
+        this.drawLine(startX, currentY - rowHeight + 5, startX + totalWidth, currentY - rowHeight + 5, {
+          color: rgb(0.2, 0.2, 0.2),
+          thickness: 1
+        });
+        this.drawLine(startX, currentY - rowHeight + 3, startX + totalWidth, currentY - rowHeight + 3, {
+          color: rgb(0.2, 0.2, 0.2),
+          thickness: 1
+        });
+      }
+
+      currentY -= rowHeight;
     }
 
-    // Update Kids in Pages object
-    const pagesObj = allObjects[1];
-    if (pagesObj) {
-      pagesObj.content = `<< /Type /Pages /Kids [${this.pageObjectIds
-        .map((oldId) => `${offsetMap.get(oldId)} 0 R`)
-        .join(' ')}] /Count ${this.pageObjectIds.length} >>`;
+    return currentY;
+  }
+
+  public drawRunningHeader(title: string, subtitle?: string): void {
+    if (!this.currentPage) return;
+    const topY = this.pageSize.height - 35;
+
+    // Header divider rule
+    this.drawLine(45, topY - 10, this.pageSize.width - 45, topY - 10, {
+      color: rgb(0.85, 0.88, 0.92),
+      thickness: 0.75
+    });
+
+    this.drawText(title, 45, topY, {
+      font: 'bold',
+      size: 8.5,
+      color: rgb(0.3, 0.35, 0.4)
+    });
+
+    if (subtitle) {
+      this.drawText(subtitle, this.pageSize.width - 45, topY, {
+        font: 'regular',
+        size: 8,
+        color: rgb(0.5, 0.55, 0.6),
+        align: 'right'
+      });
     }
+  }
 
-    // Sort objects by ID
-    allObjects.sort((a, b) => a.id - b.id);
+  public drawRunningFooter(pageIndex: number, totalPages: number, companyNumber?: string): void {
+    if (!this.currentPage) return;
+    const bottomY = 40;
 
-    // Build xref table
-    const xrefOffsets: number[] = [];
-    xrefOffsets.push(0); // 0th entry
+    // Footer divider rule
+    this.drawLine(45, bottomY + 12, this.pageSize.width - 45, bottomY + 12, {
+      color: rgb(0.85, 0.88, 0.92),
+      thickness: 0.75
+    });
 
-    for (const obj of allObjects) {
-      xrefOffsets[obj.id] = Buffer.byteLength(output, 'utf-8');
-      output += `${obj.id} 0 obj\n${obj.content}\nendobj\n`;
+    const crnText = companyNumber ? `Company Registration No. ${companyNumber} (England and Wales)` : 'Statutory Return';
+    this.drawText(crnText, 45, bottomY, {
+      font: 'regular',
+      size: 8,
+      color: rgb(0.5, 0.55, 0.6)
+    });
+
+    this.drawText(`Page ${pageIndex} of ${totalPages}`, this.pageSize.width - 45, bottomY, {
+      font: 'regular',
+      size: 8,
+      color: rgb(0.5, 0.55, 0.6),
+      align: 'right'
+    });
+  }
+
+  public applyWatermarkToAllPages(): void {
+    if (!this.watermarkText) return;
+
+    for (const page of this.pages) {
+      const centerX = this.pageSize.width / 2;
+      const centerY = this.pageSize.height / 2;
+      const size = 34;
+      const textWidth = this.fontBold.widthOfTextAtSize(this.watermarkText, size);
+
+      page.drawText(this.watermarkText, {
+        x: centerX - textWidth / 2.5,
+        y: centerY - 40,
+        size,
+        font: this.fontBold,
+        color: rgb(0.7, 0.73, 0.78),
+        opacity: 0.12,
+        rotate: degrees(45)
+      });
     }
+  }
 
-    const xrefStart = Buffer.byteLength(output, 'utf-8');
-    output += `xref\n0 ${allObjects.length + 1}\n`;
-    output += '0000000000 65535 f \n';
-    for (let i = 1; i <= allObjects.length; i++) {
-      const offset = xrefOffsets[i] || 0;
-      output += `${offset.toString().padStart(10, '0')} 00000 n \n`;
-    }
-
-    output += `trailer\n<< /Size ${allObjects.length + 1} /Root ${catalogId} 0 R >>\nstartxref\n${xrefStart}\n%%EOF\n`;
-
-    return Buffer.from(output, 'utf-8');
+  public async toBuffer(): Promise<Buffer> {
+    this.applyWatermarkToAllPages();
+    const pdfBytes = await this.pdfDoc.save();
+    return Buffer.from(pdfBytes);
   }
 }
-

@@ -172,7 +172,7 @@ export async function GET(req: NextRequest) {
       }
     }
 
-    const pdfBuffer = generateAccountsPdf(accountsData, { isDraft });
+    const pdfBuffer = await generateAccountsPdf(accountsData, { isDraft });
 
     return new NextResponse(new Uint8Array(pdfBuffer), {
       status: 200,

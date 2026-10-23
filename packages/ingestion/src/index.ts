@@ -8,4 +8,5 @@ export * from './bank_dialects.ts';
 export * from './categorizer.ts';
 export * from './bank_normalizer.ts';
 export * from './trial_balance.ts';
+export * from './pdf_extractor.ts';
 

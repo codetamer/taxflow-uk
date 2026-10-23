@@ -174,7 +174,7 @@ test('@taxflow/web: Core API & Service Integration Suite', async (t) => {
     assert.equal(res.totalTaxableProfitsPence, 3190000);
   });
 
-  await t.test('Statutory Documents Generation: Free Watermarked Drafts', () => {
+  await t.test('Statutory Documents Generation: Free Watermarked Drafts', async () => {
     const ixbrl = generateFrs105Ixbrl(sampleShieldInput, {
       includeProfitAndLoss: true,
       watermarkText: 'DRAFT — NOT FOR SUBMISSION'
@@ -182,7 +182,7 @@ test('@taxflow/web: Core API & Service Integration Suite', async (t) => {
     assert.ok(ixbrl.includes('DRAFT — NOT FOR SUBMISSION'));
     assert.ok(ixbrl.includes('15152081'));
 
-    const pdfBuf = generateAccountsPdf({
+    const pdfBuf = await generateAccountsPdf({
       companyName: 'DROPLOGICX LTD',
       companyNumber: '15152081',
       registeredOfficeAddress: '71-75 Shelton Street, London, WC2H 9JQ',
@@ -208,7 +208,7 @@ test('@taxflow/web: Core API & Service Integration Suite', async (t) => {
     assert.ok(pdfBuf.length > 500);
     assert.equal(pdfBuf.subarray(0, 4).toString(), '%PDF');
 
-    const ct600Buf = generateCt600Pdf({
+    const ct600Buf = await generateCt600Pdf({
       companyName: 'DROPLOGICX LTD',
       companyNumber: '15152081',
       utr: '1234567890',
