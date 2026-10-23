@@ -218,34 +218,73 @@ export default function ShieldDashboardPage() {
   const getScenarioInput = (scenario: typeof activeScenario): ShieldInput => {
     if (scenario === 'user_filing' && userFilingData?.formData) {
       const f = userFilingData.formData;
+      const archetype: 'TRADING' | 'PROPERTY' | 'DORMANT' | 'MIXED_INCOME' =
+        f.companyType === 'DORMANT'
+          ? 'DORMANT'
+          : f.companyType === 'PROPERTY'
+          ? 'PROPERTY'
+          : f.companyType === 'MIXED'
+          ? 'MIXED_INCOME'
+          : 'TRADING';
+
+      const isDormant = archetype === 'DORMANT';
+      const isProperty = archetype === 'PROPERTY';
+      const isMixed = archetype === 'MIXED_INCOME';
+
       const periodStart = f.periodStart || '2025-10-01';
       const periodEnd = f.periodEnd || '2026-09-30';
-      const turnoverPence = Math.round((f.turnover ?? 100000) * 100);
-      const costOfSalesPence = Math.round((f.costOfSales ?? 20000) * 100);
-      const otherChargesPence = Math.round((f.otherCharges ?? 48100) * 100);
-      const clientEntertainingPence = Math.round((f.disallowables ?? 3100) * 100);
-      const fixedAssetsPence = Math.round((f.fixedAssets ?? 15000) * 100);
-      const debtorsPence = Math.round((f.debtors ?? 10000) * 100);
-      const cashPence = Math.round((f.cashAtBank ?? 33400) * 100);
-      const creditorsUnderOneYearPence = Math.round((f.creditorsUnderOneYear ?? 25000) * 100);
-      const shareCapitalPence = Math.round((f.shareCapital ?? 100) * 100);
-      const openingRetainedEarningsPence = Math.round((f.openingRetainedEarnings ?? 15200) * 100);
-      const dividendsPaidPence = Math.round((f.dividendsPaid ?? 10000) * 100);
 
-      const operatingProfitPence = turnoverPence - costOfSalesPence - otherChargesPence;
-      const capitalAdditionsPence = Math.round((f.capitalAdditions ?? f.fixedAssets ?? 15000) * 100);
-      const aiaClaimedPence = Math.round((f.aiaClaimed ?? 15000) * 100);
+      const turnoverPence = isDormant
+        ? 0
+        : isProperty
+        ? Math.round((f.propertyRentalIncome ?? 36000) * 100)
+        : Math.round((f.turnover ?? 100000) * 100);
+
+      const costOfSalesPence = isDormant || isProperty ? 0 : Math.round((f.costOfSales ?? 20000) * 100);
+
+      const propertyExpensesPence = isProperty || isMixed ? Math.round((f.propertyAllowableExpenses ?? 6000) * 100) : 0;
+      const propertyMortgageInterestPence = isProperty || isMixed ? Math.round((f.propertyMortgageInterest ?? 12000) * 100) : 0;
+
+      const otherChargesPence = isDormant
+        ? 0
+        : isProperty
+        ? propertyExpensesPence + propertyMortgageInterestPence
+        : Math.round((f.otherCharges ?? 48100) * 100);
+
+      const clientEntertainingPence = isDormant || isProperty ? 0 : Math.round((f.disallowables ?? 3100) * 100);
+
+      const shareCapitalPence = Math.round((f.shareCapital ?? 100) * 100);
+      const fixedAssetsPence = isDormant ? 0 : Math.round((f.fixedAssets ?? 15000) * 100);
+      const debtorsPence = isDormant ? 0 : Math.round((f.debtors ?? 10000) * 100);
+      const cashPence = isDormant ? shareCapitalPence : Math.round((f.cashAtBank ?? 33400) * 100);
+      const creditorsUnderOneYearPence = isDormant ? 0 : Math.round((f.creditorsUnderOneYear ?? 25000) * 100);
+      const openingRetainedEarningsPence = isDormant ? 0 : Math.round((f.openingRetainedEarnings ?? 15200) * 100);
+      const dividendsPaidPence = isDormant ? 0 : Math.round((f.dividendsPaid ?? 10000) * 100);
+
+      const operatingProfitPence = isDormant ? 0 : turnoverPence - costOfSalesPence - otherChargesPence;
+      const capitalAdditionsPence = isDormant ? 0 : Math.round((f.capitalAdditions ?? f.fixedAssets ?? 15000) * 100);
+      const aiaClaimedPence = isDormant ? 0 : Math.round((f.aiaClaimed ?? 15000) * 100);
       const mainPoolBalancePence = Math.max(0, capitalAdditionsPence - aiaClaimedPence);
 
-      const taxableProfitPence = Math.max(0, operatingProfitPence + clientEntertainingPence - aiaClaimedPence);
-      const ctPayablePence = Math.round(taxableProfitPence * 0.19);
-      const netProfitAfterTaxPence = operatingProfitPence - ctPayablePence;
-      const closingRetainedEarningsPence = openingRetainedEarningsPence + netProfitAfterTaxPence - dividendsPaidPence;
+      const taxableProfitPence = isDormant
+        ? 0
+        : isProperty
+        ? Math.max(0, turnoverPence - otherChargesPence)
+        : Math.max(0, operatingProfitPence + clientEntertainingPence - aiaClaimedPence);
+
+      const ctPayablePence = isDormant ? 0 : Math.round(taxableProfitPence * 0.19);
+      const netProfitAfterTaxPence = isDormant ? 0 : operatingProfitPence - ctPayablePence;
+      const closingRetainedEarningsPence = isDormant
+        ? 0
+        : openingRetainedEarningsPence + netProfitAfterTaxPence - dividendsPaidPence;
 
       const statutoryWda = mainPoolWdaRatePct({ start: periodStart, end: periodEnd });
 
-      const outstandingPence = Math.max(0, Math.round(((f.directorLoanAdvance || 0) - (f.directorLoanRepaidAmount || 0)) * 100));
-      const directorLoansList = (f.directorLoanAdvance && f.directorLoanAdvance > 0)
+      const outstandingPence = isDormant
+        ? 0
+        : Math.max(0, Math.round(((f.directorLoanAdvance || 0) - (f.directorLoanRepaidAmount || 0)) * 100));
+
+      const directorLoansList = (!isDormant && f.directorLoanAdvance && f.directorLoanAdvance > 0)
         ? [{
             id: 'loan_user_1',
             madeOn: f.directorLoanDate || periodStart,
@@ -257,7 +296,7 @@ export default function ShieldDashboardPage() {
         entity: {
           crn: f.crn || userFilingData.company?.crn || '15152081',
           companyName: f.companyName || userFilingData.company?.companyName || 'DROPLOGICX LTD',
-          companyType: 'TRADING',
+          companyType: archetype,
           utr: f.utr || '1234567890',
           isCloseCompany: true,
           isCharityOrPlc: false,
@@ -296,11 +335,11 @@ export default function ShieldDashboardPage() {
           creditorsOverOneYearPence: 0,
           provisionsPence: 0,
           shareCapitalPence,
-          employeeCount: f.averageEmployees || 1
+          employeeCount: isDormant ? 0 : (f.averageEmployees || 1)
         },
         tax: {
-          tradingProfitPence: taxableProfitPence,
-          nonTradingIncomePence: 0,
+          tradingProfitPence: isProperty ? 0 : taxableProfitPence,
+          nonTradingIncomePence: isProperty ? taxableProfitPence : 0,
           exemptDistributionsPence: 0,
           ttpPence: taxableProfitPence,
           augmentedProfitsPence: taxableProfitPence,

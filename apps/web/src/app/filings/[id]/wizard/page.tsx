@@ -406,21 +406,6 @@ function WizardContent() {
     }
   }, [searchParams]);
 
-  const handleApplyReconcile = (target: 'cash' | 'retainedEarnings' | 'creditors') => {
-    if (target === 'cash') {
-      const neededCash = totalEquity - activeFixedAssets - activeDebtors + activeCreditorsUnderOneYear;
-      setForm((prev) => ({ ...prev, cashAtBank: Math.max(0, neededCash) }));
-    } else if (target === 'retainedEarnings') {
-      const currentNetProfit = operatingProfit - taxPayable;
-      const neededOpening = netAssets - form.shareCapital - currentNetProfit + form.dividendsPaid;
-      setForm((prev) => ({ ...prev, openingRetainedEarnings: neededOpening }));
-    } else if (target === 'creditors') {
-      const totalCurrentAssets = activeDebtors + activeCashAtBank;
-      const neededCreditors = activeFixedAssets + totalCurrentAssets - totalEquity;
-      setForm((prev) => ({ ...prev, creditorsUnderOneYear: Math.max(0, neededCreditors) }));
-    }
-  };
-
   const handleApplyImportedFigures = (figures: {
     turnover?: number;
     costOfSales?: number;
@@ -637,6 +622,21 @@ function WizardContent() {
   const netAssets = activeFixedAssets + netCurrentAssets;
   const totalEquity = form.shareCapital + closingRetainedEarnings;
   const balanceSheetVariance = isDormant ? 0 : netAssets - totalEquity;
+
+  const handleApplyReconcile = (target: 'cash' | 'retainedEarnings' | 'creditors') => {
+    if (target === 'cash') {
+      const neededCash = totalEquity - activeFixedAssets - activeDebtors + activeCreditorsUnderOneYear;
+      setForm((prev) => ({ ...prev, cashAtBank: Math.max(0, neededCash) }));
+    } else if (target === 'retainedEarnings') {
+      const currentNetProfit = operatingProfit - taxPayable;
+      const neededOpening = netAssets - form.shareCapital - currentNetProfit + form.dividendsPaid;
+      setForm((prev) => ({ ...prev, openingRetainedEarnings: neededOpening }));
+    } else if (target === 'creditors') {
+      const totalCurrentAssets = activeDebtors + activeCashAtBank;
+      const neededCreditors = activeFixedAssets + totalCurrentAssets - totalEquity;
+      setForm((prev) => ({ ...prev, creditorsUnderOneYear: Math.max(0, neededCreditors) }));
+    }
+  };
 
   // 7. Validation Rules
   const isUtrValid = /^\d{10}$/.test(form.utr.trim());

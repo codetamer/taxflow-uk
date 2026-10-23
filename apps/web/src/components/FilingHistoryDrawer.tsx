@@ -51,6 +51,18 @@ export function FilingHistoryDrawer({
   if (!isOpen || !filing) return null;
 
   const isFiled = filing.status === 'ACCEPTED' || filing.status === 'SUBMITTED';
+  const isDormant = filing.companyType === 'DORMANT';
+
+  const formatAccounting = (val: number | undefined): string => {
+    if (val === undefined || isNaN(val)) return '£0.00';
+    if (val < 0) {
+      return `(£${Math.abs(val).toLocaleString('en-GB', { minimumFractionDigits: 2, maximumFractionDigits: 2 })})`;
+    }
+    return `£${val.toLocaleString('en-GB', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
+  };
+
+  const turnoverVal = isDormant ? (filing.turnover ?? 0) : (filing.turnover ?? 100000);
+  const taxPayableVal = isDormant ? (filing.taxPayable ?? 0) : (filing.taxPayable ?? 6061);
 
   return (
     <div className="fixed inset-0 z-50 overflow-hidden animate-in fade-in duration-200">
@@ -131,13 +143,13 @@ export function FilingHistoryDrawer({
                 <div className="py-1.5 flex justify-between">
                   <span className="text-slate-500">Turnover / Revenue (Box 145):</span>
                   <span className="font-mono font-bold text-slate-900">
-                    £{(filing.turnover ?? 100000).toLocaleString('en-GB', { minimumFractionDigits: 2 })}
+                    {formatAccounting(turnoverVal)}
                   </span>
                 </div>
                 <div className="py-1.5 flex justify-between">
                   <span className="text-slate-500">Corporation Tax Payable:</span>
                   <span className="font-mono font-bold text-emerald-700">
-                    £{(filing.taxPayable ?? 6061).toLocaleString('en-GB', { minimumFractionDigits: 2 })}
+                    {formatAccounting(taxPayableVal)}
                   </span>
                 </div>
                 <div className="py-1.5 flex justify-between">

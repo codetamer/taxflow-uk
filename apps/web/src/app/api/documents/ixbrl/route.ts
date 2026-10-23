@@ -2,6 +2,16 @@ import { NextRequest, NextResponse } from 'next/server';
 import { generateFrs105Ixbrl } from '@taxflow/doc-engine';
 import type { ShieldInput } from '@taxflow/shield';
 
+const toPence = (penceVal: any, poundsVal: any, fallback: number = 0): number => {
+  if (penceVal !== undefined && penceVal !== null && !isNaN(Number(penceVal))) {
+    return Math.round(Number(penceVal));
+  }
+  if (poundsVal !== undefined && poundsVal !== null && !isNaN(Number(poundsVal))) {
+    return Math.round(Number(poundsVal) * 100);
+  }
+  return fallback;
+};
+
 export async function GET(req: NextRequest) {
   try {
     const { searchParams } = new URL(req.url);
@@ -49,7 +59,7 @@ export async function GET(req: NextRequest) {
         creditorsOverOneYearPence: 0,
         provisionsPence: 0,
         shareCapitalPence: 10000,
-        employeeCount: 3
+        employeeCount: 1
       },
       tax: {
         tradingProfitPence: 3190000,
@@ -89,36 +99,95 @@ export async function GET(req: NextRequest) {
             try { tb = JSON.parse(filing.trialBalanceJson); } catch {}
           }
 
-          const turnover = tb.turnoverPence ?? calc.turnoverPence ?? defaultInput.ledger.turnoverPence;
-          const costOfSales = tb.costOfSalesPence ?? calc.costOfSalesPence ?? defaultInput.ledger.costOfSalesPence;
-          const otherCharges = tb.otherChargesPence ?? calc.otherChargesPence ?? defaultInput.ledger.otherChargesPence;
-          const taxOnProfit = calc.taxPayablePence ?? defaultInput.ledger.taxExpensePence;
-          const profitOrLoss = turnover - costOfSales - otherCharges - taxOnProfit;
+          const archetype = tb.companyType || company?.companyType || 'TRADING';
+          const isDormant = archetype === 'DORMANT';
+          const isProperty = archetype === 'PROPERTY';
 
-          shieldInput = {
-            ...defaultInput,
-            entity: {
-              ...defaultInput.entity,
-              companyName: company?.name || defaultInput.entity.companyName,
-              crn: company?.crn || defaultInput.entity.crn,
-              utr: company?.utr || defaultInput.entity.utr
-            },
-            period: {
-              ...defaultInput.period,
-              periodStart: filing.periodStart || defaultInput.period.periodStart,
-              periodEnd: filing.periodEnd || defaultInput.period.periodEnd,
-              directorDeclarationName: filing.directorName || defaultInput.period.directorDeclarationName,
-              accountsApprovalDate: filing.directorApprovalDate || defaultInput.period.accountsApprovalDate
-            },
-            ledger: {
-              ...defaultInput.ledger,
-              turnoverPence: turnover,
-              costOfSalesPence: costOfSales,
-              otherChargesPence: otherCharges,
-              taxExpensePence: taxOnProfit,
-              netProfitAfterTaxPence: profitOrLoss
-            }
-          };
+          const shareCapital = toPence(tb.shareCapitalPence, tb.shareCapital, defaultInput.ledger.shareCapitalPence);
+
+          if (isDormant) {
+            shieldInput = {
+              ...defaultInput,
+              entity: {
+                ...defaultInput.entity,
+                companyName: company?.name || tb.companyName || defaultInput.entity.companyName,
+                crn: company?.crn || tb.crn || defaultInput.entity.crn,
+                companyType: 'DORMANT',
+                utr: company?.utr || tb.utr || defaultInput.entity.utr
+              },
+              period: {
+                ...defaultInput.period,
+                periodStart: filing.periodStart || tb.periodStart || defaultInput.period.periodStart,
+                periodEnd: filing.periodEnd || tb.periodEnd || defaultInput.period.periodEnd,
+                directorDeclarationName: filing.directorName || tb.directorName || defaultInput.period.directorDeclarationName,
+                accountsApprovalDate: filing.directorApprovalDate || defaultInput.period.accountsApprovalDate
+              },
+              ledger: {
+                ...defaultInput.ledger,
+                turnoverPence: 0,
+                costOfSalesPence: 0,
+                otherChargesPence: 0,
+                taxExpensePence: 0,
+                netProfitAfterTaxPence: 0,
+                fixedAssetsPence: 0,
+                debtorsPence: 0,
+                cashPence: shareCapital,
+                creditorsUnderOneYearPence: 0,
+                shareCapitalPence: shareCapital,
+                closingRetainedEarningsPence: 0,
+                employeeCount: 0
+              }
+            };
+          } else {
+            const turnover = isProperty
+              ? toPence(tb.propertyRentalIncomePence, tb.propertyRentalIncome, 3600000)
+              : toPence(tb.turnoverPence ?? calc.turnoverPence, tb.turnover, defaultInput.ledger.turnoverPence);
+            const costOfSales = isProperty
+              ? 0
+              : toPence(tb.costOfSalesPence ?? calc.costOfSalesPence, tb.costOfSales, defaultInput.ledger.costOfSalesPence);
+            const otherCharges = isProperty
+              ? toPence(tb.propertyAllowableExpensesPence, tb.propertyAllowableExpenses, 600000) + toPence(tb.propertyMortgageInterestPence, tb.propertyMortgageInterest, 1200000)
+              : toPence(tb.otherChargesPence ?? calc.otherChargesPence, tb.otherCharges, defaultInput.ledger.otherChargesPence);
+            const taxOnProfit = calc.taxPayablePence ?? defaultInput.ledger.taxExpensePence;
+            const profitOrLoss = turnover - costOfSales - otherCharges - taxOnProfit;
+
+            const fixedAssets = toPence(tb.fixedAssetsPence, tb.fixedAssets, defaultInput.ledger.fixedAssetsPence);
+            const debtors = toPence(tb.debtorsPence, tb.debtors, defaultInput.ledger.debtorsPence);
+            const cash = toPence(tb.cashPence ?? tb.cashAtBankPence, tb.cashAtBank, defaultInput.ledger.cashPence);
+            const creditors = toPence(tb.creditorsUnderOneYearPence, tb.creditorsUnderOneYear, defaultInput.ledger.creditorsUnderOneYearPence);
+
+            shieldInput = {
+              ...defaultInput,
+              entity: {
+                ...defaultInput.entity,
+                companyName: company?.name || tb.companyName || defaultInput.entity.companyName,
+                crn: company?.crn || tb.crn || defaultInput.entity.crn,
+                companyType: isProperty ? 'PROPERTY' : archetype === 'MIXED' ? 'MIXED_INCOME' : 'TRADING',
+                utr: company?.utr || tb.utr || defaultInput.entity.utr
+              },
+              period: {
+                ...defaultInput.period,
+                periodStart: filing.periodStart || tb.periodStart || defaultInput.period.periodStart,
+                periodEnd: filing.periodEnd || tb.periodEnd || defaultInput.period.periodEnd,
+                directorDeclarationName: filing.directorName || tb.directorName || defaultInput.period.directorDeclarationName,
+                accountsApprovalDate: filing.directorApprovalDate || defaultInput.period.accountsApprovalDate
+              },
+              ledger: {
+                ...defaultInput.ledger,
+                turnoverPence: turnover,
+                costOfSalesPence: costOfSales,
+                otherChargesPence: otherCharges,
+                taxExpensePence: taxOnProfit,
+                netProfitAfterTaxPence: profitOrLoss,
+                fixedAssetsPence: fixedAssets,
+                debtorsPence: debtors,
+                cashPence: cash,
+                creditorsUnderOneYearPence: creditors,
+                shareCapitalPence: shareCapital,
+                employeeCount: tb.averageEmployees || 1
+              }
+            };
+          }
         }
       } catch {
         // Fall back gracefully to default benchmark dataset
@@ -126,7 +195,7 @@ export async function GET(req: NextRequest) {
     }
 
     const ixbrl = generateFrs105Ixbrl(shieldInput, {
-      includeProfitAndLoss: true,
+      includeProfitAndLoss: shieldInput.entity.companyType !== 'DORMANT',
       watermarkText: isDraft ? 'DRAFT - NOT FOR SUBMISSION' : undefined
     });
 
@@ -141,4 +210,3 @@ export async function GET(req: NextRequest) {
     return NextResponse.json({ error: err.message }, { status: 500 });
   }
 }
-
