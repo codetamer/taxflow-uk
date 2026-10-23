@@ -26,7 +26,10 @@ interface ComparativeFinancialTableProps {
   hasPriorYearData?: boolean;
 }
 
-function formatAccounting(val: number): string {
+function formatAccounting(val: number | undefined | null): string {
+  if (val === undefined || val === null || isNaN(val)) {
+    return '—';
+  }
   if (val < 0) {
     return `(£${Math.abs(val).toLocaleString()})`;
   }
@@ -87,14 +90,15 @@ export function ComparativeFinancialTable({
                   );
                 }
 
-                const diff = (item.currentValue || 0) - (item.priorValue || 0);
+                const hasPrior = item.priorValue !== undefined && item.priorValue !== null && !isNaN(item.priorValue);
+                const diff = hasPrior ? (item.currentValue || 0) - (item.priorValue || 0) : null;
                 const percentChange =
-                  item.priorValue && item.priorValue > 0
-                    ? ((diff / item.priorValue) * 100).toFixed(1)
+                  hasPrior && item.priorValue! > 0
+                    ? ((diff! / item.priorValue!) * 100).toFixed(1)
                     : null;
 
-                const isPositiveDiff = diff > 0;
-                const isZero = diff === 0;
+                const isPositiveDiff = diff !== null && diff > 0;
+                const isZero = diff !== null && diff === 0;
 
                 return (
                   <tr 
@@ -137,7 +141,7 @@ export function ComparativeFinancialTable({
                     <td className="py-2 px-3 text-right">
                       {item.isTotal ? (
                         <span className="font-mono tabular-nums text-slate-500">
-                          {formatAccounting(item.priorValue ?? 0)}
+                          {formatAccounting(item.priorValue)}
                         </span>
                       ) : item.onChangePrior ? (
                         <div className="relative inline-block w-28">
@@ -145,7 +149,7 @@ export function ComparativeFinancialTable({
                           <input
                             type="number"
                             min="0"
-                            value={item.priorValue === 0 ? '' : item.priorValue}
+                            value={item.priorValue === 0 ? '' : (item.priorValue ?? '')}
                             onChange={(e) => item.onChangePrior!(parseFloat(e.target.value) || 0)}
                             placeholder="0"
                             className="w-full pl-6 pr-2 py-1 text-right bg-slate-50/30 border border-slate-200/70 rounded-lg text-xs font-mono tabular-nums text-slate-600 focus:bg-white focus:ring-1 focus:ring-slate-700 transition"
@@ -153,14 +157,14 @@ export function ComparativeFinancialTable({
                         </div>
                       ) : (
                         <span className="font-mono tabular-nums text-slate-600">
-                          {formatAccounting(item.priorValue ?? 0)}
+                          {formatAccounting(item.priorValue)}
                         </span>
                       )}
                     </td>
 
                     {/* YoY Delta Pill */}
                     <td className="py-2 px-3 text-right">
-                      {item.priorValue !== undefined ? (
+                      {hasPrior && diff !== null ? (
                         isZero ? (
                           <span className="text-[10px] text-slate-400 font-mono">0.0%</span>
                         ) : (
@@ -180,7 +184,7 @@ export function ComparativeFinancialTable({
                           </span>
                         )
                       ) : (
-                        <span className="text-[10px] text-slate-300 font-mono">—</span>
+                        <span className="text-[10px] text-slate-400 font-mono">n/a</span>
                       )}
                     </td>
                   </tr>

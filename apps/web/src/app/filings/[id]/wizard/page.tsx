@@ -46,6 +46,7 @@ import { TermExplainer } from '@/components/TermExplainer';
 import { PlainEnglishBanner } from '@/components/PlainEnglishBanner';
 import { GlossaryModal } from '@/components/GlossaryModal';
 import { AutoReconcileModal } from '@/components/AutoReconcileModal';
+import { ArchetypeConfirmModal } from '@/components/ArchetypeConfirmModal';
 import { ImportStatementModal } from '@/components/ImportStatementModal';
 import { DirectorLoansSchedule } from '@/components/DirectorLoansSchedule';
 import type { DirectorLoanItem } from '@/components/DirectorLoansSchedule';
@@ -53,6 +54,7 @@ import { ComparativeFinancialTable } from '@/components/ComparativeFinancialTabl
 import type { FinancialLineItem } from '@/components/ComparativeFinancialTable';
 import { TaxComputationBreakdown } from '@/components/TaxComputationBreakdown';
 import { PayHmrcModal } from '@/components/PayHmrcModal';
+import { getFilingDraft, saveFilingDraft } from '@/lib/filingClientStorage';
 import { ComplianceScoreRing } from '@/components/ComplianceScoreRing';
 import { computePeriod, ctPaymentDueDate, daysInclusive, mainPoolWdaRatePct } from '@taxflow/ct-engine';
 import { runPreFlightShield } from '@taxflow/shield';
@@ -214,42 +216,40 @@ function WizardContent() {
     }
   };
 
-  // Initial State Hydration: Load saved draft on mount
+  // Initial State Hydration: Load saved draft on mount (FE-01)
   useEffect(() => {
     async function loadSavedDraft() {
       try {
-        if (typeof window !== 'undefined') {
-          const cached = localStorage.getItem(`taxflow_draft_${filingId}`);
-          if (cached) {
-            try {
-              const parsed = JSON.parse(cached);
-              if (parsed.directorLoans && Array.isArray(parsed.directorLoans)) {
-                setForm((prev) => ({ ...prev, ...parsed }));
-              } else if (parsed.directorLoanAdvance > 0) {
-                setForm((prev) => ({
-                  ...prev,
-                  ...parsed,
-                  directorLoans: [
-                    {
-                      id: 'loan_1',
-                      directorName: parsed.directorName || 'Muhammad Saif Raza',
-                      advanceDate: parsed.directorLoanDate || '2026-05-01',
-                      advanceAmount: parsed.directorLoanAdvance,
-                      repaidAmount: parsed.directorLoanRepaidAmount || 0,
-                      repaidDate: parsed.directorLoanRepaidDate || ''
-                    }
-                  ]
-                }));
-              } else {
-                setForm((prev) => ({ ...prev, ...parsed }));
-              }
-            } catch {}
+        const localDraft = getFilingDraft(filingId);
+        if (localDraft) {
+          if (localDraft.directorLoans && Array.isArray(localDraft.directorLoans)) {
+            setForm((prev) => ({ ...prev, ...localDraft }));
+          } else if (localDraft.directorLoanAdvance && localDraft.directorLoanAdvance > 0) {
+            setForm((prev) => ({
+              ...prev,
+              ...localDraft,
+              directorLoans: [
+                {
+                  id: 'loan_1',
+                  directorName: localDraft.directorName || 'Muhammad Saif Raza',
+                  advanceDate: localDraft.directorLoanDate || '2026-05-01',
+                  advanceAmount: Number(localDraft.directorLoanAdvance) || 0,
+                  repaidAmount: Number(localDraft.directorLoanRepaidAmount) || 0,
+                  repaidDate: localDraft.directorLoanRepaidDate || ''
+                }
+              ]
+            }));
+          } else {
+            setForm((prev) => ({ ...prev, ...localDraft }));
           }
+          const now = new Date();
+          setLastSavedTime(`Synced ${now.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}`);
         }
 
+        // Check server only if no local edits exist yet
         const res = await fetch(`/api/filings/${filingId}`);
         const data = await res.json();
-        if (data.success && data.filing?.formData) {
+        if (data.success && data.filing?.formData && !localDraft) {
           const fd = data.filing.formData;
           if (fd.directorLoans && Array.isArray(fd.directorLoans)) {
             setForm((prev) => ({ ...prev, ...fd }));
@@ -262,8 +262,8 @@ function WizardContent() {
                   id: 'loan_1',
                   directorName: fd.directorName || 'Muhammad Saif Raza',
                   advanceDate: fd.directorLoanDate || '2026-05-01',
-                  advanceAmount: fd.directorLoanAdvance,
-                  repaidAmount: fd.directorLoanRepaidAmount || 0,
+                  advanceAmount: Number(fd.directorLoanAdvance) || 0,
+                  repaidAmount: Number(fd.directorLoanRepaidAmount) || 0,
                   repaidDate: fd.directorLoanRepaidDate || ''
                 }
               ]
@@ -271,8 +271,6 @@ function WizardContent() {
           } else {
             setForm((prev) => ({ ...prev, ...fd }));
           }
-          const now = new Date();
-          setLastSavedTime(`Synced ${now.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}`);
         }
       } catch {
         // Fall back to benchmark defaults
@@ -282,14 +280,12 @@ function WizardContent() {
     fetchPriorYearAccounts('15152081');
   }, [filingId]);
 
-  // Debounced Autosave: Saves draft to database and local cache on every field edit
+  // Debounced Autosave: Saves draft to database and local cache on every field edit (FE-01)
   useEffect(() => {
     const timer = setTimeout(async () => {
       try {
         setIsAutosaving(true);
-        if (typeof window !== 'undefined') {
-          localStorage.setItem(`taxflow_draft_${filingId}`, JSON.stringify(form));
-        }
+        saveFilingDraft(filingId, form);
 
         const res = await fetch(`/api/filings/${filingId}`, {
           method: 'PATCH',
@@ -305,7 +301,7 @@ function WizardContent() {
       } finally {
         setIsAutosaving(false);
       }
-    }, 600);
+    }, 400);
 
     return () => clearTimeout(timer);
   }, [form, filingId]);
@@ -452,6 +448,44 @@ function WizardContent() {
     }
   };
 
+  // Non-Destructive Archetype Switching & Safeguard Confirmation (FE-02)
+  const [pendingArchetype, setPendingArchetype] = useState<'TRADING' | 'PROPERTY' | 'DORMANT' | 'MIXED' | null>(null);
+
+  const handleRequestArchetype = (newType: 'TRADING' | 'PROPERTY' | 'DORMANT' | 'MIXED') => {
+    if (newType === form.companyType) return;
+
+    const hasSignificantActivity =
+      form.companyType !== 'DORMANT' &&
+      (
+        (form.turnover && form.turnover > 0) ||
+        (form.costOfSales && form.costOfSales > 0) ||
+        (form.directorLoans && form.directorLoans.some((l) => (l.advanceAmount || 0) > 0)) ||
+        (form.propertyRentalIncome && form.propertyRentalIncome > 0)
+      );
+
+    if (newType === 'DORMANT' && hasSignificantActivity) {
+      setPendingArchetype(newType);
+      return;
+    }
+
+    setForm((prev) => ({
+      ...prev,
+      companyType: newType,
+      averageEmployees: newType === 'DORMANT' ? 0 : (prev.averageEmployees || 1)
+    }));
+  };
+
+  const handleConfirmArchetypeChange = () => {
+    if (pendingArchetype) {
+      setForm((prev) => ({
+        ...prev,
+        companyType: pendingArchetype,
+        averageEmployees: pendingArchetype === 'DORMANT' ? 0 : (prev.averageEmployees || 1)
+      }));
+      setPendingArchetype(null);
+    }
+  };
+
   // -------------------------------------------------------------------------
   // FINANCIAL COMPUTATION ENGINE BY ARCHETYPE
   // -------------------------------------------------------------------------
@@ -520,8 +554,8 @@ function WizardContent() {
             id: 'loan_1',
             directorName: form.directorName || 'Muhammad Saif Raza',
             advanceDate: form.directorLoanDate || '2026-05-01',
-            advanceAmount: form.directorLoanAdvance,
-            repaidAmount: form.directorLoanRepaidAmount || 0,
+            advanceAmount: Number(form.directorLoanAdvance) || 0,
+            repaidAmount: Number(form.directorLoanRepaidAmount) || 0,
             repaidDate: form.directorLoanRepaidDate || ''
           }
         ]
@@ -771,7 +805,7 @@ function WizardContent() {
     {
       id: 'costOfSales',
       label: 'Cost of Sales',
-      boxLabel: 'Box 165',
+      boxLabel: 'FRS 105 iXBRL',
       tooltip: 'Direct contractor and production expenses',
       currentValue: form.costOfSales,
       priorValue: priorYearData?.figures ? Math.round(priorYearData.figures.costOfSalesPence / 100) : undefined,
@@ -780,7 +814,7 @@ function WizardContent() {
     {
       id: 'otherCharges',
       label: 'Other Operating Charges',
-      boxLabel: 'Box 165',
+      boxLabel: 'FRS 105 iXBRL',
       tooltip: 'Hosting, software subscriptions, insurance, utilities',
       currentValue: form.otherCharges,
       priorValue: priorYearData?.figures ? Math.round(priorYearData.figures.otherOperatingChargesPence / 100) : undefined,
@@ -789,7 +823,7 @@ function WizardContent() {
     {
       id: 'disallowables',
       label: 'Client Entertaining (Disallowable)',
-      boxLabel: 'Box 160',
+      boxLabel: 'Tax Add-Back',
       tooltip: 'Hospitality added back to taxable profit (CTA 2009 s1298)',
       currentValue: form.disallowables,
       onChangeCurrent: (val) => setForm((prev) => ({ ...prev, disallowables: val }))
@@ -1078,7 +1112,7 @@ function WizardContent() {
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                   {/* Archetype 1: Trading Company */}
                   <div
-                    onClick={() => setForm({ ...form, companyType: 'TRADING' })}
+                    onClick={() => handleRequestArchetype('TRADING')}
                     className={`p-4 rounded-2xl border-2 transition cursor-pointer flex flex-col justify-between space-y-2 ${
                       form.companyType === 'TRADING'
                         ? 'border-slate-900 bg-slate-50/70 shadow-xs ring-1 ring-slate-900'
@@ -1101,7 +1135,7 @@ function WizardContent() {
 
                   {/* Archetype 2: Property Company (Buy-to-Let SPV) */}
                   <div
-                    onClick={() => setForm({ ...form, companyType: 'PROPERTY' })}
+                    onClick={() => handleRequestArchetype('PROPERTY')}
                     className={`p-4 rounded-2xl border-2 transition cursor-pointer flex flex-col justify-between space-y-2 ${
                       form.companyType === 'PROPERTY'
                         ? 'border-indigo-600 bg-indigo-50/50 shadow-xs ring-1 ring-indigo-600'
@@ -1124,7 +1158,7 @@ function WizardContent() {
 
                   {/* Archetype 3: Dormant Company */}
                   <div
-                    onClick={() => setForm({ ...form, companyType: 'DORMANT', averageEmployees: 0 })}
+                    onClick={() => handleRequestArchetype('DORMANT')}
                     className={`p-4 rounded-2xl border-2 transition cursor-pointer flex flex-col justify-between space-y-2 ${
                       form.companyType === 'DORMANT'
                         ? 'border-emerald-600 bg-emerald-50/50 shadow-xs ring-1 ring-emerald-600'
@@ -1147,7 +1181,7 @@ function WizardContent() {
 
                   {/* Archetype 4: Mixed Income */}
                   <div
-                    onClick={() => setForm({ ...form, companyType: 'MIXED' })}
+                    onClick={() => handleRequestArchetype('MIXED')}
                     className={`p-4 rounded-2xl border-2 transition cursor-pointer flex flex-col justify-between space-y-2 ${
                       form.companyType === 'MIXED'
                         ? 'border-purple-600 bg-purple-50/50 shadow-xs ring-1 ring-purple-600'
@@ -1373,10 +1407,42 @@ function WizardContent() {
                       </span>
                     </div>
                     <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 pt-1 text-slate-600">
-                      <div>Fixed Assets: <span className="font-mono font-semibold text-slate-900">£{(priorYearData.figures.fixedAssetsPence / 100).toLocaleString()}</span></div>
-                      <div>Current Assets: <span className="font-mono font-semibold text-slate-900">£{(priorYearData.figures.currentAssetsPence / 100).toLocaleString()}</span></div>
-                      <div>Net Assets: <span className="font-mono font-semibold text-slate-900">£{(priorYearData.figures.netCurrentAssetsPence / 100).toLocaleString()}</span></div>
-                      <div>Retained Reserves: <span className="font-mono font-semibold text-slate-900">£{(priorYearData.figures.profitAndLossReservePence / 100).toLocaleString()}</span></div>
+                      <div>
+                        Fixed Assets:{' '}
+                        <span className="font-mono font-semibold text-slate-900">
+                          {priorYearData.figures.fixedAssetsPence !== undefined && !isNaN(priorYearData.figures.fixedAssetsPence)
+                            ? `£${(priorYearData.figures.fixedAssetsPence / 100).toLocaleString()}`
+                            : '—'}
+                        </span>
+                      </div>
+                      <div>
+                        Current Assets:{' '}
+                        <span className="font-mono font-semibold text-slate-900">
+                          {priorYearData.figures.currentAssetsPence !== undefined && !isNaN(priorYearData.figures.currentAssetsPence)
+                            ? `£${(priorYearData.figures.currentAssetsPence / 100).toLocaleString()}`
+                            : '—'}
+                        </span>
+                      </div>
+                      <div>
+                        Net Assets:{' '}
+                        <span className="font-mono font-semibold text-slate-900">
+                          {priorYearData.figures.totalNetAssetsPence !== undefined && !isNaN(priorYearData.figures.totalNetAssetsPence)
+                            ? `£${(priorYearData.figures.totalNetAssetsPence / 100).toLocaleString()}`
+                            : priorYearData.figures.totalShareholdersFundsPence !== undefined && !isNaN(priorYearData.figures.totalShareholdersFundsPence)
+                            ? `£${(priorYearData.figures.totalShareholdersFundsPence / 100).toLocaleString()}`
+                            : priorYearData.figures.fixedAssetsPence !== undefined && priorYearData.figures.netCurrentAssetsPence !== undefined
+                            ? `£${((priorYearData.figures.fixedAssetsPence + priorYearData.figures.netCurrentAssetsPence) / 100).toLocaleString()}`
+                            : '—'}
+                        </span>
+                      </div>
+                      <div>
+                        Retained Reserves:{' '}
+                        <span className="font-mono font-semibold text-slate-900">
+                          {priorYearData.figures.profitAndLossReservePence !== undefined && !isNaN(priorYearData.figures.profitAndLossReservePence)
+                            ? `£${(priorYearData.figures.profitAndLossReservePence / 100).toLocaleString()}`
+                            : '—'}
+                        </span>
+                      </div>
                     </div>
                   </div>
                 )}
@@ -1700,7 +1766,7 @@ function WizardContent() {
                       <div>
                         <h3 className="text-base font-bold text-slate-950 flex items-center space-x-2">
                           <span>Capital Allowances &amp; Plant Reliefs</span>
-                          <span className="text-[10px] font-mono text-slate-400 font-normal">CAA 2001 / CT600 Box 705</span>
+                          <span className="text-[10px] font-mono text-slate-400 font-normal">CAA 2001 / CT600 Box 690</span>
                         </h3>
                         <p className="text-xs text-slate-500">
                           100% Annual Investment Allowance (AIA) and Writing Down Allowance (WDA)
@@ -1747,7 +1813,7 @@ function WizardContent() {
                             onChange={(e) => setForm({ ...form, aiaClaimed: Math.min(form.capitalAdditions, Math.max(0, parseInt(e.target.value) || 0)) })}
                             className="w-full px-3.5 py-2.5 border border-slate-300 rounded-xl text-sm font-semibold focus:outline-none focus:ring-2 focus:ring-slate-900"
                           />
-                          <p className="text-[11px] text-slate-400 mt-1">Deducted 100% against trading profit in CT600 Box 705</p>
+                          <p className="text-[11px] text-slate-400 mt-1">Deducted 100% against trading profit in CT600 Box 690</p>
                         </div>
                       </div>
                     </div>
@@ -2262,7 +2328,11 @@ function WizardContent() {
                   {fatalShieldErrors.length === 0 ? 'All 40 Checks Clear' : `${fatalShieldErrors.length} Fatal Errors`}
                 </p>
                 <p className="text-[11px] text-slate-500">
-                  {warningShieldItems.length > 0 ? `${warningShieldItems.length} advisory notes` : 'HMRC &amp; CH Gateway ready'}
+                  {fatalShieldErrors.length > 0
+                    ? `${fatalShieldErrors.length} blocking issue${fatalShieldErrors.length > 1 ? 's' : ''} to resolve`
+                    : warningShieldItems.length > 0
+                    ? `${warningShieldItems.length} advisory note${warningShieldItems.length > 1 ? 's' : ''}`
+                    : 'HMRC & CH Gateway ready'}
                 </p>
               </div>
             </div>
@@ -2503,6 +2573,20 @@ function WizardContent() {
         isOpen={isGlossaryOpen}
         onClose={() => setIsGlossaryOpen(false)}
         initialTermId={initialGlossaryTerm}
+      />
+
+      {/* Non-Destructive Archetype Switch Safeguard Modal (FE-02) */}
+      <ArchetypeConfirmModal
+        isOpen={pendingArchetype !== null}
+        targetArchetype={pendingArchetype}
+        activeFigures={{
+          turnover: form.turnover,
+          costOfSales: form.costOfSales,
+          directorLoansTotal: form.directorLoans?.reduce((acc, l) => acc + (l.advanceAmount || 0), 0) || form.directorLoanAdvance || 0,
+          propertyIncome: form.propertyRentalIncome
+        }}
+        onClose={() => setPendingArchetype(null)}
+        onConfirm={handleConfirmArchetypeChange}
       />
     </div>
   );

@@ -95,6 +95,7 @@ export async function PUT(
         const company = repos.companies.getByCrn('15152081') || repos.companies.list()[0];
         if (company) {
           existing = repos.filings.create({
+            id,
             companyId: company.id,
             periodStart: body.periodStart || '2025-10-01',
             periodEnd: body.periodEnd || '2026-09-30',

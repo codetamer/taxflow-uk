@@ -28,6 +28,7 @@ import {
 import { runPreFlightShield } from '@taxflow/shield';
 import type { ShieldInput, ShieldReport, RuleEvaluation } from '@taxflow/shield';
 import { TermExplainer } from '@/components/TermExplainer';
+import { getFilingDraft, subscribeFilingDraft } from '@/lib/filingClientStorage';
 import { GlossaryModal } from '@/components/GlossaryModal';
 import { ComplianceScoreRing } from '@/components/ComplianceScoreRing';
 
@@ -187,18 +188,54 @@ export default function ShieldDashboardPage() {
   const [initialGlossaryTerm, setInitialGlossaryTerm] = useState<string>('');
 
   useEffect(() => {
+    // 1. Immediately hydrate from shared in-browser filing state (FE-01)
+    const localDraft = getFilingDraft(filingId);
+    if (localDraft) {
+      setUserFilingData((prev: any) => ({
+        ...prev,
+        formData: localDraft,
+        company: {
+          crn: localDraft.crn || '15152081',
+          companyName: localDraft.companyName || 'DROPLOGICX LTD'
+        }
+      }));
+    }
+
+    // 2. Subscribe to real-time draft updates from wizard edits in other components/tabs
+    const unsubscribe = subscribeFilingDraft(filingId, (updatedDraft) => {
+      setUserFilingData((prev: any) => ({
+        ...prev,
+        formData: updatedDraft,
+        company: {
+          crn: updatedDraft.crn || prev?.company?.crn || '15152081',
+          companyName: updatedDraft.companyName || prev?.company?.companyName || 'DROPLOGICX LTD'
+        }
+      }));
+    });
+
+    // 3. Supplement with server data if available
     async function loadFiling() {
       try {
         const res = await fetch(`/api/filings/${filingId}`);
         const data = await res.json();
-        if (data.success && data.filing?.formData) {
-          setUserFilingData(data.filing);
+        if (data.success && data.filing) {
+          setUserFilingData((prev: any) => {
+            // Keep local draft if user edited, otherwise use server
+            const formData = localDraft || data.filing.formData || prev?.formData;
+            return {
+              ...data.filing,
+              formData,
+              company: data.filing.company || prev?.company
+            };
+          });
         }
       } catch {
-        // Fall back to clean benchmark
+        // Keep local draft
       }
     }
     loadFiling();
+
+    return () => unsubscribe();
   }, [filingId]);
 
   const openGlossary = (termId: string) => {
@@ -235,35 +272,39 @@ export default function ShieldDashboardPage() {
       const periodEnd = f.periodEnd || '2026-09-30';
 
       const turnoverPence = isDormant
-        ? 0
+        ? Math.round((Number(f.turnover) || 0) * 100)
         : isProperty
-        ? Math.round((f.propertyRentalIncome ?? 36000) * 100)
-        : Math.round((f.turnover ?? 100000) * 100);
+        ? Math.round((Number(f.propertyRentalIncome ?? 36000)) * 100)
+        : Math.round((Number(f.turnover ?? 100000)) * 100);
 
-      const costOfSalesPence = isDormant || isProperty ? 0 : Math.round((f.costOfSales ?? 20000) * 100);
+      const costOfSalesPence = isDormant
+        ? Math.round((Number(f.costOfSales) || 0) * 100)
+        : isProperty
+        ? 0
+        : Math.round((Number(f.costOfSales ?? 20000)) * 100);
 
-      const propertyExpensesPence = isProperty || isMixed ? Math.round((f.propertyAllowableExpenses ?? 6000) * 100) : 0;
-      const propertyMortgageInterestPence = isProperty || isMixed ? Math.round((f.propertyMortgageInterest ?? 12000) * 100) : 0;
+      const propertyExpensesPence = isProperty || isMixed ? Math.round((Number(f.propertyAllowableExpenses ?? 6000)) * 100) : 0;
+      const propertyMortgageInterestPence = isProperty || isMixed ? Math.round((Number(f.propertyMortgageInterest ?? 12000)) * 100) : 0;
 
       const otherChargesPence = isDormant
-        ? 0
+        ? Math.round((Number(f.otherCharges) || 0) * 100)
         : isProperty
         ? propertyExpensesPence + propertyMortgageInterestPence
-        : Math.round((f.otherCharges ?? 48100) * 100);
+        : Math.round((Number(f.otherCharges ?? 48100)) * 100);
 
-      const clientEntertainingPence = isDormant || isProperty ? 0 : Math.round((f.disallowables ?? 3100) * 100);
+      const clientEntertainingPence = isDormant || isProperty ? 0 : Math.round((Number(f.disallowables ?? 3100)) * 100);
 
-      const shareCapitalPence = Math.round((f.shareCapital ?? 100) * 100);
-      const fixedAssetsPence = isDormant ? 0 : Math.round((f.fixedAssets ?? 15000) * 100);
-      const debtorsPence = isDormant ? 0 : Math.round((f.debtors ?? 10000) * 100);
-      const cashPence = isDormant ? shareCapitalPence : Math.round((f.cashAtBank ?? 33400) * 100);
-      const creditorsUnderOneYearPence = isDormant ? 0 : Math.round((f.creditorsUnderOneYear ?? 25000) * 100);
-      const openingRetainedEarningsPence = isDormant ? 0 : Math.round((f.openingRetainedEarnings ?? 15200) * 100);
-      const dividendsPaidPence = isDormant ? 0 : Math.round((f.dividendsPaid ?? 10000) * 100);
+      const shareCapitalPence = Math.round((Number(f.shareCapital ?? 100)) * 100);
+      const fixedAssetsPence = isDormant ? 0 : Math.round((Number(f.fixedAssets ?? 15000)) * 100);
+      const debtorsPence = isDormant ? 0 : Math.round((Number(f.debtors ?? 10000)) * 100);
+      const cashPence = isDormant ? shareCapitalPence : Math.round((Number(f.cashAtBank ?? 33400)) * 100);
+      const creditorsUnderOneYearPence = isDormant ? 0 : Math.round((Number(f.creditorsUnderOneYear ?? 25000)) * 100);
+      const openingRetainedEarningsPence = isDormant ? 0 : Math.round((Number(f.openingRetainedEarnings ?? 15200)) * 100);
+      const dividendsPaidPence = isDormant ? 0 : Math.round((Number(f.dividendsPaid ?? 10000)) * 100);
 
       const operatingProfitPence = isDormant ? 0 : turnoverPence - costOfSalesPence - otherChargesPence;
-      const capitalAdditionsPence = isDormant ? 0 : Math.round((f.capitalAdditions ?? f.fixedAssets ?? 15000) * 100);
-      const aiaClaimedPence = isDormant ? 0 : Math.round((f.aiaClaimed ?? 15000) * 100);
+      const capitalAdditionsPence = isDormant ? 0 : Math.round((Number(f.capitalAdditions ?? f.fixedAssets ?? 15000)) * 100);
+      const aiaClaimedPence = isDormant ? 0 : Math.round((Number(f.aiaClaimed ?? 15000)) * 100);
       const mainPoolBalancePence = Math.max(0, capitalAdditionsPence - aiaClaimedPence);
 
       const taxableProfitPence = isDormant
@@ -280,17 +321,41 @@ export default function ShieldDashboardPage() {
 
       const statutoryWda = mainPoolWdaRatePct({ start: periodStart, end: periodEnd });
 
-      const outstandingPence = isDormant
-        ? 0
-        : Math.max(0, Math.round(((f.directorLoanAdvance || 0) - (f.directorLoanRepaidAmount || 0)) * 100));
-
-      const directorLoansList = (!isDormant && f.directorLoanAdvance && f.directorLoanAdvance > 0)
+      // Parse multi-loan schedule for s455 (FE-01)
+      const rawLoans = Array.isArray(f.directorLoans) && f.directorLoans.length > 0
+        ? f.directorLoans
+        : (f.directorLoanAdvance && Number(f.directorLoanAdvance) > 0)
         ? [{
             id: 'loan_user_1',
-            madeOn: f.directorLoanDate || periodStart,
-            outstandingAtDueDatePence: outstandingPence,
+            directorName: f.directorName || 'Muhammad Saif Raza',
+            advanceDate: f.directorLoanDate || periodStart,
+            advanceAmount: Number(f.directorLoanAdvance),
+            repaidAmount: Number(f.directorLoanRepaidAmount || 0),
+            repaidDate: f.directorLoanRepaidDate || ''
           }]
         : [];
+
+      const directorLoansList = rawLoans
+        .filter((l: any) => (Number(l.advanceAmount) || 0) > 0)
+        .map((l: any, idx: number) => {
+          const adv = Number(l.advanceAmount) || 0;
+          const rep = Number(l.repaidAmount) || 0;
+          const outstanding = Math.max(0, adv - rep);
+          return {
+            id: l.id || `loan_${idx}`,
+            madeOn: l.advanceDate || periodStart,
+            outstandingAtDueDatePence: Math.round(outstanding * 100)
+          };
+        });
+
+      const s455TaxPence = rawLoans.reduce((total: number, loan: any) => {
+        const adv = Number(loan.advanceAmount) || 0;
+        const rep = Number(loan.repaidAmount) || 0;
+        const outstanding = Math.max(0, adv - rep);
+        if (outstanding <= 0) return total;
+        const ratePct = loan.advanceDate && loan.advanceDate >= '2026-04-06' ? 35.75 : 33.75;
+        return total + Math.round(outstanding * ratePct);
+      }, 0);
 
       return {
         entity: {
@@ -353,9 +418,7 @@ export default function ShieldDashboardPage() {
           carAiaClaimedPence: 0,
           zeroEmissionFyaClaimedPence: 0,
           directorLoans: directorLoansList,
-          s455TaxPence: directorLoansList.length > 0 && !(f.directorLoanRepaidAmount >= f.directorLoanAdvance)
-            ? Math.round((f.directorLoanAdvance - (f.directorLoanRepaidAmount || 0)) * 35.75)
-            : 0
+          s455TaxPence: isDormant ? 0 : s455TaxPence
         }
       };
     }
@@ -449,7 +512,7 @@ export default function ShieldDashboardPage() {
               <div className="flex items-center space-x-2">
                 <h1 className="text-2xl font-bold tracking-tight">40-Point Pre-Flight Rejection Shield</h1>
                 <span className="bg-slate-800 text-slate-300 font-mono text-[11px] px-2 py-0.5 rounded-full border border-slate-700">
-                  CATO & TIS Verified
+                  GovTalk &amp; Schema Verified
                 </span>
               </div>
               <p className="text-xs text-slate-400">

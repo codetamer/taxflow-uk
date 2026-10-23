@@ -2,7 +2,7 @@ import type { ShieldInput, RuleEvaluation } from '../types.ts';
 
 export function evaluateCategory4(input: ShieldInput): RuleEvaluation[] {
   const evaluations: RuleEvaluation[] = [];
-  const { entity, ledger } = input;
+  const { entity, ledger, tax } = input;
 
   // RULE 16: Two-of-Three Micro-Entity Qualification Test (Companies Act 2006 s384A)
   const turnoverLimit = 1_000_000_00; // £1,000,000
@@ -94,7 +94,8 @@ export function evaluateCategory4(input: ShieldInput): RuleEvaluation[] {
       ledger.turnoverPence !== 0 ||
       ledger.costOfSalesPence !== 0 ||
       ledger.staffCostsPence !== 0 ||
-      ledger.otherChargesPence !== 0;
+      ledger.otherChargesPence !== 0 ||
+      (tax.directorLoans && tax.directorLoans.some((l) => (l.outstandingAtDueDatePence || 0) > 0));
 
     if (hasActivity) {
       evaluations.push({
@@ -103,7 +104,7 @@ export function evaluateCategory4(input: ShieldInput): RuleEvaluation[] {
         category: 'Micro-Entity Statutory Qualification',
         severity: 'FATAL',
         status: 'FAIL',
-        message: 'Dormant Company Inconsistency: The company type is set to Dormant, but financial activity (turnover or expenses) is recorded. A dormant company must have no significant accounting transactions during the period (Companies Act 2006 s1169).',
+        message: 'Dormant Company Inconsistency: The company type is set to Dormant, but financial activity (turnover, expenses, or director loans) is recorded. A dormant company must have no significant accounting transactions during the period (Companies Act 2006 s1169).',
         remediation: 'Change company type to "Trading" or "Property", or clear transaction entries to reflect a genuinely dormant entity.',
         offendingFields: ['companyType', 'turnoverPence', 'otherChargesPence'],
       });

@@ -184,7 +184,7 @@ export function TaxComputationBreakdown({
                   <div className="flex items-center gap-2">
                     <span>(-) Capital Allowances: 100% Annual Investment Allowance (AIA)</span>
                     <span className="text-[10px] font-mono text-emerald-700 bg-emerald-100/70 px-1.5 py-0.2 rounded">
-                      CT600 Box 705
+                      CT600 Box 690
                     </span>
                   </div>
                   <span className="font-mono tabular-nums font-semibold text-emerald-900">
@@ -306,9 +306,9 @@ export function TaxComputationBreakdown({
           {s455Tax > 0 && (
             <div className="flex items-center justify-between py-1.5 px-3 rounded-lg text-amber-900 bg-amber-50/40">
               <div className="flex items-center gap-2">
-                <span>(+) Section 455 Tax on Director Loans (33.75%)</span>
+                <span>(+) Section 455 Tax on Director Loans (33.75% / 35.75%)</span>
                 <span className="text-[10px] font-mono text-amber-700 bg-amber-100/70 px-1.5 py-0.2 rounded">
-                  CT600 Box A30
+                  CT600 Box 480 (CT600A)
                 </span>
               </div>
               <span className="font-mono tabular-nums font-semibold text-amber-900">
@@ -323,7 +323,7 @@ export function TaxComputationBreakdown({
               <div className="flex items-center gap-2">
                 <span className="text-white text-xs font-bold">Total Amount Payable to HMRC</span>
                 <span className="text-[10px] font-mono text-emerald-400 bg-slate-800 border border-slate-700 px-1.5 py-0.2 rounded">
-                  CT600 Box 440
+                  {s455Tax > 0 ? 'CT600 Box 525' : 'CT600 Box 440'}
                 </span>
               </div>
               <p className="text-[10px] text-slate-400 font-normal">

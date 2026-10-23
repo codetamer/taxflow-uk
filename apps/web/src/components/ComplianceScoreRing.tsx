@@ -89,7 +89,7 @@ export function ComplianceScoreRing({
         </div>
         <p className="text-[11px] text-slate-500">
           {isAllPassed
-            ? '100% statutory mathematical symmetry across all accounts boxes.'
+            ? 'Automated statutory mathematical verification across all accounts boxes.'
             : `${fatalCount} error${fatalCount > 1 ? 's' : ''} must be resolved before submission.`}
         </p>
       </div>

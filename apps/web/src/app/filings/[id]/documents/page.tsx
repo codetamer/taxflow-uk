@@ -24,19 +24,46 @@ import {
   Briefcase,
   Layers,
   PauseCircle,
-  Info
+  Info,
+  Calendar,
+  Landmark
 } from 'lucide-react';
+import { computePeriod } from '@taxflow/ct-engine';
 import { TermExplainer } from '@/components/TermExplainer';
 import { PlainEnglishBanner } from '@/components/PlainEnglishBanner';
 import { GlossaryModal } from '@/components/GlossaryModal';
+import { getFilingDraft, subscribeFilingDraft } from '@/lib/filingClientStorage';
 
-function formatAccounting(val: number, isCurrency = true): string {
+function formatAccounting(val: number | undefined | null, isCurrency = true): string {
+  if (val === undefined || val === null || isNaN(val)) {
+    return '—';
+  }
   const absVal = Math.abs(val).toLocaleString('en-GB', { minimumFractionDigits: 0, maximumFractionDigits: 2 });
   const prefix = isCurrency ? '£' : '';
   if (val < 0) {
     return `(${prefix}${absVal})`;
   }
   return `${prefix}${absVal}`;
+}
+
+function formatDateBritish(isoDate?: string): string {
+  if (!isoDate) return '';
+  const parts = isoDate.split('-');
+  if (parts.length === 3) {
+    const y = Number(parts[0]);
+    const m = Number(parts[1]);
+    const d = Number(parts[2]);
+    if (!isNaN(y) && !isNaN(m) && !isNaN(d)) {
+      const date = new Date(Date.UTC(y, m - 1, d));
+      return date.toLocaleDateString('en-GB', {
+        day: 'numeric',
+        month: 'long',
+        year: 'numeric',
+        timeZone: 'UTC'
+      });
+    }
+  }
+  return isoDate;
 }
 
 export default function DocumentsPage() {
@@ -52,12 +79,53 @@ export default function DocumentsPage() {
   const [isLoading, setIsLoading] = useState<boolean>(true);
 
   useEffect(() => {
+    // 1. Immediately hydrate from shared in-browser filing state (FE-01)
+    const localDraft = getFilingDraft(filingId);
+    if (localDraft) {
+      setFilingData({
+        formData: localDraft,
+        company: {
+          crn: localDraft.crn || '15152081',
+          name: localDraft.companyName || 'DROPLOGICX LTD',
+          utr: localDraft.utr || '1234567890'
+        },
+        periodStart: localDraft.periodStart || '2025-10-01',
+        periodEnd: localDraft.periodEnd || '2026-09-30',
+        directorName: localDraft.directorName || 'Muhammad Saif Raza'
+      });
+      setIsLoading(false);
+    }
+
+    // 2. Subscribe to real-time draft updates from wizard edits (FE-01)
+    const unsubscribe = subscribeFilingDraft(filingId, (updatedDraft) => {
+      setFilingData((prev: any) => ({
+        ...prev,
+        formData: updatedDraft,
+        company: {
+          crn: updatedDraft.crn || prev?.company?.crn || '15152081',
+          name: updatedDraft.companyName || prev?.company?.name || 'DROPLOGICX LTD',
+          utr: updatedDraft.utr || prev?.company?.utr || '1234567890'
+        },
+        periodStart: updatedDraft.periodStart || prev?.periodStart || '2025-10-01',
+        periodEnd: updatedDraft.periodEnd || prev?.periodEnd || '2026-09-30',
+        directorName: updatedDraft.directorName || prev?.directorName || 'Muhammad Saif Raza'
+      }));
+    });
+
+    // 3. Supplement with server data if available
     async function loadFiling() {
       try {
         const res = await fetch(`/api/filings/${filingId}`);
         const data = await res.json();
         if (data.success && data.filing) {
-          setFilingData(data.filing);
+          setFilingData((prev: any) => {
+            const formData = localDraft || data.filing.formData || prev?.formData;
+            return {
+              ...data.filing,
+              formData,
+              company: data.filing.company || prev?.company
+            };
+          });
         }
       } catch (e) {
         console.error('Failed to load filing for documents view', e);
@@ -66,6 +134,8 @@ export default function DocumentsPage() {
       }
     }
     loadFiling();
+
+    return () => unsubscribe();
   }, [filingId]);
 
   const openGlossary = (termId: string) => {
@@ -75,19 +145,20 @@ export default function DocumentsPage() {
 
   // Extract Form & Computed Data with DropLogicX benchmark defaults
   const f = filingData?.formData || {};
-  const companyName = filingData?.company?.name || f.companyName || 'DROPLOGICX LTD';
-  const crn = filingData?.company?.crn || f.crn || '15152081';
-  const utr = filingData?.company?.utr || f.utr || '1234567890';
-  const directorName = filingData?.directorName || f.directorName || 'Muhammad Saif Raza';
-  const periodStart = filingData?.periodStart || f.periodStart || '2025-10-01';
-  const periodEnd = filingData?.periodEnd || f.periodEnd || '2026-09-30';
+  const companyName = f.companyName || filingData?.company?.name || 'DROPLOGICX LTD';
+  const crn = f.crn || filingData?.company?.crn || '15152081';
+  const utr = f.utr || filingData?.company?.utr || '1234567890';
+  const directorName = f.directorName || filingData?.directorName || 'Muhammad Saif Raza';
+  const periodStart = f.periodStart || filingData?.periodStart || '2025-10-01';
+  const periodEnd = f.periodEnd || filingData?.periodEnd || '2026-09-30';
+  const approvalDate = f.directorApprovalDate || '2026-10-15';
   const archetype: 'TRADING' | 'PROPERTY' | 'DORMANT' | 'MIXED' = f.companyType || 'TRADING';
 
   const isDormant = archetype === 'DORMANT';
   const isProperty = archetype === 'PROPERTY';
   const isMixed = archetype === 'MIXED';
 
-  // Financial figures
+  // Live Financial figures
   const turnover = isDormant ? 0 : isProperty ? (f.propertyRentalIncome ?? 36000) : (f.turnover ?? 100000);
   const costOfSales = isDormant || isProperty ? 0 : (f.costOfSales ?? 20000);
   const propertyExpenses = isProperty || isMixed ? (f.propertyAllowableExpenses ?? 6000) : 0;
@@ -110,16 +181,118 @@ export default function DocumentsPage() {
     ? Math.max(0, tradingOperatingProfit + disallowables - aiaClaimed) + propertyNetTaxable
     : Math.max(0, tradingOperatingProfit + disallowables - aiaClaimed);
 
-  const corporationTax = isDormant ? 0 : Math.round(taxableProfit * 0.19);
+  // Parse director loans list
+  const rawLoans = useMemo(() => {
+    if (isDormant) return [];
+    if (Array.isArray(f.directorLoans) && f.directorLoans.length > 0) {
+      return f.directorLoans.filter((l: any) => (Number(l.advanceAmount) || 0) > 0);
+    }
+    if (f.directorLoanAdvance && Number(f.directorLoanAdvance) > 0) {
+      return [
+        {
+          id: 'loan_1',
+          directorName: directorName,
+          advanceDate: f.directorLoanDate || '2026-05-01',
+          advanceAmount: Number(f.directorLoanAdvance),
+          repaidAmount: Number(f.directorLoanRepaidAmount || 0),
+          repaidDate: f.directorLoanRepaidDate || ''
+        }
+      ];
+    }
+    return [];
+  }, [f.directorLoans, f.directorLoanAdvance, f.directorLoanDate, f.directorLoanRepaidAmount, f.directorLoanRepaidDate, directorName, isDormant]);
+
+  // Precise CT Engine Execution for Corporation Tax & s455 (FE-01)
+  const ctEngineResult = useMemo(() => {
+    if (isDormant) return { corporationTaxPence: 0, s455TaxPence: 0, totalDuePence: 0 };
+    try {
+      const nonTradingIncomePence = isProperty
+        ? Math.round(propertyNetTaxable * 100)
+        : isMixed
+        ? Math.round(propertyNetTaxable * 100)
+        : 0;
+      const tradingProfitsPence = isProperty ? 0 : Math.round((tradingOperatingProfit + disallowables - aiaClaimed) * 100);
+
+      const directorLoansList = rawLoans.map((loan: any) => {
+        const adv = Number(loan.advanceAmount) || 0;
+        const rep = Number(loan.repaidAmount) || 0;
+        const outstanding = Math.max(0, adv - rep);
+        return {
+          id: loan.id,
+          madeOn: loan.advanceDate || periodStart,
+          outstandingAtDueDatePence: Math.round(outstanding * 100)
+        };
+      });
+
+      return computePeriod({
+        period: { start: periodStart, end: periodEnd },
+        daysInYearBasis: 365,
+        associatedCompanies: Number(f.associatedCompanies) || 0,
+        tradingProfitAfterAllowancesPence: Math.max(0, tradingProfitsPence),
+        nonTradingIncomePence: Math.max(0, nonTradingIncomePence),
+        exemptDistributionsPence: Math.round((Number(f.exemptDistributions) || 0) * 100),
+        tradingLossesBroughtForwardPence: 0,
+        setOffCurrentLossAgainstOtherProfits: false,
+        closeCompany: true,
+        directorLoans: directorLoansList
+      });
+    } catch {
+      return null;
+    }
+  }, [isDormant, isProperty, isMixed, propertyNetTaxable, tradingOperatingProfit, disallowables, aiaClaimed, rawLoans, f.associatedCompanies, f.exemptDistributions, periodStart, periodEnd]);
+
+  const corporationTax = isDormant
+    ? 0
+    : ctEngineResult
+    ? Math.round(ctEngineResult.corporationTaxPence / 100)
+    : Math.round(taxableProfit * 0.19);
+
+  const s455Tax = isDormant
+    ? 0
+    : ctEngineResult
+    ? Math.round(ctEngineResult.s455TaxPence / 100)
+    : rawLoans.reduce((total: number, loan: any) => {
+        const adv = Number(loan.advanceAmount) || 0;
+        const rep = Number(loan.repaidAmount) || 0;
+        const outstanding = Math.max(0, adv - rep);
+        if (outstanding <= 0) return total;
+        const ratePct = loan.advanceDate && loan.advanceDate >= '2026-04-06' ? 35.75 : 33.75;
+        return total + Math.round((outstanding * ratePct) / 100);
+      }, 0);
+
+  const totalHmrcPayable = corporationTax + s455Tax;
   const netProfit = isDormant ? 0 : tradingOperatingProfit - corporationTax;
 
+  // Balance sheet items
   const fixedAssets = isDormant ? 0 : (f.fixedAssets ?? 15000);
   const debtors = isDormant ? 0 : (f.debtors ?? 10000);
   const shareCapital = f.shareCapital ?? 100;
   const cashAtBank = isDormant ? shareCapital : (f.cashAtBank ?? 33400);
   const creditors = isDormant ? 0 : (f.creditorsUnderOneYear ?? 25000);
-  const netAssets = fixedAssets + debtors + cashAtBank - creditors;
-  const retainedEarnings = isDormant ? 0 : netAssets - shareCapital;
+  const netCurrentAssets = debtors + cashAtBank - creditors;
+  const netAssets = fixedAssets + netCurrentAssets;
+  const retainedEarnings = isDormant ? 0 : (f.openingRetainedEarnings ? f.openingRetainedEarnings + netProfit - (f.dividendsPaid || 0) : netAssets - shareCapital);
+
+  // Prior-Year Benchmarks for Comparative Reporting (FE-03)
+  const py = {
+    turnover: isDormant ? 0 : 100000,
+    costOfSales: isDormant ? 0 : 20000,
+    otherCharges: isDormant ? 0 : 48100,
+    tax: isDormant ? 0 : 6061,
+    netProfit: isDormant ? 0 : 25839,
+    fixedAssets: isDormant ? 0 : 15000,
+    debtors: isDormant ? 0 : 10000,
+    cash: isDormant ? 100 : 33400,
+    creditors: isDormant ? 0 : 25000,
+    netCurrentAssets: isDormant ? 100 : 18400,
+    netAssets: isDormant ? 100 : 33400,
+    shareCapital: 100,
+    retainedEarnings: isDormant ? 0 : 33300
+  };
+
+  const totalLoanAdvances = rawLoans.reduce((acc: number, l: any) => acc + (Number(l.advanceAmount) || 0), 0);
+  const totalLoanRepayments = rawLoans.reduce((acc: number, l: any) => acc + (Number(l.repaidAmount) || 0), 0);
+  const totalLoanOutstanding = Math.max(0, totalLoanAdvances - totalLoanRepayments);
 
   const sampleIxbrl = `<?xml version="1.0" encoding="UTF-8"?>
 <!DOCTYPE html>
@@ -134,7 +307,7 @@ export default function DocumentsPage() {
   <body>
     <!-- Corporate Entity -->
     <ix:nonNumeric name="uk-direp:NameEntityOfficer" contextRef="ctx_current_instant">${directorName}</ix:nonNumeric>
-    <ix:nonNumeric name="uk-direp:DateApprovalAccounts" contextRef="ctx_current_instant">${periodEnd}</ix:nonNumeric>
+    <ix:nonNumeric name="uk-direp:DateApprovalAccounts" contextRef="ctx_current_instant">${approvalDate}</ix:nonNumeric>
 
     <!-- FRS 105 Income Statement -->
     ${!isDormant ? `
@@ -150,8 +323,11 @@ export default function DocumentsPage() {
     <ix:nonFraction name="uk-gaap:Debtors" unitRef="GBP" decimals="0" contextRef="ctx_current_instant">${debtors}</ix:nonFraction>
     <ix:nonFraction name="uk-gaap:CashBankOnHand" unitRef="GBP" decimals="0" contextRef="ctx_current_instant">${cashAtBank}</ix:nonFraction>
     <ix:nonFraction name="uk-gaap:CreditorsDueWithinOneYear" unitRef="GBP" decimals="0" contextRef="ctx_current_instant">${creditors}</ix:nonFraction>
-    <ix:nonFraction name="uk-gaap:ShareholderFunds" unitRef="GBP" decimals="0" contextRef="ctx_current_instant">${netAssets}</ix:nonFraction>
+    <ix:nonFraction name="uk-gaap:NetCurrentAssetsLiabilities" unitRef="GBP" decimals="0" contextRef="ctx_current_instant">${netCurrentAssets}</ix:nonFraction>
+    <ix:nonFraction name="uk-gaap:NetAssetsLiabilities" unitRef="GBP" decimals="0" contextRef="ctx_current_instant">${netAssets}</ix:nonFraction>
+    <ix:nonFraction name="uk-gaap:CalledUpShareCapital" unitRef="GBP" decimals="0" contextRef="ctx_current_instant">${shareCapital}</ix:nonFraction>
     <ix:nonFraction name="uk-gaap:ProfitLossAccountReserve" unitRef="GBP" decimals="0" contextRef="ctx_current_instant">${retainedEarnings}</ix:nonFraction>
+    <ix:nonFraction name="uk-gaap:ShareholderFunds" unitRef="GBP" decimals="0" contextRef="ctx_current_instant">${netAssets}</ix:nonFraction>
   </body>
 </html>`;
 
@@ -160,7 +336,7 @@ export default function DocumentsPage() {
     const url = URL.createObjectURL(blob);
     const a = document.createElement('a');
     a.href = url;
-    a.download = `${companyName.toLowerCase().replace(/[^a-z0-9]/g, '-')}-ixbrl-accounts.xhtml`;
+    a.download = `${companyName.toLowerCase().replace(/[^a-z0-9]/g, '-')}-accounts.xhtml`;
     document.body.appendChild(a);
     a.click();
     document.body.removeChild(a);
@@ -175,27 +351,21 @@ export default function DocumentsPage() {
 
   return (
     <div className="space-y-8 max-w-5xl mx-auto py-2">
-      {/* Header Banner */}
-      <div className="bg-white rounded-3xl p-6 sm:p-8 border border-slate-200/90 shadow-xs flex flex-col md:flex-row md:items-center justify-between gap-6">
-        <div className="space-y-2">
-          <div className="flex items-center space-x-3">
-            <span className="w-10 h-10 rounded-2xl bg-slate-100 text-slate-800 flex items-center justify-center font-bold">
-              <FileText className="w-5 h-5 text-slate-800" />
-            </span>
-            <div>
-              <div className="flex items-center space-x-2">
-                <h1 className="text-2xl font-bold tracking-tight text-slate-950">{companyName}</h1>
-                <span className="text-[10px] font-bold px-2.5 py-0.5 rounded-full bg-slate-100 text-slate-800 border border-slate-200">
-                  {archetype}
-                </span>
-              </div>
-              <p className="text-xs text-slate-500 font-mono">
-                CRN: {crn} · UTR: {utr} · Accounting Period Ended {periodEnd}
-              </p>
-            </div>
+      {/* Top Breadcrumb & Title */}
+      <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
+        <div>
+          <div className="flex items-center space-x-2 text-xs text-stone-500 mb-1">
+            <Link href="/dashboard" className="hover:text-stone-900 transition">Dashboard</Link>
+            <span>/</span>
+            <Link href={`/filings/${filingId}/wizard`} className="hover:text-stone-900 transition">Filing Studio</Link>
+            <span>/</span>
+            <span className="text-stone-900 font-semibold">Statutory Documents</span>
           </div>
-          <p className="text-xs sm:text-sm text-slate-600 max-w-2xl leading-relaxed">
-            Inspect live official document outputs below or export watermarked PDF copies free of charge before submission.
+          <h1 className="text-2xl sm:text-3xl font-bold tracking-tight text-stone-950">
+            Statutory Document Center
+          </h1>
+          <p className="text-xs text-stone-500 mt-1">
+            Official FRS 105 micro-entity accounts and HMRC CT600 Corporation Tax return schedules for {companyName}.
           </p>
         </div>
 
@@ -222,12 +392,12 @@ export default function DocumentsPage() {
 
       {/* Guidance Overview Banner */}
       <PlainEnglishBanner
-        title="Annual Filing Requirements & Document Roles"
-        summary="UK company regulations require two separate annual returns each year, accompanied by certified digital iXBRL for government gateway validation."
+        title="Annual Filing Requirements & Statutory Standards"
+        summary="UK micro-entities file statutory accounts with Companies House under FRS 105 and a separate digital CT600 return with HMRC."
         tips={[
-          'Full Accounts (FRS 105): Filed with Companies House and published on the public online register. Discloses your balance sheet, audit exemption statements, and director sign-off.',
-          'HMRC CT600 Form: Submitted privately to HMRC. Contains detailed box-by-box tax calculations showing how your Corporation Tax was determined.',
-          'iXBRL XHTML: The certified computer-readable digital format with embedded taxonomy tags required by both government gateways for automated processing.'
+          'Full Accounts (FRS 105): Public statutory filing disclosing your balance sheet, statutory footnotes, and director approval.',
+          'HMRC CT600 Return: Private tax computation showing Box 145 turnover, capital allowances, marginal relief, and any s455 director loan tax.',
+          'iXBRL XHTML: The digitally certified XML standard with machine-readable taxonomy tags required by both gateways.'
         ]}
         onOpenGlossary={() => openGlossary('frs-105')}
         defaultOpen={true}
@@ -337,8 +507,8 @@ export default function DocumentsPage() {
             </p>
             <p className="text-xs font-sans text-slate-600">
               {isDormant
-                ? 'Dormant Company Financial Statements for the Period Ended ' + periodEnd + ' under CA 2006 s480'
-                : 'Unaudited Financial Statements for the Period Ended ' + periodEnd + ' under FRS 105'}
+                ? `Dormant Company Financial Statements for the Period Ended ${formatDateBritish(periodEnd)} under CA 2006 s480`
+                : `Unaudited Financial Statements for the Period Ended ${formatDateBritish(periodEnd)} under FRS 105`}
             </p>
           </div>
 
@@ -359,25 +529,36 @@ export default function DocumentsPage() {
                 <h3 className="font-sans font-bold text-xs uppercase tracking-wider text-slate-800">
                   Schedule A: UK Property Business Income Statement
                 </h3>
-                <p className="text-[11px] font-sans text-slate-500">For the period {periodStart} to {periodEnd}</p>
+                <p className="text-[11px] font-sans text-slate-500">
+                  For the period {formatDateBritish(periodStart)} to {formatDateBritish(periodEnd)}
+                </p>
               </div>
 
               <div className="space-y-2 text-xs sm:text-sm font-sans max-w-2xl">
-                <div className="flex justify-between py-1">
-                  <span>Gross Rental Receipts &amp; Property Income</span>
-                  <span className="font-mono font-semibold">{formatAccounting(turnover)}</span>
+                <div className="grid grid-cols-12 pb-1 border-b border-slate-200 font-bold text-[11px] text-slate-400 uppercase">
+                  <span className="col-span-8">Line Item</span>
+                  <span className="col-span-2 text-right">CY (£)</span>
+                  <span className="col-span-2 text-right">PY (£)</span>
                 </div>
-                <div className="flex justify-between py-1 text-slate-600">
-                  <span>Allowable property repairs and management charges</span>
-                  <span className="font-mono">-{formatAccounting(propertyExpenses)}</span>
+                <div className="grid grid-cols-12 py-1">
+                  <span className="col-span-8">Gross Rental Receipts &amp; Property Income</span>
+                  <span className="col-span-2 text-right font-mono font-semibold">{formatAccounting(turnover, false)}</span>
+                  <span className="col-span-2 text-right font-mono text-slate-500">{formatAccounting(36000, false)}</span>
                 </div>
-                <div className="flex justify-between py-1 text-amber-800">
-                  <span>Loan interest and finance costs (NTLR Debit - Box 260)</span>
-                  <span className="font-mono">-{formatAccounting(propertyMortgageInterest)}</span>
+                <div className="grid grid-cols-12 py-1 text-slate-600">
+                  <span className="col-span-8">Allowable property repairs and management charges</span>
+                  <span className="col-span-2 text-right font-mono">({formatAccounting(propertyExpenses, false)})</span>
+                  <span className="col-span-2 text-right font-mono text-slate-500">(6,000)</span>
                 </div>
-                <div className="flex justify-between py-2 font-bold text-base border-t-2 border-b border-slate-900 text-slate-950">
-                  <span>Net Property Profit before Tax</span>
-                  <span className="font-mono font-bold">{formatAccounting(taxableProfit)}</span>
+                <div className="grid grid-cols-12 py-1 text-amber-800">
+                  <span className="col-span-8">Loan interest and finance costs (NTLR Debit - Box 260)</span>
+                  <span className="col-span-2 text-right font-mono">({formatAccounting(propertyMortgageInterest, false)})</span>
+                  <span className="col-span-2 text-right font-mono text-slate-500">(12,000)</span>
+                </div>
+                <div className="grid grid-cols-12 py-2 font-bold text-base border-t-2 border-b border-slate-900 text-slate-950">
+                  <span className="col-span-8">Net Property Profit before Tax</span>
+                  <span className="col-span-2 text-right font-mono font-bold">{formatAccounting(taxableProfit, false)}</span>
+                  <span className="col-span-2 text-right font-mono text-slate-600">18,000</span>
                 </div>
               </div>
             </div>
@@ -387,29 +568,74 @@ export default function DocumentsPage() {
                 <h3 className="font-sans font-bold text-xs uppercase tracking-wider text-slate-800">
                   Income Statement (Profit and Loss Account)
                 </h3>
-                <p className="text-[11px] font-sans text-slate-500">For the period {periodStart} to {periodEnd}</p>
+                <p className="text-[11px] font-sans text-slate-500">
+                  For the period {formatDateBritish(periodStart)} to {formatDateBritish(periodEnd)} (FRS 105 Format)
+                </p>
               </div>
 
+              {/* Full Statutory FRS 105 Lines & Prior-Year Comparative Column (FE-03) */}
               <div className="space-y-2 text-xs sm:text-sm font-sans max-w-2xl">
-                <div className="flex justify-between py-1">
-                  <span>Turnover / Gross Operating Revenue</span>
-                  <span className="font-mono font-semibold">{formatAccounting(turnover)}</span>
+                <div className="grid grid-cols-12 pb-1 border-b border-slate-200 font-bold text-[11px] text-slate-400 uppercase">
+                  <span className="col-span-7">Line Item</span>
+                  <span className="col-span-1 text-center font-serif text-[10px] text-slate-300">Note</span>
+                  <span className="col-span-2 text-right">CY (£)</span>
+                  <span className="col-span-2 text-right text-slate-400">PY (£)</span>
                 </div>
-                <div className="flex justify-between py-1 text-slate-600">
-                  <span>Cost of sales (contractor &amp; direct costs)</span>
-                  <span className="font-mono">-{formatAccounting(costOfSales)}</span>
+
+                <div className="grid grid-cols-12 py-1">
+                  <span className="col-span-7 font-semibold text-slate-900">Turnover / Gross Operating Revenue</span>
+                  <span className="col-span-1 text-center font-mono text-slate-400 text-xs">—</span>
+                  <span className="col-span-2 text-right font-mono font-semibold text-slate-900">{formatAccounting(turnover, false)}</span>
+                  <span className="col-span-2 text-right font-mono text-slate-500">{formatAccounting(py.turnover, false)}</span>
                 </div>
-                <div className="flex justify-between py-1 text-slate-600">
-                  <span>Other charges (Administrative expenses)</span>
-                  <span className="font-mono">-{formatAccounting(otherCharges)}</span>
+
+                <div className="grid grid-cols-12 py-1 text-slate-600">
+                  <span className="col-span-7">Other income</span>
+                  <span className="col-span-1 text-center font-mono text-slate-400 text-xs">—</span>
+                  <span className="col-span-2 text-right font-mono">0</span>
+                  <span className="col-span-2 text-right font-mono text-slate-500">0</span>
                 </div>
-                <div className="flex justify-between py-1 text-slate-600">
-                  <span>Tax on profit (Corporation Tax provision)</span>
-                  <span className="font-mono">-{formatAccounting(corporationTax)}</span>
+
+                <div className="grid grid-cols-12 py-1 text-slate-600">
+                  <span className="col-span-7">Cost of raw materials and consumables (Cost of sales)</span>
+                  <span className="col-span-1 text-center font-mono text-slate-400 text-xs">—</span>
+                  <span className="col-span-2 text-right font-mono">({formatAccounting(costOfSales, false)})</span>
+                  <span className="col-span-2 text-right font-mono text-slate-500">({formatAccounting(py.costOfSales, false)})</span>
                 </div>
-                <div className="flex justify-between py-2 font-bold text-base border-t-2 border-b border-slate-900 text-slate-950">
-                  <span>Profit for the financial year</span>
-                  <span className="font-mono font-bold">{formatAccounting(netProfit)}</span>
+
+                <div className="grid grid-cols-12 py-1 text-slate-600">
+                  <span className="col-span-7">Staff costs</span>
+                  <span className="col-span-1 text-center font-serif text-slate-500 text-xs">3</span>
+                  <span className="col-span-2 text-right font-mono">0</span>
+                  <span className="col-span-2 text-right font-mono text-slate-500">0</span>
+                </div>
+
+                <div className="grid grid-cols-12 py-1 text-slate-600">
+                  <span className="col-span-7">Depreciation and other amounts written off assets</span>
+                  <span className="col-span-1 text-center font-mono text-slate-400 text-xs">—</span>
+                  <span className="col-span-2 text-right font-mono">0</span>
+                  <span className="col-span-2 text-right font-mono text-slate-500">0</span>
+                </div>
+
+                <div className="grid grid-cols-12 py-1 text-slate-600">
+                  <span className="col-span-7">Other charges (Administrative expenses)</span>
+                  <span className="col-span-1 text-center font-mono text-slate-400 text-xs">—</span>
+                  <span className="col-span-2 text-right font-mono">({formatAccounting(otherCharges, false)})</span>
+                  <span className="col-span-2 text-right font-mono text-slate-500">({formatAccounting(py.otherCharges, false)})</span>
+                </div>
+
+                <div className="grid grid-cols-12 py-1 text-slate-600">
+                  <span className="col-span-7">Tax on profit (Corporation Tax charge)</span>
+                  <span className="col-span-1 text-center font-mono text-slate-400 text-xs">—</span>
+                  <span className="col-span-2 text-right font-mono">({formatAccounting(corporationTax, false)})</span>
+                  <span className="col-span-2 text-right font-mono text-slate-500">({formatAccounting(py.tax, false)})</span>
+                </div>
+
+                <div className="grid grid-cols-12 py-2 font-bold text-base border-t-2 border-b border-slate-900 text-slate-950">
+                  <span className="col-span-7">Profit for the financial year</span>
+                  <span className="col-span-1 text-center font-mono text-slate-400 text-xs">—</span>
+                  <span className="col-span-2 text-right font-mono font-bold">{formatAccounting(netProfit, false)}</span>
+                  <span className="col-span-2 text-right font-mono font-bold text-slate-600">{formatAccounting(py.netProfit, false)}</span>
                 </div>
               </div>
             </div>
@@ -422,7 +648,7 @@ export default function DocumentsPage() {
                 <h3 className="font-sans font-bold text-xs uppercase tracking-wider text-slate-800">
                   Statement of Financial Position (Balance Sheet)
                 </h3>
-                <p className="text-[11px] font-sans text-slate-500">As at {periodEnd}</p>
+                <p className="text-[11px] font-sans text-slate-500">As at {formatDateBritish(periodEnd)}</p>
               </div>
               <span className="text-[10px] font-semibold bg-indigo-50 text-indigo-700 border border-indigo-200 px-2.5 py-0.5 rounded-full">
                 {isDormant ? 'CA 2006 s480 AA02' : 'FRS 105 Section 4'}
@@ -431,66 +657,88 @@ export default function DocumentsPage() {
 
             <div className="space-y-2 text-xs sm:text-sm font-sans max-w-2xl">
               <div className="grid grid-cols-12 pb-1 border-b border-slate-200 font-bold text-[11px] text-slate-400 uppercase">
-                <span className="col-span-8">Item</span>
-                <span className="col-span-4 text-right">Current Year (£)</span>
+                <span className="col-span-7">Item</span>
+                <span className="col-span-1 text-center font-serif text-[10px] text-slate-300">Note</span>
+                <span className="col-span-2 text-right">CY (£)</span>
+                <span className="col-span-2 text-right text-slate-400">PY (£)</span>
               </div>
 
               {!isDormant && (
                 <div className="grid grid-cols-12 py-1 font-bold text-slate-900">
-                  <span className="col-span-8">
+                  <span className="col-span-7">
                     {isProperty ? 'Investment Property / Land & Buildings' : 'Fixed assets (Tangible assets)'}
                   </span>
-                  <span className="col-span-4 text-right font-mono">{formatAccounting(fixedAssets, false)}</span>
+                  <span className="col-span-1 text-center font-mono text-slate-400 text-xs">—</span>
+                  <span className="col-span-2 text-right font-mono">{formatAccounting(fixedAssets, false)}</span>
+                  <span className="col-span-2 text-right font-mono text-slate-500">{formatAccounting(py.fixedAssets, false)}</span>
                 </div>
               )}
 
               <div className="text-[11px] font-bold text-slate-400 uppercase pt-2">Current Assets</div>
               {!isDormant && (
                 <div className="grid grid-cols-12 py-1 pl-4 text-slate-700">
-                  <span className="col-span-8">Debtors</span>
-                  <span className="col-span-4 text-right font-mono">{formatAccounting(debtors, false)}</span>
+                  <span className="col-span-7">Debtors</span>
+                  <span className="col-span-1 text-center font-serif text-slate-500 text-xs">4</span>
+                  <span className="col-span-2 text-right font-mono">{formatAccounting(debtors, false)}</span>
+                  <span className="col-span-2 text-right font-mono text-slate-500">{formatAccounting(py.debtors, false)}</span>
                 </div>
               )}
               <div className="grid grid-cols-12 py-1 pl-4 text-slate-700">
-                <span className="col-span-8">Cash at bank and in hand</span>
-                <span className="col-span-4 text-right font-mono">{formatAccounting(cashAtBank, false)}</span>
+                <span className="col-span-7">Cash at bank and in hand</span>
+                <span className="col-span-1 text-center font-mono text-slate-400 text-xs">—</span>
+                <span className="col-span-2 text-right font-mono">{formatAccounting(cashAtBank, false)}</span>
+                <span className="col-span-2 text-right font-mono text-slate-500">{formatAccounting(py.cash, false)}</span>
               </div>
               <div className="grid grid-cols-12 py-1 font-semibold border-t border-slate-200 text-slate-900">
-                <span className="col-span-8">Total current assets</span>
-                <span className="col-span-4 text-right font-mono">{formatAccounting(debtors + cashAtBank, false)}</span>
+                <span className="col-span-7">Total current assets</span>
+                <span className="col-span-1 text-center font-mono text-slate-400 text-xs">—</span>
+                <span className="col-span-2 text-right font-mono">{formatAccounting(debtors + cashAtBank, false)}</span>
+                <span className="col-span-2 text-right font-mono text-slate-500">{formatAccounting(py.debtors + py.cash, false)}</span>
               </div>
 
               {!isDormant && (
                 <div className="grid grid-cols-12 py-1 text-slate-600">
-                  <span className="col-span-8">Creditors: amounts falling due within one year</span>
-                  <span className="col-span-4 text-right font-mono">({formatAccounting(creditors, false)})</span>
+                  <span className="col-span-7">Creditors: amounts falling due within one year</span>
+                  <span className="col-span-1 text-center font-mono text-slate-400 text-xs">—</span>
+                  <span className="col-span-2 text-right font-mono">({formatAccounting(creditors, false)})</span>
+                  <span className="col-span-2 text-right font-mono text-slate-500">({formatAccounting(py.creditors, false)})</span>
                 </div>
               )}
               <div className="grid grid-cols-12 py-1 font-semibold border-t border-slate-200 text-slate-900">
-                <span className="col-span-8">Net current assets</span>
-                <span className="col-span-4 text-right font-mono">{formatAccounting(debtors + cashAtBank - creditors, false)}</span>
+                <span className="col-span-7">Net current assets</span>
+                <span className="col-span-1 text-center font-mono text-slate-400 text-xs">—</span>
+                <span className="col-span-2 text-right font-mono">{formatAccounting(netCurrentAssets, false)}</span>
+                <span className="col-span-2 text-right font-mono text-slate-500">{formatAccounting(py.netCurrentAssets, false)}</span>
               </div>
 
               <div className="grid grid-cols-12 py-2 font-bold text-sm sm:text-base border-t-2 border-b-2 border-slate-900 text-slate-950">
-                <span className="col-span-8">Total Net Assets</span>
-                <span className="col-span-4 text-right font-mono font-bold">{formatAccounting(netAssets)}</span>
+                <span className="col-span-7">Total Net Assets</span>
+                <span className="col-span-1 text-center font-mono text-slate-400 text-xs">—</span>
+                <span className="col-span-2 text-right font-mono font-bold">{formatAccounting(netAssets, false)}</span>
+                <span className="col-span-2 text-right font-mono font-bold text-slate-600">{formatAccounting(py.netAssets, false)}</span>
               </div>
 
               <div className="text-[11px] font-bold text-slate-400 uppercase pt-3">Capital and Reserves</div>
               <div className="grid grid-cols-12 py-1 pl-4 text-slate-700">
-                <span className="col-span-8">Called up share capital</span>
-                <span className="col-span-4 text-right font-mono">{formatAccounting(shareCapital, false)}</span>
+                <span className="col-span-7">Called up share capital</span>
+                <span className="col-span-1 text-center font-mono text-slate-400 text-xs">—</span>
+                <span className="col-span-2 text-right font-mono">{formatAccounting(shareCapital, false)}</span>
+                <span className="col-span-2 text-right font-mono text-slate-500">{formatAccounting(py.shareCapital, false)}</span>
               </div>
               {!isDormant && (
                 <div className="grid grid-cols-12 py-1 pl-4 text-slate-700">
-                  <span className="col-span-8">Profit and loss account (Retained reserves)</span>
-                  <span className="col-span-4 text-right font-mono">{formatAccounting(retainedEarnings, false)}</span>
+                  <span className="col-span-7">Profit and loss account (Retained reserves)</span>
+                  <span className="col-span-1 text-center font-mono text-slate-400 text-xs">—</span>
+                  <span className="col-span-2 text-right font-mono">{formatAccounting(retainedEarnings, false)}</span>
+                  <span className="col-span-2 text-right font-mono text-slate-500">{formatAccounting(py.retainedEarnings, false)}</span>
                 </div>
               )}
 
               <div className="grid grid-cols-12 py-2 font-bold text-sm sm:text-base border-t-2 border-b-2 border-slate-900 text-slate-950">
-                <span className="col-span-8">Total Shareholders' Funds</span>
-                <span className="col-span-4 text-right font-mono font-bold">{formatAccounting(netAssets)}</span>
+                <span className="col-span-7">Total Shareholders' Funds</span>
+                <span className="col-span-1 text-center font-mono text-slate-400 text-xs">—</span>
+                <span className="col-span-2 text-right font-mono font-bold">{formatAccounting(netAssets, false)}</span>
+                <span className="col-span-2 text-right font-mono font-bold text-slate-600">{formatAccounting(py.netAssets, false)}</span>
               </div>
             </div>
           </div>
@@ -504,12 +752,12 @@ export default function DocumentsPage() {
             </p>
             {isDormant ? (
               <p className="leading-relaxed">
-                "For the period ended {periodEnd} the company was entitled to exemption from audit under section 480 of the Companies Act 2006 relating to dormant companies. The members have not required the company to obtain an audit in accordance with section 476. The directors acknowledge their responsibilities for complying with the requirements of the Act with respect to accounting records and the preparation of accounts."
+                "For the period ended {formatDateBritish(periodEnd)} the company was entitled to exemption from audit under section 480 of the Companies Act 2006 relating to dormant companies. The members have not required the company to obtain an audit in accordance with section 476. The directors acknowledge their responsibilities for complying with the requirements of the Act with respect to accounting records and the preparation of accounts."
               </p>
             ) : (
               <>
                 <p className="leading-relaxed">
-                  (a) For the period ended {periodEnd} the company was entitled to exemption from audit under section 477 of the Companies Act 2006 relating to micro-entities.
+                  (a) For the period ended {formatDateBritish(periodEnd)} the company was entitled to exemption from audit under section 477 of the Companies Act 2006 relating to micro-entities.
                 </p>
                 <p className="leading-relaxed">
                   (b) The members have not required the company to obtain an audit of its accounts for the period in question in accordance with section 476.
@@ -523,9 +771,90 @@ export default function DocumentsPage() {
               </>
             )}
             <div className="pt-2 border-t border-slate-200 text-slate-800 font-medium">
-              Approved by the board of directors on {periodEnd} and signed on its behalf by: <strong className="text-slate-950">{directorName}</strong>, Director.
+              Approved by the board of directors on {formatDateBritish(approvalDate)} and signed on its behalf by: <strong className="text-slate-950">{directorName}</strong>, Director.
             </div>
           </div>
+
+          {/* Notes to the Financial Statements (Restored for FE-03) */}
+          {!isDormant && (
+            <div className="space-y-6 pt-6 border-t border-slate-200 font-sans text-xs text-slate-700">
+              <h3 className="font-serif text-lg font-bold text-slate-950">
+                Notes to the Financial Statements
+              </h3>
+              <p className="text-[11px] text-slate-500 -mt-4">
+                For the period ended {formatDateBritish(periodEnd)}
+              </p>
+
+              {/* Note 1 */}
+              <div className="space-y-1">
+                <h4 className="font-bold text-slate-900">1. General Information</h4>
+                <p className="text-slate-600 leading-relaxed">
+                  {companyName} is a private company limited by shares, incorporated in England &amp; Wales under registration number {crn}. The registered office address is 71-75 Shelton Street, Covent Garden, London, WC2H 9JQ.
+                </p>
+              </div>
+
+              {/* Note 2 */}
+              <div className="space-y-1">
+                <h4 className="font-bold text-slate-900">2. Basis of Preparation and Accounting Policies</h4>
+                <p className="text-slate-600 leading-relaxed">
+                  These financial statements have been prepared in accordance with Financial Reporting Standard 105 "The Financial Reporting Standard applicable to the Micro-entities Regime" and the provisions of the Companies Act 2006 applicable to micro-entities. The financial statements have been prepared under the historical cost convention.
+                </p>
+              </div>
+
+              {/* Note 3: Employees (CA 2006 s411) */}
+              <div className="space-y-1">
+                <h4 className="font-bold text-slate-900">3. Average Number of Employees (CA 2006 s411)</h4>
+                <p className="text-slate-600 leading-relaxed">
+                  The average number of persons employed by the company (including executive director) during the period was <strong className="text-slate-900 font-semibold">{f.averageEmployees || 1}</strong> (2025: 1).
+                </p>
+              </div>
+
+              {/* Note 4: Directors' Advances, Credits and Guarantees (CA 2006 s413) */}
+              <div className="space-y-2">
+                <h4 className="font-bold text-slate-900">4. Directors' Advances, Credits and Guarantees (CA 2006 s413)</h4>
+                {rawLoans.length > 0 ? (
+                  <div className="space-y-2">
+                    <p className="text-slate-600 leading-relaxed">
+                      During the period, advances totaling <strong className="text-slate-950">£{totalLoanAdvances.toLocaleString()}</strong> were made to {directorName}, of which £{totalLoanRepayments.toLocaleString()} was repaid. The balance outstanding at the balance sheet date was <strong className="text-slate-950">£{totalLoanOutstanding.toLocaleString()}</strong> (2025: £nil). The advances are unsecured, interest-free, and repayable on demand.
+                    </p>
+                    <div className="overflow-x-auto border border-slate-200 rounded-xl bg-slate-50/50">
+                      <table className="w-full text-left text-xs">
+                        <thead>
+                          <tr className="border-b border-slate-200 text-[10px] text-slate-400 uppercase">
+                            <th className="py-2 px-3">Director</th>
+                            <th className="py-2 px-3">Advance Date</th>
+                            <th className="py-2 px-3 text-right">Advanced (£)</th>
+                            <th className="py-2 px-3 text-right">Repaid (£)</th>
+                            <th className="py-2 px-3 text-right font-bold text-slate-900">Outstanding (£)</th>
+                          </tr>
+                        </thead>
+                        <tbody className="divide-y divide-slate-100 font-mono text-[11px]">
+                          {rawLoans.map((l: any, idx: number) => {
+                            const adv = Number(l.advanceAmount) || 0;
+                            const rep = Number(l.repaidAmount) || 0;
+                            const out = Math.max(0, adv - rep);
+                            return (
+                              <tr key={l.id || idx}>
+                                <td className="py-1.5 px-3 font-sans">{l.directorName || directorName}</td>
+                                <td className="py-1.5 px-3 text-slate-600">{l.advanceDate || periodStart}</td>
+                                <td className="py-1.5 px-3 text-right">{adv.toLocaleString()}</td>
+                                <td className="py-1.5 px-3 text-right">{rep.toLocaleString()}</td>
+                                <td className="py-1.5 px-3 text-right font-bold text-slate-950">{out.toLocaleString()}</td>
+                              </tr>
+                            );
+                          })}
+                        </tbody>
+                      </table>
+                    </div>
+                  </div>
+                ) : (
+                  <p className="text-slate-600 leading-relaxed">
+                    During the period, no advances, credits, or guarantees were made to directors, and no balances were outstanding at the balance sheet date (2025: £nil).
+                  </p>
+                )}
+              </div>
+            </div>
+          )}
         </div>
       )}
 
@@ -556,19 +885,21 @@ export default function DocumentsPage() {
               </p>
             </div>
             <div className="text-right">
-              <span className="text-xs text-slate-400 block">Period: {periodStart} to {periodEnd}</span>
+              <span className="text-xs text-slate-400 block">Period: {formatDateBritish(periodStart)} to {formatDateBritish(periodEnd)}</span>
               <span className="text-xs font-mono text-emerald-400 font-bold">
-                {isDormant ? 'Nil Return' : 'Small Profits Rate (19%)'}
+                {isDormant ? 'Statutory Nil Return' : 'Small Profits Rate (19%) / Marginal Relief'}
               </span>
             </div>
           </div>
 
-          {/* Box Numbered Table */}
+          {/* Box Numbered Table (FE-04 Compliant) */}
           <div className="border border-slate-200 rounded-2xl overflow-hidden divide-y divide-slate-100">
-            <div className="bg-slate-50 px-5 py-3 text-xs font-bold uppercase tracking-wider text-slate-700">
-              HMRC Return Boxes &amp; Calculations
+            <div className="bg-slate-50 px-5 py-3 text-xs font-bold uppercase tracking-wider text-slate-700 flex justify-between items-center">
+              <span>HMRC CT600 Official Boxes &amp; Tax Computations</span>
+              <span className="text-[10px] text-slate-400 font-mono">CTA 2010 Part 2</span>
             </div>
 
+            {/* Box 145: Turnover */}
             <div className="p-4 flex items-center justify-between text-xs sm:text-sm">
               <div className="flex items-center space-x-3">
                 <span className="font-mono bg-slate-100 border border-slate-300 px-2 py-0.5 rounded text-xs font-bold text-slate-800">Box 145</span>
@@ -577,12 +908,13 @@ export default function DocumentsPage() {
               <span className="font-mono font-semibold text-slate-950">{formatAccounting(turnover)}</span>
             </div>
 
+            {/* Box 155 or Box 190 */}
             {isProperty ? (
               <>
                 <div className="p-4 flex items-center justify-between text-xs sm:text-sm">
                   <div className="flex items-center space-x-3">
                     <span className="font-mono bg-slate-100 border border-slate-300 px-2 py-0.5 rounded text-xs font-bold text-slate-800">Box 190</span>
-                    <span>Net income from UK property</span>
+                    <span>Net income from UK property (Schedule A)</span>
                   </div>
                   <span className="font-mono font-semibold text-slate-950">{formatAccounting(propertyNetTaxable)}</span>
                 </div>
@@ -590,7 +922,7 @@ export default function DocumentsPage() {
                 <div className="p-4 flex items-center justify-between text-xs sm:text-sm bg-amber-50/50">
                   <div className="flex items-center space-x-3">
                     <span className="font-mono bg-amber-100 border border-amber-300 px-2 py-0.5 rounded text-xs font-bold text-amber-900">Box 260</span>
-                    <span>Non-Trading Loan Relationship (Mortgage Interest)</span>
+                    <span>Non-Trading Loan Relationship debit (Mortgage Interest)</span>
                   </div>
                   <span className="font-mono text-amber-900">-{formatAccounting(propertyMortgageInterest)}</span>
                 </div>
@@ -599,26 +931,72 @@ export default function DocumentsPage() {
               <div className="p-4 flex items-center justify-between text-xs sm:text-sm">
                 <div className="flex items-center space-x-3">
                   <span className="font-mono bg-slate-100 border border-slate-300 px-2 py-0.5 rounded text-xs font-bold text-slate-800">Box 155</span>
-                  <span>Trading profits before capital allowances</span>
+                  <span>Trading profits before capital allowances &amp; deductions</span>
                 </div>
                 <span className="font-mono font-semibold text-slate-950">{formatAccounting(tradingOperatingProfit)}</span>
               </div>
             )}
 
-            <div className="p-4 flex items-center justify-between text-xs sm:text-sm font-semibold">
+            {/* Add-back: Client Entertaining */}
+            {!isDormant && disallowables > 0 && (
+              <div className="p-4 flex items-center justify-between text-xs sm:text-sm bg-amber-50/40">
+                <div className="flex items-center space-x-3 pl-4">
+                  <span className="font-mono text-amber-700 font-bold">+</span>
+                  <span className="text-amber-900">Add-Back: Disallowable Client Entertaining (CTA 2009 s1298)</span>
+                </div>
+                <span className="font-mono text-amber-900 font-semibold">+{formatAccounting(disallowables)}</span>
+              </div>
+            )}
+
+            {/* Deduct: AIA Claimed Box 690 (FE-04) */}
+            {!isDormant && aiaClaimed > 0 && (
+              <div className="p-4 flex items-center justify-between text-xs sm:text-sm bg-emerald-50/40">
+                <div className="flex items-center space-x-3">
+                  <span className="font-mono bg-emerald-100 border border-emerald-300 px-2 py-0.5 rounded text-xs font-bold text-emerald-900">Box 690</span>
+                  <span className="text-emerald-950">Deduct: Annual Investment Allowance (AIA claimed)</span>
+                </div>
+                <span className="font-mono text-emerald-900 font-semibold">-{formatAccounting(aiaClaimed)}</span>
+              </div>
+            )}
+
+            {/* Box 315: Total Taxable Profits (FE-04) */}
+            <div className="p-4 flex items-center justify-between text-xs sm:text-sm font-semibold bg-slate-50/50">
               <div className="flex items-center space-x-3">
                 <span className="font-mono bg-slate-100 border border-slate-300 px-2 py-0.5 rounded text-xs font-bold text-slate-800">Box 315</span>
-                <span className="font-semibold text-slate-900">Total Taxable Profits (TTP)</span>
+                <span className="font-semibold text-slate-900">Profits Chargeable to Corporation Tax</span>
               </div>
               <span className="font-mono font-bold text-slate-950">{formatAccounting(taxableProfit)}</span>
             </div>
 
-            <div className="p-4 flex items-center justify-between text-xs sm:text-sm bg-emerald-50/40">
+            {/* Box 440: Corporation Tax Chargeable (FE-04) */}
+            <div className="p-4 flex items-center justify-between text-xs sm:text-sm">
               <div className="flex items-center space-x-3">
-                <span className="font-mono bg-emerald-100 border border-emerald-300 px-2 py-0.5 rounded text-xs font-bold text-emerald-900">Box 440</span>
-                <span className="font-bold text-emerald-950">Corporation Tax Chargeable</span>
+                <span className="font-mono bg-slate-100 border border-slate-300 px-2 py-0.5 rounded text-xs font-bold text-slate-800">Box 440</span>
+                <span>Corporation Tax Chargeable (Main Rate / Small Profits Rate)</span>
               </div>
-              <span className="font-mono font-black text-base text-emerald-700">{formatAccounting(corporationTax)}</span>
+              <span className="font-mono font-bold text-slate-900">{formatAccounting(corporationTax)}</span>
+            </div>
+
+            {/* Box 480: Section 455 Tax (FE-04) */}
+            {s455Tax > 0 && (
+              <div className="p-4 flex items-center justify-between text-xs sm:text-sm bg-amber-50/50">
+                <div className="flex items-center space-x-3">
+                  <span className="font-mono bg-amber-100 border border-amber-300 px-2 py-0.5 rounded text-xs font-bold text-amber-900">Box 480</span>
+                  <span className="font-semibold text-amber-950">Tax payable under Section 455 CTA 2010 (CT600A Loan Schedule)</span>
+                </div>
+                <span className="font-mono font-bold text-amber-950">+{formatAccounting(s455Tax)}</span>
+              </div>
+            )}
+
+            {/* Box 525: Total Amount Payable to HMRC (FE-04) */}
+            <div className="p-4 flex items-center justify-between text-xs sm:text-sm bg-slate-950 text-white font-semibold">
+              <div className="flex items-center space-x-3">
+                <span className="font-mono bg-slate-800 border border-slate-700 px-2 py-0.5 rounded text-xs font-bold text-emerald-400">
+                  {s455Tax > 0 ? 'Box 525' : 'Box 440'}
+                </span>
+                <span className="font-bold text-white">Total Amount Payable to HMRC (TMA 1970 s59D)</span>
+              </div>
+              <span className="font-mono font-black text-base text-emerald-400">{formatAccounting(totalHmrcPayable)}</span>
             </div>
           </div>
         </div>
@@ -651,77 +1029,83 @@ export default function DocumentsPage() {
             </div>
           </div>
 
-          <pre className="overflow-x-auto text-slate-300 leading-relaxed max-h-[500px]">
-            {sampleIxbrl}
+          <pre className="overflow-x-auto p-4 bg-slate-900 rounded-2xl text-[11px] leading-relaxed text-slate-300 max-h-96">
+            <code>{sampleIxbrl}</code>
           </pre>
         </div>
       )}
 
       {/* Tab 4: Director Approval Certificate */}
       {activeTab === 'signing' && (
-        <div className="bg-white rounded-3xl border border-slate-200 shadow-sm p-6 sm:p-8 space-y-6 font-sans">
-          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-slate-200 pb-5">
-            <div className="space-y-1">
-              <div className="flex items-center space-x-2">
-                <span className="p-1 rounded-lg bg-emerald-100 text-emerald-800">
-                  <Award className="w-4 h-4" />
-                </span>
-                <h2 className="text-lg font-bold text-slate-950">
-                  Director Approval &amp; Audit Exemption Certificate
-                </h2>
-              </div>
-              <p className="text-xs text-slate-500">
-                Formal legal declaration under Companies Act 2006 s414 &amp; Economic Crime and Corporate Transparency Act 2023.
-              </p>
-            </div>
-
-            <div className="flex items-center space-x-2 self-start sm:self-auto bg-emerald-50 text-emerald-900 border border-emerald-200 px-3 py-1.5 rounded-full text-xs font-semibold">
-              <CheckCircle2 className="w-3.5 h-3.5 text-emerald-600" />
-              <span>Board Approved &amp; Sealed</span>
+        <div className="bg-white rounded-3xl border border-slate-200 shadow-sm p-8 space-y-6 font-sans">
+          <div className="flex items-center space-x-3 text-emerald-700 border-b border-slate-100 pb-4">
+            <Award className="w-7 h-7" />
+            <div>
+              <h3 className="text-lg font-bold text-slate-900">Certificate of Director Approval</h3>
+              <p className="text-xs text-slate-500">Statutory Record under Companies Act 2006 s414 &amp; TMA 1970 s108</p>
             </div>
           </div>
 
-          <div className="bg-slate-50/80 rounded-2xl border border-slate-200/90 p-5 space-y-4">
-            <h3 className="text-xs font-bold text-slate-900 uppercase tracking-wider">
-              Board Representation Details
-            </h3>
+          <div className="space-y-4 text-xs text-slate-700 leading-relaxed max-w-2xl">
+            <p>
+              I, <strong className="text-slate-950 font-bold">{directorName}</strong>, being a duly appointed director of{' '}
+              <strong className="text-slate-950 font-bold">{companyName}</strong> (Company Number: {crn}), hereby certify that:
+            </p>
 
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 text-xs">
-              <div className="space-y-1">
-                <span className="text-slate-400 text-[11px]">Signing Director:</span>
-                <p className="font-bold text-slate-900 text-sm">{directorName}</p>
-                <p className="text-[11px] text-slate-500">Appointed Director ({companyName})</p>
+            <ul className="list-disc pl-5 space-y-2">
+              <li>
+                The financial statements for the period ended {formatDateBritish(periodEnd)} have been formally approved by the board of directors in accordance with the Companies Act 2006.
+              </li>
+              <li>
+                The company qualifies for the micro-entities regime under section 384A and section 477 of the Companies Act 2006, and these accounts have been prepared in accordance with Financial Reporting Standard 105.
+              </li>
+              <li>
+                The Corporation Tax return (Form CT600) and supporting schedules reflect a true and complete statement of the company's taxable profits and liabilities for the period.
+              </li>
+              {s455Tax > 0 && (
+                <li>
+                  The Section 455 tax charge of £{s455Tax.toLocaleString()} on overdrawn director loans has been reviewed and acknowledged.
+                </li>
+              )}
+            </ul>
+
+            <div className="pt-4 border-t border-slate-200 grid grid-cols-1 sm:grid-cols-2 gap-4">
+              <div className="p-4 bg-slate-50 rounded-xl border border-slate-200">
+                <span className="text-[10px] text-slate-400 uppercase tracking-wider block font-bold">Approved On</span>
+                <span className="font-mono text-xs font-bold text-slate-900">{formatDateBritish(approvalDate)}</span>
               </div>
-
-              <div className="space-y-1">
-                <span className="text-slate-400 text-[11px]">Date of Board Approval:</span>
-                <p className="font-mono font-bold text-slate-900 text-sm">{periodEnd}</p>
-                <p className="text-[11px] text-slate-500">Meeting of the Board of Directors</p>
-              </div>
-
-              <div className="space-y-1">
-                <span className="text-slate-400 text-[11px]">Audit Exemption Declaration:</span>
-                <p className="font-semibold text-slate-800">
-                  {isDormant ? 'Section 480 Companies Act 2006' : 'Section 477 Companies Act 2006'}
-                </p>
-                <p className="text-[11px] text-slate-500">
-                  Confirmed: Turnover {formatAccounting(turnover)}, Net Assets {formatAccounting(netAssets)}
-                </p>
-              </div>
-
-              <div className="space-y-1">
-                <span className="text-slate-400 text-[11px]">Cryptographic IRmark Hash:</span>
-                <p className="font-mono text-emerald-800 font-semibold text-[11px] truncate">
-                  SHA1: 7u9rJ1b4K2w8Xz0L9qP... (Base64 Canonical)
-                </p>
-                <p className="text-[11px] text-slate-500">Deterministic GovTalk C14N XML Digest</p>
+              <div className="p-4 bg-slate-50 rounded-xl border border-slate-200">
+                <span className="text-[10px] text-slate-400 uppercase tracking-wider block font-bold">Appointed Signatory</span>
+                <span className="text-xs font-bold text-slate-900">{directorName} (Director)</span>
               </div>
             </div>
           </div>
         </div>
       )}
 
-      {/* Global Glossary Modal */}
+      {/* Floating Action Bar */}
+      <div className="sticky bottom-4 bg-white/95 backdrop-blur-md rounded-2xl border border-slate-200 p-4 shadow-lg flex items-center justify-between">
+        <div className="flex items-center space-x-2 text-xs text-slate-600">
+          <CheckCircle2 className="w-4 h-4 text-emerald-600" />
+          <span>Statutory documents synchronized with active filing state</span>
+        </div>
+        <div className="flex items-center space-x-2">
+          <Link
+            href={`/filings/${filingId}/wizard`}
+            className="px-4 py-2 rounded-xl text-xs font-semibold text-slate-700 hover:bg-slate-100 transition"
+          >
+            Back to Wizard
+          </Link>
+          <Link
+            href={`/filings/${filingId}/wizard?step=3`}
+            className="inline-flex items-center space-x-1.5 px-4 py-2 rounded-xl text-xs font-bold bg-slate-900 hover:bg-slate-800 text-white shadow-xs transition"
+          >
+            <span>Proceed to Submit</span>
+            <ArrowRight className="w-3.5 h-3.5" />
+          </Link>
+        </div>
+      </div>
+
       <GlossaryModal
         isOpen={isGlossaryOpen}
         onClose={() => setIsGlossaryOpen(false)}

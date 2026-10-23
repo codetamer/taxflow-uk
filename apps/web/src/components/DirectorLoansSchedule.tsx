@@ -102,16 +102,16 @@ export function DirectorLoansSchedule({
         </div>
       ) : (
         <div className="overflow-x-auto border border-slate-200 rounded-xl bg-white shadow-sm">
-          <table className="w-full text-left text-xs">
+          <table className="min-w-[760px] w-full text-left text-xs">
             <thead>
               <tr className="bg-slate-50/80 border-b border-slate-200 text-[11px] text-slate-500 font-semibold">
-                <th className="py-2.5 px-3">Director Name</th>
-                <th className="py-2.5 px-3">Advance Date</th>
-                <th className="py-2.5 px-3">Advance (£)</th>
-                <th className="py-2.5 px-3">Repaid (£)</th>
-                <th className="py-2.5 px-3">Repaid Date</th>
-                <th className="py-2.5 px-3">Rate</th>
-                <th className="py-2.5 px-3 text-right">Tax Due (£)</th>
+                <th className="py-2.5 px-3 w-[190px] min-w-[170px]">Director Name</th>
+                <th className="py-2.5 px-3 w-[140px] min-w-[130px]">Advance Date</th>
+                <th className="py-2.5 px-3 w-[110px] min-w-[100px]">Advance (£)</th>
+                <th className="py-2.5 px-3 w-[110px] min-w-[100px]">Repaid (£)</th>
+                <th className="py-2.5 px-3 w-[140px] min-w-[130px]">Repaid Date</th>
+                <th className="py-2.5 px-3 w-[70px] min-w-[65px]">Rate</th>
+                <th className="py-2.5 px-3 w-[110px] min-w-[100px] text-right">Tax Due (£)</th>
                 <th className="py-2.5 px-2 text-center w-10"></th>
               </tr>
             </thead>
@@ -123,7 +123,7 @@ export function DirectorLoansSchedule({
                       <select
                         value={line.directorName}
                         onChange={(e) => handleUpdateLoan(line.id, { directorName: e.target.value })}
-                        className="w-full bg-slate-50 border border-slate-200 rounded-lg px-2 py-1 text-xs focus:ring-1 focus:ring-slate-900 focus:bg-white"
+                        className="w-full min-w-[150px] bg-slate-50 border border-slate-200 rounded-lg px-2.5 py-1.5 text-xs text-slate-900 focus:ring-1 focus:ring-slate-900 focus:bg-white truncate"
                       >
                         {registeredDirectors.map((d) => (
                           <option key={d} value={d}>
@@ -136,7 +136,7 @@ export function DirectorLoansSchedule({
                         type="text"
                         value={line.directorName}
                         onChange={(e) => handleUpdateLoan(line.id, { directorName: e.target.value })}
-                        className="w-full bg-slate-50 border border-slate-200 rounded-lg px-2 py-1 text-xs focus:ring-1 focus:ring-slate-900 focus:bg-white"
+                        className="w-full min-w-[150px] bg-slate-50 border border-slate-200 rounded-lg px-2.5 py-1.5 text-xs text-slate-900 focus:ring-1 focus:ring-slate-900 focus:bg-white"
                       />
                     )}
                   </td>

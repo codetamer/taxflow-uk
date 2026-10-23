@@ -368,9 +368,9 @@ export default function HomePage() {
             <span className="text-xs font-bold text-amber-900 bg-amber-50 px-2 py-0.5 rounded-full border border-amber-200">
               What is 0p Symmetry?
             </span>
-            <h3 className="font-bold text-stone-900 text-sm">Zero Gateway Rejections</h3>
+            <h3 className="font-bold text-stone-900 text-sm">Automated Gateway Pre-Flight Verification</h3>
             <p className="text-xs text-stone-600 leading-relaxed">
-              Companies House automated servers reject submissions if Net Assets don’t equal Shareholders’ Funds to the exact penny. TaxFlow mathematically guarantees 0p discrepancy.
+              Companies House automated servers reject submissions if Net Assets don’t equal Shareholders’ Funds to the exact penny. TaxFlow automated checks verify 0p discrepancy before dispatch.
             </p>
           </div>
         </div>
@@ -394,7 +394,7 @@ export default function HomePage() {
                 <tr className="border-b border-stone-200 bg-stone-50/75">
                   <th className="py-4 px-6 font-semibold text-stone-900 w-1/3">Capability & Assurance</th>
                   <th className="py-4 px-6 font-semibold text-stone-400 w-1/3">Traditional Firms & Legacy Tools</th>
-                  <th className="py-4 px-6 font-bold text-amber-950 bg-amber-50/50 w-1/3">TaxFlow UK Sovereign</th>
+                  <th className="py-4 px-6 font-bold text-amber-950 bg-amber-50/50 w-1/3">TaxFlow UK Platform</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-stone-100 text-xs sm:text-sm">
@@ -414,7 +414,7 @@ export default function HomePage() {
                       <ShieldCheck className="w-3.5 h-3.5 mr-1 text-amber-700" />
                       <span>40-Point Pre-Flight Shield</span>
                     </span>
-                    <p className="text-xs text-amber-900/80 mt-1">100% gateway rejection prevention guaranteed</p>
+                    <p className="text-xs text-amber-900/80 mt-1">Comprehensive 40-point automated pre-flight checks</p>
                   </td>
                 </tr>
 

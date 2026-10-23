@@ -142,10 +142,24 @@ export function AutoReconcileModal({
                   className="mt-0.5 text-emerald-600 focus:ring-emerald-500"
                 />
                 <div className="space-y-0.5">
-                  <div className="font-semibold text-slate-900">Opening Retained Earnings</div>
+                  <div className="font-semibold text-slate-900 flex items-center gap-1.5">
+                    <span>Opening Retained Earnings</span>
+                    <span className="text-[10px] bg-amber-100 text-amber-800 px-1.5 py-0.5 rounded font-medium">Prior-Period Effect</span>
+                  </div>
                   <p className="text-slate-500 text-[11px] leading-relaxed">
                     Adjusts brought-forward accumulated profits by {isAssetsHigher ? '+' : '-'}£{absVariancePounds} if the variance stems from prior-year accounts discrepancies.
                   </p>
+                  {selectedTarget === 'retainedEarnings' && (
+                    <div className="mt-2 p-2.5 rounded-lg bg-amber-50 border border-amber-200 text-amber-900 text-[11px] space-y-1">
+                      <div className="flex items-center gap-1.5 font-bold text-amber-950">
+                        <AlertTriangle className="w-3.5 h-3.5 text-amber-600 flex-shrink-0" />
+                        <span>Statutory Continuity Warning (FRS 105 Section 8)</span>
+                      </div>
+                      <p className="leading-relaxed text-amber-800">
+                        Opening retained earnings must strictly equal the closing reserves filed in last year's statutory accounts. Modifying this figure represents a formal prior-period restatement under FRS 105 / CA 2006. If prior accounts were already accepted by Companies House, ensure this reflects a genuine prior-year adjustment.
+                      </p>
+                    </div>
+                  )}
                 </div>
               </label>
 

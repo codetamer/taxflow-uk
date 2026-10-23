@@ -4,32 +4,32 @@ export function evaluateCategory3(input: ShieldInput): RuleEvaluation[] {
   const evaluations: RuleEvaluation[] = [];
   const { tax } = input;
 
-  // RULE 11: Total Profits Parity (Box 235 = Box 155 + Box 170)
+  // RULE 11: Total Profits Parity (Box 315 = Box 155 + Box 170 / Property Profits)
   const expectedTtp = Math.max(0, tax.tradingProfitPence) + tax.nonTradingIncomePence;
   if (tax.ttpPence === expectedTtp) {
     evaluations.push({
       id: 'RULE_11',
-      name: 'Total Taxable Profits Parity (CT600 Box 235)',
+      name: 'Total Taxable Profits Parity (CT600 Box 315)',
       category: 'CT600 Box Parity & Marginal Relief',
       severity: 'FATAL',
       status: 'PASS',
       message: `Total Taxable Profits (£${(tax.ttpPence / 100).toFixed(
         2
-      )}) exactly equals Trading Profit + Non-Trading Interest Income.`,
+      )}) exactly equals Trading Profit + Non-Trading Property/Interest Income.`,
     });
   } else {
     evaluations.push({
       id: 'RULE_11',
-      name: 'Total Taxable Profits Parity (CT600 Box 235)',
+      name: 'Total Taxable Profits Parity (CT600 Box 315)',
       category: 'CT600 Box Parity & Marginal Relief',
       severity: 'FATAL',
       status: 'FAIL',
-      message: `CT600 Box 235 parity failure: Total Taxable Profits (£${(tax.ttpPence / 100).toFixed(
+      message: `CT600 Box 315 parity failure: Total Taxable Profits (£${(tax.ttpPence / 100).toFixed(
         2
       )}) does not equal Trading Profit (£${(Math.max(0, tax.tradingProfitPence) / 100).toFixed(
         2
       )}) + Non-Trading Income (£${(tax.nonTradingIncomePence / 100).toFixed(2)}).`,
-      remediation: 'Ensure Total Taxable Profits correctly sums trading profit after allowances and non-trading income.',
+      remediation: 'Ensure Total Taxable Profits (Box 315) correctly sums trading profit after allowances and non-trading income.',
       offendingFields: ['ttpPence', 'tradingProfitPence', 'nonTradingIncomePence'],
     });
   }

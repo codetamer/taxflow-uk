@@ -10,6 +10,7 @@ export class FilingRepository {
   }
 
   create(data: {
+    id?: string;
     companyId: string;
     periodStart: string;
     periodEnd: string;
@@ -24,7 +25,7 @@ export class FilingRepository {
     irmarkBase64?: string;
     irmarkBase32?: string;
   }): FilingRecord {
-    const id = `fil_${randomUUID().replace(/-/g, '').slice(0, 16)}`;
+    const id = data.id || `fil_${randomUUID().replace(/-/g, '').slice(0, 16)}`;
     const now = new Date().toISOString();
 
     const stmt = this.db.prepare(`
