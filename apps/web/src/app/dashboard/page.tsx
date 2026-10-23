@@ -297,16 +297,54 @@ export default function DashboardPage() {
         defaultOpen={true}
       />
 
-      {/* Official Filing Deadlines Countdown */}
-      <div className="space-y-3">
-        <div className="flex items-center justify-between">
+      {/* Official Multi-Deadline Statutory Countdown & Timetable */}
+      <div className="space-y-4">
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
           <h2 className="text-xs font-semibold text-stone-500 uppercase tracking-wider flex items-center space-x-2">
             <Clock className="w-4 h-4 text-stone-400" />
             <span>Official Filing Deadlines & Timetable</span>
           </h2>
-          <span className="text-xs text-stone-400">All filings currently in draft</span>
+          <span className="text-xs font-medium text-emerald-700 bg-emerald-50 px-2.5 py-0.5 rounded-full border border-emerald-200">
+            All statutory returns on schedule · 0 overdue notices
+          </span>
         </div>
 
+        {/* Chronological Statutory Timeline Track */}
+        <div className="bg-slate-900 text-white rounded-2xl p-4 sm:p-5 border border-slate-800 shadow-xs space-y-3">
+          <div className="flex items-center justify-between text-xs">
+            <span className="font-semibold text-slate-300">Statutory Progression (2025/26 Financial Year)</span>
+            <span className="text-[11px] text-amber-400 font-mono">Period Ended: 30 Sep 2026</span>
+          </div>
+          <div className="relative pt-1 pb-1">
+            <div className="h-1.5 bg-slate-800 rounded-full overflow-hidden">
+              <div className="h-full bg-gradient-to-r from-amber-500 via-emerald-500 to-sky-500 w-3/4 rounded-full" />
+            </div>
+            <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 pt-3 text-[11px]">
+              <div>
+                <p className="text-slate-400">1. Year End</p>
+                <p className="font-bold text-white font-mono">30 Sep 2026</p>
+                <p className="text-[10px] text-emerald-400">Completed</p>
+              </div>
+              <div>
+                <p className="text-slate-400">2. Accounts Due</p>
+                <p className="font-bold text-white font-mono">30 Jun 2027</p>
+                <p className="text-[10px] text-amber-400">9 Months (s442)</p>
+              </div>
+              <div>
+                <p className="text-slate-400">3. Tax Payment</p>
+                <p className="font-bold text-white font-mono">01 Jul 2027</p>
+                <p className="text-[10px] text-amber-400">9m + 1d (s59D)</p>
+              </div>
+              <div>
+                <p className="text-slate-400">4. CT600 Return</p>
+                <p className="font-bold text-white font-mono">30 Sep 2027</p>
+                <p className="text-[10px] text-sky-400">12 Months (Sched 18)</p>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        {/* 4 Multi-Deadline Action Cards */}
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
           <div className="bg-white p-5 rounded-2xl border border-stone-200 shadow-xs flex flex-col justify-between space-y-3">
             <div className="space-y-1">
@@ -317,10 +355,10 @@ export default function DashboardPage() {
               <p className="text-[11px] text-stone-400">9 months from period end (s442)</p>
             </div>
             <div className="flex items-center justify-between pt-2 border-t border-stone-100">
-              <span className="px-2.5 py-0.5 bg-amber-50 text-amber-900 text-[11px] font-semibold rounded-full border border-amber-200">
+              <span className="px-2.5 py-0.5 bg-emerald-50 text-emerald-800 text-[11px] font-semibold rounded-full border border-emerald-200">
                 Draft Ready
               </span>
-              <p className="text-[10px] text-stone-400">0 Gateway Errors</p>
+              <p className="text-[10px] text-stone-400">FRS 105 iXBRL</p>
             </div>
           </div>
 
@@ -333,7 +371,7 @@ export default function DashboardPage() {
               <p className="text-[11px] text-stone-400">9 months + 1 day from end (s59D)</p>
             </div>
             <div className="flex items-center justify-between pt-2 border-t border-stone-100">
-              <span className="px-2.5 py-0.5 bg-amber-50 text-amber-900 text-[11px] font-semibold rounded-full border border-amber-200">
+              <span className="px-2.5 py-0.5 bg-emerald-50 text-emerald-800 text-[11px] font-semibold rounded-full border border-emerald-200 font-mono">
                 {filingMetrics.taxPayable}
               </span>
               <p className="text-[10px] text-stone-400">19% Small Profits</p>
@@ -349,7 +387,7 @@ export default function DashboardPage() {
               <p className="text-[11px] text-stone-400">12 months from period end</p>
             </div>
             <div className="flex items-center justify-between pt-2 border-t border-stone-100">
-              <span className="px-2.5 py-0.5 bg-amber-50 text-amber-900 text-[11px] font-semibold rounded-full border border-amber-200">
+              <span className="px-2.5 py-0.5 bg-emerald-50 text-emerald-800 text-[11px] font-semibold rounded-full border border-emerald-200">
                 Draft Ready
               </span>
               <p className="text-[10px] text-stone-400">IRmark Ready</p>

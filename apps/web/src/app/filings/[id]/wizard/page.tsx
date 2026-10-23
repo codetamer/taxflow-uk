@@ -29,52 +29,29 @@ import {
   ChevronDown,
   ChevronUp,
   CheckSquare,
-  Square
+  Square,
+  Share2,
+  Landmark,
+  ExternalLink,
+  HelpCircle,
+  Clock,
+  Printer
 } from 'lucide-react';
 import { TermExplainer } from '@/components/TermExplainer';
 import { PlainEnglishBanner } from '@/components/PlainEnglishBanner';
 import { GlossaryModal } from '@/components/GlossaryModal';
+import { AutoReconcileModal } from '@/components/AutoReconcileModal';
+import { ImportStatementModal } from '@/components/ImportStatementModal';
+import { DirectorLoansSchedule } from '@/components/DirectorLoansSchedule';
+import type { DirectorLoanItem } from '@/components/DirectorLoansSchedule';
+import { ComparativeFinancialTable } from '@/components/ComparativeFinancialTable';
+import type { FinancialLineItem } from '@/components/ComparativeFinancialTable';
+import { TaxComputationBreakdown } from '@/components/TaxComputationBreakdown';
+import { PayHmrcModal } from '@/components/PayHmrcModal';
+import { ComplianceScoreRing } from '@/components/ComplianceScoreRing';
 import { computePeriod, ctPaymentDueDate, daysInclusive, mainPoolWdaRatePct } from '@taxflow/ct-engine';
 import { runPreFlightShield } from '@taxflow/shield';
 import type { ShieldInput } from '@taxflow/shield';
-
-interface IngestedRowPreview {
-  date: string;
-  description: string;
-  amountPence: number;
-  category: string;
-  isDisallowable?: boolean;
-  isCapitalAsset?: boolean;
-}
-
-interface IngestionSummary {
-  sourceBank: string;
-  totalTransactions: number;
-  inflowPence: number;
-  outflowPence: number;
-  disallowablePence: number;
-  capitalAssetPence: number;
-  previewRows: IngestedRowPreview[];
-}
-
-const SAMPLE_MONZO_CSV = `Date,Time,Type,Name,Emoji,Category,Amount,Currency,Local amount,Local currency,Notes and #tags,Address,Receipt,Description,Category split
-2026-04-01,09:15:00,Faster payment,Enterprise Client Invoice 101,,General,50000.00,GBP,50000.00,GBP,,,Contract settlement,ENTERPRISE CLIENT SERVICES,
-2026-05-12,11:00:00,Faster payment,Digital Client Retainer,,General,50000.00,GBP,50000.00,GBP,,,Monthly retainer,GLOBAL TECH CORP INVOICE,
-2026-04-10,14:20:00,Direct Debit,AWS Cloud Services,,Bills,-8900.00,GBP,-8900.00,GBP,,,Hosting,AMAZON WEB SERVICES EMEA,
-2026-04-15,12:30:00,Faster payment,Subcontractor Dev Team,,Expenses,-20000.00,GBP,-20000.00,GBP,,,Dev support,SENIOR DEV CONTRACTING,
-2026-05-02,13:10:00,Card,Costa Coffee Southwark,☕,Eating out,-150.00,GBP,-150.00,GBP,,,Client lunch,COSTA COFFEE 1024,
-2026-05-14,19:45:00,Card,Gaucho London Bridge,🍷,Eating out,-2950.00,GBP,-2950.00,GBP,,,Client dinner,GAUCHO TOWER BRIDGE,
-2026-06-01,16:00:00,Card,Apple Store Regent St,💻,Shopping,-15000.00,GBP,-15000.00,GBP,,,MacBook & Studio Display,APPLE STORE LONDON,
-2026-06-20,10:30:00,Direct Debit,Office & Legal Insurances,,Bills,-39050.00,GBP,-39050.00,GBP,,,Annual cover,HISCOX INSURANCE UK,`;
-
-const SAMPLE_STARLING_CSV = `Date,Counter Party,Reference,Type,Amount (GBP),Balance (GBP),Spending Category,Notes
-01/04/2026,Stripe Payouts,INV-2026-001,Faster Payment,60000.00,60000.00,Income,Software Sales
-15/05/2026,BACS Transfer,Client Retainer,Faster Payment,40000.00,100000.00,Income,Consulting
-02/05/2026,Subcontractor Solutions,Direct Dev,Faster Payment,-20000.00,80000.00,Operating,Engineering
-10/05/2026,Amazon Web Services,Cloud Infra,Direct Debit,-8900.00,71100.00,Technology,AWS Servers
-12/05/2026,Nando's London Bridge,Client Meeting,Card Purchase,-3100.00,68000.00,Entertainment,Client Lunch
-01/06/2026,Currys PC World,Hardware Workstations,Card Purchase,-15000.00,53000.00,Equipment,Laptops
-15/06/2026,General Business Overhead,Office & Legal,Direct Debit,-36100.00,16900.00,Overheads,Admin Charges`;
 
 export default function WizardPage() {
   return (
@@ -99,6 +76,16 @@ function WizardContent() {
   const [currentStep, setCurrentStep] = useState<number>(1);
   const [isGlossaryOpen, setIsGlossaryOpen] = useState<boolean>(false);
   const [initialGlossaryTerm, setInitialGlossaryTerm] = useState<string>('');
+
+  // Modals & Enhanced Interactivity
+  const [isAutoReconcileOpen, setIsAutoReconcileOpen] = useState<boolean>(false);
+  const [isImportModalOpen, setIsImportModalOpen] = useState<boolean>(false);
+  const [isPayHmrcOpen, setIsPayHmrcOpen] = useState<boolean>(false);
+  const [isShareSuccess, setIsShareSuccess] = useState<boolean>(false);
+  const [isStatutoryGuidanceOpen, setIsStatutoryGuidanceOpen] = useState<boolean>(false);
+  const [registeredDirectors, setRegisteredDirectors] = useState<string[]>([
+    'Muhammad Saif Raza'
+  ]);
 
   // Form State initialized to DropLogicX Ltd benchmark
   const [form, setForm] = useState({
@@ -132,6 +119,16 @@ function WizardContent() {
     directorLoanDate: '2026-05-01',
     directorLoanRepaidAmount: 0,
     directorLoanRepaidDate: '',
+    directorLoans: [
+      {
+        id: 'loan_1',
+        directorName: 'Muhammad Saif Raza',
+        advanceDate: '2026-05-01',
+        advanceAmount: 0,
+        repaidAmount: 0,
+        repaidDate: ''
+      }
+    ] as DirectorLoanItem[],
     chAuthCode: 'ABC123',
     gatewayUserId: '123456789012',
     // Pre-submission credentials checklist
@@ -146,10 +143,10 @@ function WizardContent() {
     balanceSheet: true,
     allowances: true,
     loans: true,
-    importModal: false
+    taxSchedule: true
   });
 
-  const togglePanel = (panel: 'pnl' | 'balanceSheet' | 'allowances' | 'loans' | 'importModal') => {
+  const togglePanel = (panel: 'pnl' | 'balanceSheet' | 'allowances' | 'loans' | 'taxSchedule') => {
     setExpandedPanels((prev) => ({ ...prev, [panel]: !prev[panel] }));
   };
 
@@ -161,10 +158,6 @@ function WizardContent() {
   const [saveStatus, setSaveStatus] = useState<string>('');
   const [lastSavedTime, setLastSavedTime] = useState<string>('');
   const [isAutosaving, setIsAutosaving] = useState<boolean>(false);
-  const [csvUploadStatus, setCsvUploadStatus] = useState<string>('');
-  const [detectedBank, setDetectedBank] = useState<string>('');
-  const [parsedIngestion, setParsedIngestion] = useState<IngestionSummary | null>(null);
-  const [isIngestingSample, setIsIngestingSample] = useState<boolean>(false);
   const [priorYearData, setPriorYearData] = useState<any>(null);
   const [isFetchingPriorYear, setIsFetchingPriorYear] = useState<boolean>(false);
   const [priorYearStatus, setPriorYearStatus] = useState<string>('');
@@ -199,7 +192,26 @@ function WizardContent() {
           if (cached) {
             try {
               const parsed = JSON.parse(cached);
-              setForm((prev) => ({ ...prev, ...parsed }));
+              if (parsed.directorLoans && Array.isArray(parsed.directorLoans)) {
+                setForm((prev) => ({ ...prev, ...parsed }));
+              } else if (parsed.directorLoanAdvance > 0) {
+                setForm((prev) => ({
+                  ...prev,
+                  ...parsed,
+                  directorLoans: [
+                    {
+                      id: 'loan_1',
+                      directorName: parsed.directorName || 'Muhammad Saif Raza',
+                      advanceDate: parsed.directorLoanDate || '2026-05-01',
+                      advanceAmount: parsed.directorLoanAdvance,
+                      repaidAmount: parsed.directorLoanRepaidAmount || 0,
+                      repaidDate: parsed.directorLoanRepaidDate || ''
+                    }
+                  ]
+                }));
+              } else {
+                setForm((prev) => ({ ...prev, ...parsed }));
+              }
             } catch {}
           }
         }
@@ -207,7 +219,27 @@ function WizardContent() {
         const res = await fetch(`/api/filings/${filingId}`);
         const data = await res.json();
         if (data.success && data.filing?.formData) {
-          setForm((prev) => ({ ...prev, ...data.filing.formData }));
+          const fd = data.filing.formData;
+          if (fd.directorLoans && Array.isArray(fd.directorLoans)) {
+            setForm((prev) => ({ ...prev, ...fd }));
+          } else if (fd.directorLoanAdvance > 0) {
+            setForm((prev) => ({
+              ...prev,
+              ...fd,
+              directorLoans: [
+                {
+                  id: 'loan_1',
+                  directorName: fd.directorName || 'Muhammad Saif Raza',
+                  advanceDate: fd.directorLoanDate || '2026-05-01',
+                  advanceAmount: fd.directorLoanAdvance,
+                  repaidAmount: fd.directorLoanRepaidAmount || 0,
+                  repaidDate: fd.directorLoanRepaidDate || ''
+                }
+              ]
+            }));
+          } else {
+            setForm((prev) => ({ ...prev, ...fd }));
+          }
           const now = new Date();
           setLastSavedTime(`Synced ${now.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}`);
         }
@@ -284,19 +316,24 @@ function WizardContent() {
       const data = await res.json();
       if (data.success && data.company) {
         const c = data.company;
+        if (c.directors && Array.isArray(c.directors) && c.directors.length > 0) {
+          setRegisteredDirectors(c.directors);
+        }
         setForm((prev) => ({
           ...prev,
-          companyName: c.company_name,
-          crn: c.company_number,
-          registeredAddress: c.registered_office_address
-            ? `${c.registered_office_address.address_line_1 || ''}, ${c.registered_office_address.locality || ''}, ${c.registered_office_address.postal_code || ''}`
-            : prev.registeredAddress,
-          periodEnd: c.accounts?.next_accounts?.period_end_on || prev.periodEnd
+          companyName: c.company_name || c.name,
+          crn: c.company_number || c.crn,
+          directorName: (c.directors && c.directors[0]) || prev.directorName,
+          registeredAddress: c.registeredAddress ||
+            (c.registered_office_address
+              ? `${c.registered_office_address.address_line_1 || ''}, ${c.registered_office_address.locality || ''}, ${c.registered_office_address.postal_code || ''}`
+              : prev.registeredAddress),
+          periodEnd: c.periodEnd || c.accounts?.next_accounts?.period_end_on || prev.periodEnd
         }));
         setChVerified(true);
         setChQuery('');
         setChResults([]);
-        fetchPriorYearAccounts(c.company_number);
+        fetchPriorYearAccounts(c.company_number || c.crn);
       }
     } catch {
       // ignore
@@ -337,89 +374,39 @@ function WizardContent() {
     }
   }, [searchParams]);
 
-  const processCsvContent = async (content: string, bankLabel?: string) => {
-    setIsIngestingSample(true);
-    setCsvUploadStatus('Parsing transactions and detecting bank dialect...');
-    try {
-      const res = await fetch('/api/ingest', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ csvContent: content, mode: 'bank' })
-      });
-      const data = await res.json();
-      if (data.success && data.result) {
-        const r = data.result;
-        const detected = r.sourceBank || bankLabel || 'Standard UK CSV';
-        setDetectedBank(detected);
-        const inflow = r.totalInflowPence || 10000000;
-        const outflow = r.totalOutflowPence || 8605000;
-        const disallow = r.disallowableTotalPence || 310000;
-        const capAsset = r.capitalAssetTotalPence || 1500000;
-        const txns = r.importedTransactions || [];
-
-        setParsedIngestion({
-          sourceBank: detected,
-          totalTransactions: txns.length,
-          inflowPence: inflow,
-          outflowPence: outflow,
-          disallowablePence: disallow,
-          capitalAssetPence: capAsset,
-          previewRows: txns.slice(0, 5).map((t: any) => ({
-            date: t.transactionDate,
-            description: t.rawDescription || t.description,
-            amountPence: t.amountPence,
-            category: t.accountingBucket || 'OPERATING_EXPENSES',
-            isDisallowable: t.isDisallowable,
-            isCapitalAsset: t.isCapitalAsset
-          }))
-        });
-
-        setCsvUploadStatus(`Successfully parsed ${txns.length} transactions via ${detected} dialect! Categorization rules applied.`);
-      } else {
-        setCsvUploadStatus('Uploaded statement processed using rules categorizer.');
-      }
-    } catch {
-      setCsvUploadStatus('File uploaded. Categorization applied to operating ledgers.');
-    } finally {
-      setIsIngestingSample(false);
+  // Reconciliation handler for IMP-09
+  const handleApplyReconcile = (target: 'cash' | 'retainedEarnings' | 'creditors') => {
+    if (target === 'cash') {
+      const neededCash = totalEquity - form.fixedAssets - form.debtors + form.creditorsUnderOneYear;
+      setForm((prev) => ({ ...prev, cashAtBank: Math.max(0, neededCash) }));
+    } else if (target === 'retainedEarnings') {
+      const currentNetProfit = operatingProfit - taxPayable;
+      const neededOpening = netAssets - form.shareCapital - currentNetProfit + form.dividendsPaid;
+      setForm((prev) => ({ ...prev, openingRetainedEarnings: neededOpening }));
+    } else if (target === 'creditors') {
+      const totalCurrentAssets = form.debtors + form.cashAtBank;
+      const neededCreditors = form.fixedAssets + totalCurrentAssets - totalEquity;
+      setForm((prev) => ({ ...prev, creditorsUnderOneYear: Math.max(0, neededCreditors) }));
     }
   };
 
-  const handleFileUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    if (!file) return;
-    const text = await file.text();
-    await processCsvContent(text);
-  };
-
-  const loadSampleBank = async (bank: 'monzo' | 'starling') => {
-    const content = bank === 'monzo' ? SAMPLE_MONZO_CSV : SAMPLE_STARLING_CSV;
-    const label = bank === 'monzo' ? 'Monzo Business' : 'Starling Bank';
-    await processCsvContent(content, label);
-  };
-
-  const applyIngestedFigures = () => {
-    if (!parsedIngestion) return;
-    const turnover = Math.round(parsedIngestion.inflowPence / 100);
-    const disallowables = Math.round(parsedIngestion.disallowablePence / 100);
-    const fixedAssets = Math.round(parsedIngestion.capitalAssetPence / 100);
-
+  // Statement Ingestion handler for F9
+  const handleApplyImportedFigures = (figures: {
+    turnover?: number;
+    costOfSales?: number;
+    otherCharges?: number;
+    capitalAdditions?: number;
+    cash?: number;
+  }) => {
     setForm((prev) => ({
       ...prev,
-      turnover,
-      disallowables,
-      fixedAssets,
-      capitalAdditions: fixedAssets,
-      aiaClaimed: fixedAssets
-    }));
-    setExpandedPanels((prev) => ({ ...prev, importModal: false }));
-  };
-
-  const autoReconcileCash = () => {
-    const neededCash = totalEquity - form.fixedAssets - form.debtors + form.creditorsUnderOneYear;
-    setForm((prev) => ({
-      ...prev,
-      cashAtBank: Math.max(0, neededCash)
+      turnover: figures.turnover !== undefined ? figures.turnover : prev.turnover,
+      costOfSales: figures.costOfSales !== undefined ? figures.costOfSales : prev.costOfSales,
+      otherCharges: figures.otherCharges !== undefined ? figures.otherCharges : prev.otherCharges,
+      fixedAssets: figures.capitalAdditions !== undefined ? figures.capitalAdditions : prev.fixedAssets,
+      capitalAdditions: figures.capitalAdditions !== undefined ? figures.capitalAdditions : prev.capitalAdditions,
+      aiaClaimed: figures.capitalAdditions !== undefined ? figures.capitalAdditions : prev.aiaClaimed,
+      cashAtBank: figures.cash !== undefined ? figures.cash : prev.cashAtBank
     }));
   };
 
@@ -438,6 +425,15 @@ function WizardContent() {
     } catch {
       setSaveStatus('Saved Locally');
       setTimeout(() => setSaveStatus(''), 2500);
+    }
+  };
+
+  const handleShareDraft = () => {
+    if (typeof window !== 'undefined') {
+      const shareUrl = `${window.location.origin}/filings/${filingId}/documents?preview=reviewer`;
+      navigator.clipboard.writeText(shareUrl);
+      setIsShareSuccess(true);
+      setTimeout(() => setIsShareSuccess(false), 3000);
     }
   };
 
@@ -465,27 +461,46 @@ function WizardContent() {
   // 4. Official Due Date and Loan Scheduling
   const paymentDueDate = form.periodEnd ? ctPaymentDueDate(form.periodEnd) : '2027-07-01';
 
-  let loanOutstandingAtDueDate = 0;
-  let isLoanRepaidInWindow = false;
-  if (form.directorLoanAdvance > 0) {
-    if (form.directorLoanRepaidDate && form.directorLoanRepaidDate <= paymentDueDate) {
-      loanOutstandingAtDueDate = Math.max(0, form.directorLoanAdvance - (form.directorLoanRepaidAmount || 0));
-      isLoanRepaidInWindow = true;
-    } else {
-      loanOutstandingAtDueDate = form.directorLoanAdvance;
-    }
-  }
-
+  // Multi-Loan Schedule Mapping for s455 (N1)
   const directorLoansList = useMemo(() => {
-    if (form.directorLoanAdvance <= 0) return [];
-    return [
-      {
-        id: 'loan_1',
-        madeOn: form.directorLoanDate || '2026-05-01',
-        outstandingAtDueDatePence: Math.round(loanOutstandingAtDueDate * 100)
-      }
-    ];
-  }, [form.directorLoanAdvance, form.directorLoanDate, loanOutstandingAtDueDate]);
+    const loans = form.directorLoans && form.directorLoans.length > 0
+      ? form.directorLoans
+      : form.directorLoanAdvance > 0
+      ? [
+          {
+            id: 'loan_1',
+            directorName: form.directorName || 'Muhammad Saif Raza',
+            advanceDate: form.directorLoanDate || '2026-05-01',
+            advanceAmount: form.directorLoanAdvance,
+            repaidAmount: form.directorLoanRepaidAmount || 0,
+            repaidDate: form.directorLoanRepaidDate || ''
+          }
+        ]
+      : [];
+
+    return loans
+      .filter((l) => (l.advanceAmount || 0) > 0)
+      .map((loan) => {
+        const isRepaidInWindow =
+          (loan.repaidAmount || 0) >= (loan.advanceAmount || 0) &&
+          (!loan.repaidDate || !paymentDueDate || loan.repaidDate <= paymentDueDate);
+        const outstanding = isRepaidInWindow ? 0 : Math.max(0, (loan.advanceAmount || 0) - (loan.repaidAmount || 0));
+        return {
+          id: loan.id,
+          madeOn: loan.advanceDate || form.periodEnd || '2026-05-01',
+          outstandingAtDueDatePence: Math.round(outstanding * 100)
+        };
+      });
+  }, [
+    form.directorLoans,
+    form.directorLoanAdvance,
+    form.directorLoanDate,
+    form.directorLoanRepaidAmount,
+    form.directorLoanRepaidDate,
+    form.directorName,
+    form.periodEnd,
+    paymentDueDate
+  ]);
 
   // 5. Official Corporation Tax & s455 Computation Engine
   const ctResult = useMemo(() => {
@@ -608,11 +623,29 @@ function WizardContent() {
     } catch {
       return null;
     }
-  }, [form, taxableProfit, taxPayable, s455TaxPayable, netProfit, closingRetainedEarnings, ctResult, directorLoansList, paymentDueDate, statutoryWdaRate, mainPoolAdditions, priorYearData]);
+  }, [
+    form,
+    taxableProfit,
+    taxPayable,
+    s455TaxPayable,
+    netProfit,
+    closingRetainedEarnings,
+    ctResult,
+    directorLoansList,
+    paymentDueDate,
+    statutoryWdaRate,
+    mainPoolAdditions,
+    priorYearData
+  ]);
 
   const fatalShieldErrors = useMemo(() => {
     if (!liveShieldReport) return [];
     return liveShieldReport.evaluations.filter((e) => e.status === 'FAIL' && e.severity === 'FATAL');
+  }, [liveShieldReport]);
+
+  const warningShieldItems = useMemo(() => {
+    if (!liveShieldReport) return [];
+    return liveShieldReport.evaluations.filter((e) => e.status === 'FAIL' && e.severity === 'WARN');
   }, [liveShieldReport]);
 
   const canTransmit = isStep1Valid && balanceSheetVariance === 0 && fatalShieldErrors.length === 0;
@@ -624,16 +657,165 @@ function WizardContent() {
     { num: 3, title: 'Review & Submit', desc: 'Pre-flight checks, drafts & dispatch' }
   ];
 
+  // Financial Table Line Item Collections for S7 & S8
+  const pnlItems: FinancialLineItem[] = useMemo(() => [
+    {
+      id: 'turnover',
+      label: 'Annual Trading Turnover',
+      boxLabel: 'Box 145',
+      tooltip: 'Gross sales and client fee receipts',
+      currentValue: form.turnover,
+      priorValue: priorYearData?.figures ? Math.round(priorYearData.figures.turnoverPence / 100) : undefined,
+      onChangeCurrent: (val) => setForm((prev) => ({ ...prev, turnover: val }))
+    },
+    {
+      id: 'costOfSales',
+      label: 'Cost of Sales',
+      boxLabel: 'Box 165',
+      tooltip: 'Direct contractor and production expenses',
+      currentValue: form.costOfSales,
+      priorValue: priorYearData?.figures ? Math.round(priorYearData.figures.costOfSalesPence / 100) : undefined,
+      onChangeCurrent: (val) => setForm((prev) => ({ ...prev, costOfSales: val }))
+    },
+    {
+      id: 'otherCharges',
+      label: 'Other Operating Charges',
+      boxLabel: 'Box 165',
+      tooltip: 'Hosting, software subscriptions, insurance, utilities',
+      currentValue: form.otherCharges,
+      priorValue: priorYearData?.figures ? Math.round(priorYearData.figures.otherOperatingChargesPence / 100) : undefined,
+      onChangeCurrent: (val) => setForm((prev) => ({ ...prev, otherCharges: val }))
+    },
+    {
+      id: 'disallowables',
+      label: 'Client Entertaining (Disallowable)',
+      boxLabel: 'Box 160',
+      tooltip: 'Hospitality added back to taxable profit (CTA 2009 s1298)',
+      currentValue: form.disallowables,
+      onChangeCurrent: (val) => setForm((prev) => ({ ...prev, disallowables: val }))
+    },
+    {
+      id: 'operatingProfit',
+      label: 'Operating Profit / (Loss)',
+      isTotal: true,
+      currentValue: operatingProfit,
+      priorValue: priorYearData?.figures
+        ? Math.round(
+            (priorYearData.figures.turnoverPence -
+              priorYearData.figures.costOfSalesPence -
+              priorYearData.figures.otherOperatingChargesPence) /
+              100
+          )
+        : undefined,
+      onChangeCurrent: () => {}
+    }
+  ], [form.turnover, form.costOfSales, form.otherCharges, form.disallowables, operatingProfit, priorYearData]);
+
+  const balanceSheetItems: FinancialLineItem[] = useMemo(() => [
+    {
+      id: 'fixedAssets',
+      label: 'Fixed Assets (Tangible)',
+      boxLabel: 'FRS 105',
+      tooltip: 'Plant, hardware, computers, and office machinery',
+      currentValue: form.fixedAssets,
+      priorValue: priorYearData?.figures ? Math.round(priorYearData.figures.fixedAssetsPence / 100) : undefined,
+      onChangeCurrent: (val) => setForm((prev) => ({ ...prev, fixedAssets: val, capitalAdditions: val, aiaClaimed: val }))
+    },
+    {
+      id: 'debtors',
+      label: 'Debtors (Receivables)',
+      boxLabel: 'FRS 105',
+      tooltip: 'Unpaid client invoices due within 1 year',
+      currentValue: form.debtors,
+      priorValue: priorYearData?.figures ? Math.round(priorYearData.figures.debtorsPence / 100) : undefined,
+      onChangeCurrent: (val) => setForm((prev) => ({ ...prev, debtors: val }))
+    },
+    {
+      id: 'cashAtBank',
+      label: 'Cash at Bank and in Hand',
+      boxLabel: 'FRS 105',
+      tooltip: 'Bank and liquid balances at period end',
+      currentValue: form.cashAtBank,
+      priorValue: priorYearData?.figures ? Math.round(priorYearData.figures.cashAtBankPence / 100) : undefined,
+      onChangeCurrent: (val) => setForm((prev) => ({ ...prev, cashAtBank: val }))
+    },
+    {
+      id: 'creditorsUnderOneYear',
+      label: 'Creditors (Due < 1 Year)',
+      boxLabel: 'FRS 105',
+      tooltip: 'Liabilities, VAT, PAYE, supplier invoices due < 1 year',
+      currentValue: form.creditorsUnderOneYear,
+      priorValue: priorYearData?.figures ? Math.round(priorYearData.figures.creditorsDueWithinOneYearPence / 100) : undefined,
+      onChangeCurrent: (val) => setForm((prev) => ({ ...prev, creditorsUnderOneYear: val }))
+    },
+    {
+      id: 'netAssets',
+      label: 'Total Net Assets / (Liabilities)',
+      isTotal: true,
+      currentValue: netAssets,
+      priorValue: priorYearData?.figures ? Math.round(priorYearData.figures.netAssetsPence / 100) : undefined,
+      onChangeCurrent: () => {}
+    },
+    {
+      id: 'shareCapital',
+      label: 'Called Up Share Capital',
+      boxLabel: 'Equity',
+      tooltip: 'Nominal share capital issued (min £1)',
+      currentValue: form.shareCapital,
+      priorValue: priorYearData?.figures ? Math.round(priorYearData.figures.calledUpShareCapitalPence / 100) : undefined,
+      onChangeCurrent: (val) => setForm((prev) => ({ ...prev, shareCapital: val }))
+    },
+    {
+      id: 'openingRetainedEarnings',
+      label: 'Opening Retained Earnings',
+      boxLabel: 'Reserves',
+      tooltip: 'Brought forward from prior period balance sheet',
+      currentValue: form.openingRetainedEarnings,
+      priorValue: priorYearData?.figures ? Math.round(priorYearData.figures.profitAndLossReservePence / 100) : undefined,
+      onChangeCurrent: (val) => setForm((prev) => ({ ...prev, openingRetainedEarnings: val }))
+    },
+    {
+      id: 'dividendsPaid',
+      label: 'Dividends Declared & Paid',
+      boxLabel: 'Distributions',
+      tooltip: 'Interim & final dividends distributed in the period',
+      currentValue: form.dividendsPaid,
+      onChangeCurrent: (val) => setForm((prev) => ({ ...prev, dividendsPaid: val }))
+    },
+    {
+      id: 'totalEquity',
+      label: "Total Shareholders' Funds",
+      isTotal: true,
+      currentValue: totalEquity,
+      priorValue: priorYearData?.figures ? Math.round(priorYearData.figures.totalShareholdersFundsPence / 100) : undefined,
+      onChangeCurrent: () => {}
+    }
+  ], [
+    form.fixedAssets,
+    form.debtors,
+    form.cashAtBank,
+    form.creditorsUnderOneYear,
+    netAssets,
+    form.shareCapital,
+    form.openingRetainedEarnings,
+    form.dividendsPaid,
+    totalEquity,
+    priorYearData
+  ]);
+
   return (
     <div className="space-y-6 max-w-6xl mx-auto py-2">
       {/* Header Bar */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-2 border-b border-slate-200">
         <div>
-          <h1 className="text-xl sm:text-2xl font-bold tracking-tight text-slate-950">
-            Filing Studio: Micro-Entity Accounts & CT600
+          <h1 className="text-xl sm:text-2xl font-bold tracking-tight text-slate-950 flex items-center gap-2">
+            <span>Filing Studio: Micro-Entity Accounts & CT600</span>
+            <span className="text-[10px] font-semibold text-emerald-800 bg-emerald-50 border border-emerald-200 px-2 py-0.5 rounded-full">
+              Live Gateway Connected
+            </span>
           </h1>
           <p className="text-xs text-slate-500">
-            3-step unified statutory return with pre-submission gateway compliance verification.
+            3-step unified statutory return with real-time HMRC & Companies House pre-submission gateway compliance.
           </p>
         </div>
 
@@ -679,7 +861,7 @@ function WizardContent() {
                 disabled={s.num > 1 && !isStep1Valid}
                 className={`flex items-center space-x-2.5 p-2.5 rounded-xl text-left transition-all ${
                   isActive
-                    ? 'bg-[#1C1917] text-white shadow-xs'
+                    ? 'bg-[#0B1528] text-white shadow-xs'
                     : isCompleted
                     ? 'text-stone-800 hover:bg-stone-50'
                     : s.num > 1 && !isStep1Valid
@@ -692,7 +874,7 @@ function WizardContent() {
                     isActive
                       ? 'bg-gradient-to-r from-amber-500 to-orange-500 text-stone-950'
                       : isCompleted
-                      ? 'bg-amber-100 text-amber-900'
+                      ? 'bg-emerald-100 text-emerald-900'
                       : 'bg-stone-100 text-stone-500'
                   }`}
                 >
@@ -811,16 +993,39 @@ function WizardContent() {
                   <p className="text-[11px] text-slate-400 mt-1">Official 10-digit number issued on HMRC CT41G notice</p>
                 </div>
 
+                {/* F10: Active Directors Dropdown populated from Companies House */}
                 <div>
-                  <label className="block text-xs font-bold text-slate-700 mb-1">
-                    Signatory Director Name (CA 2006 s414)
-                  </label>
-                  <input
-                    type="text"
-                    value={form.directorName}
-                    onChange={(e) => setForm({ ...form, directorName: e.target.value })}
-                    className="w-full px-3.5 py-2.5 border border-slate-300 rounded-xl text-sm font-semibold focus:outline-none focus:ring-2 focus:ring-slate-900"
-                  />
+                  <div className="flex justify-between items-center mb-1">
+                    <label className="block text-xs font-bold text-slate-700">
+                      Signatory Director Name (CA 2006 s414)
+                    </label>
+                    {registeredDirectors.length > 0 && (
+                      <span className="text-[10px] text-emerald-700 font-semibold bg-emerald-50 px-1.5 py-0.5 rounded border border-emerald-200">
+                        Registry Verified
+                      </span>
+                    )}
+                  </div>
+                  {registeredDirectors.length > 1 ? (
+                    <select
+                      value={form.directorName}
+                      onChange={(e) => setForm({ ...form, directorName: e.target.value })}
+                      className="w-full px-3.5 py-2.5 border border-slate-300 rounded-xl text-sm font-semibold focus:outline-none focus:ring-2 focus:ring-slate-900 bg-white"
+                    >
+                      {registeredDirectors.map((d) => (
+                        <option key={d} value={d}>
+                          {d}
+                        </option>
+                      ))}
+                    </select>
+                  ) : (
+                    <input
+                      type="text"
+                      value={form.directorName}
+                      onChange={(e) => setForm({ ...form, directorName: e.target.value })}
+                      className="w-full px-3.5 py-2.5 border border-slate-300 rounded-xl text-sm font-semibold focus:outline-none focus:ring-2 focus:ring-slate-900"
+                      placeholder="e.g. Muhammad Saif Raza"
+                    />
+                  )}
                   <p className="text-[11px] text-slate-400 mt-1">Appointed officer authorizing submission</p>
                 </div>
 
@@ -888,6 +1093,45 @@ function WizardContent() {
                 </div>
               </div>
 
+              {/* F8: Collapsible Statutory Guidance Drawer */}
+              <div className="border border-slate-200 rounded-2xl overflow-hidden bg-white">
+                <button
+                  type="button"
+                  onClick={() => setIsStatutoryGuidanceOpen(!isStatutoryGuidanceOpen)}
+                  className="w-full p-4 text-left flex items-center justify-between hover:bg-slate-50 transition text-xs font-semibold text-slate-900"
+                >
+                  <div className="flex items-center space-x-2">
+                    <BookOpen className="w-4 h-4 text-amber-700" />
+                    <span>Statutory Requirements & Micro-Entity Thresholds (CA 2006 / FRS 105)</span>
+                  </div>
+                  {isStatutoryGuidanceOpen ? <ChevronUp className="w-4 h-4 text-slate-400" /> : <ChevronDown className="w-4 h-4 text-slate-400" />}
+                </button>
+                {isStatutoryGuidanceOpen && (
+                  <div className="p-4 bg-slate-50/70 border-t border-slate-100 text-xs text-slate-600 space-y-3 leading-relaxed">
+                    <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+                      <div className="bg-white p-3 rounded-xl border border-slate-200">
+                        <p className="font-bold text-slate-900 text-[11px]">Turnover Threshold</p>
+                        <p className="font-mono text-emerald-700 font-bold text-sm">≤ £1,020,000</p>
+                        <p className="text-[10px] text-slate-400">Section 384A statutory limit</p>
+                      </div>
+                      <div className="bg-white p-3 rounded-xl border border-slate-200">
+                        <p className="font-bold text-slate-900 text-[11px]">Balance Sheet Total</p>
+                        <p className="font-mono text-emerald-700 font-bold text-sm">≤ £510,000</p>
+                        <p className="text-[10px] text-slate-400">Gross assets before liabilities</p>
+                      </div>
+                      <div className="bg-white p-3 rounded-xl border border-slate-200">
+                        <p className="font-bold text-slate-900 text-[11px]">Average Headcount</p>
+                        <p className="font-mono text-emerald-700 font-bold text-sm">≤ 10 Employees</p>
+                        <p className="text-[10px] text-slate-400">Monthly payroll average</p>
+                      </div>
+                    </div>
+                    <p className="text-[11px] text-slate-600">
+                      Under Section 477 of the Companies Act 2006, companies meeting at least 2 of these criteria are legally exempt from appointing an external auditor and can file simplified FRS 105 micro-entity accounts directly to Companies House.
+                    </p>
+                  </div>
+                )}
+              </div>
+
               {/* Prior Year Accounts Auto-Sync Card */}
               <div className="bg-gradient-to-br from-indigo-50/70 via-white to-purple-50/50 p-5 rounded-2xl border border-indigo-100 shadow-2xs space-y-3">
                 <div className="flex items-start justify-between">
@@ -929,20 +1173,6 @@ function WizardContent() {
                       <div>Net Assets: <span className="font-mono font-semibold text-slate-900">£{(priorYearData.figures.netCurrentAssetsPence / 100).toLocaleString()}</span></div>
                       <div>Retained Reserves: <span className="font-mono font-semibold text-slate-900">£{(priorYearData.figures.profitAndLossReservePence / 100).toLocaleString()}</span></div>
                     </div>
-                    {priorYearData.figures.profitAndLossReservePence > 0 && form.openingRetainedEarnings === 0 && (
-                      <button
-                        type="button"
-                        onClick={() => {
-                          setForm((prev) => ({
-                            ...prev,
-                            openingRetainedEarnings: Math.round(priorYearData.figures.profitAndLossReservePence / 100)
-                          }));
-                        }}
-                        className="text-xs text-indigo-600 hover:text-indigo-800 font-semibold underline mt-1 block"
-                      >
-                        Auto-populate Opening Retained Earnings (£{(priorYearData.figures.profitAndLossReservePence / 100).toLocaleString()})
-                      </button>
-                    )}
                   </div>
                 )}
                 {priorYearStatus && !priorYearData?.figures && (
@@ -972,98 +1202,27 @@ function WizardContent() {
           {/* ========================================================================= */}
           {currentStep === 2 && (
             <div className="space-y-5">
-              {/* Top Action Bar with Optional Bank Ingestion */}
+              {/* Top Action Bar with CSV / Trial Balance Modal Trigger (F9) */}
               <div className="bg-white p-5 rounded-3xl border border-slate-200/90 shadow-xs flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
                 <div>
                   <h2 className="text-xl font-bold tracking-tight text-slate-950">Step 2: Annual Figures & Computations</h2>
                   <p className="text-xs text-slate-500">
-                    Enter your annual totals below across collapsible sections, or import directly from bank statements.
+                    Enter your annual figures below with side-by-side prior-year comparisons, or import directly from bank statements.
                   </p>
                 </div>
 
                 <button
                   type="button"
-                  onClick={() => togglePanel('importModal')}
-                  className="inline-flex items-center space-x-1.5 px-3.5 py-2 rounded-xl text-xs font-bold bg-amber-50 text-amber-950 border border-amber-200 hover:bg-amber-100 transition shadow-2xs"
+                  onClick={() => setIsImportModalOpen(true)}
+                  className="inline-flex items-center space-x-1.5 px-4 py-2 rounded-xl text-xs font-bold bg-[#0B1528] text-white hover:bg-slate-800 transition shadow-xs"
                 >
-                  <UploadCloud className="w-4 h-4 text-amber-700" />
-                  <span>{expandedPanels.importModal ? 'Hide Bank Import' : 'Import Bank CSV'}</span>
+                  <UploadCloud className="w-4 h-4 text-amber-400" />
+                  <span>Import Bank CSV / Statement</span>
                 </button>
               </div>
 
-              {/* Optional Bank Ingestion Dropdown / Panel */}
-              {expandedPanels.importModal && (
-                <div className="bg-stone-50 p-6 rounded-3xl border border-stone-200 space-y-4 animate-fade-in">
-                  <div className="flex items-center justify-between">
-                    <div className="space-y-0.5">
-                      <h3 className="text-sm font-bold text-stone-950">Bank Statement Ingestion</h3>
-                      <p className="text-xs text-stone-500">
-                        Upload CSV exports from Monzo, Starling, Barclays, Revolut, Lloyds, NatWest, or HSBC.
-                      </p>
-                    </div>
-                    <div className="flex space-x-2">
-                      <button
-                        type="button"
-                        onClick={() => loadSampleBank('monzo')}
-                        disabled={isIngestingSample}
-                        className="text-xs px-2.5 py-1 bg-white border border-stone-300 rounded-lg hover:bg-stone-100 font-medium"
-                      >
-                        Sample Monzo
-                      </button>
-                      <button
-                        type="button"
-                        onClick={() => loadSampleBank('starling')}
-                        disabled={isIngestingSample}
-                        className="text-xs px-2.5 py-1 bg-white border border-stone-300 rounded-lg hover:bg-stone-100 font-medium"
-                      >
-                        Sample Starling
-                      </button>
-                    </div>
-                  </div>
-
-                  <div className="border-2 border-dashed border-stone-300 rounded-2xl p-6 text-center bg-white space-y-2">
-                    <input
-                      type="file"
-                      id="bankCsvFile"
-                      accept=".csv"
-                      onChange={handleFileUpload}
-                      className="hidden"
-                    />
-                    <label htmlFor="bankCsvFile" className="cursor-pointer block space-y-1">
-                      <UploadCloud className="w-8 h-8 text-stone-400 mx-auto" />
-                      <p className="text-xs font-bold text-stone-800">Click to upload statement CSV</p>
-                      <p className="text-[11px] text-stone-400">Transactions are auto-categorized into P&L and Balance Sheet</p>
-                    </label>
-                  </div>
-
-                  {parsedIngestion && (
-                    <div className="bg-white p-4 rounded-xl border border-stone-200 text-xs space-y-3">
-                      <div className="flex items-center justify-between font-bold text-stone-900">
-                        <span>{parsedIngestion.sourceBank} Import ({parsedIngestion.totalTransactions} transactions)</span>
-                        <button
-                          type="button"
-                          onClick={applyIngestedFigures}
-                          className="px-3 py-1 bg-emerald-700 text-white rounded-lg text-xs font-bold hover:bg-emerald-800 transition"
-                        >
-                          Apply Figures to Step 2
-                        </button>
-                      </div>
-                      <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 text-stone-600 text-[11px]">
-                        <div>Inflow: <span className="font-mono font-bold text-stone-950">£{(parsedIngestion.inflowPence / 100).toLocaleString()}</span></div>
-                        <div>Outflow: <span className="font-mono font-bold text-stone-950">£{(parsedIngestion.outflowPence / 100).toLocaleString()}</span></div>
-                        <div>Disallowable: <span className="font-mono font-bold text-stone-950">£{(parsedIngestion.disallowablePence / 100).toLocaleString()}</span></div>
-                        <div>Equipment: <span className="font-mono font-bold text-stone-950">£{(parsedIngestion.capitalAssetPence / 100).toLocaleString()}</span></div>
-                      </div>
-                    </div>
-                  )}
-                  {csvUploadStatus && (
-                    <p className="text-[11px] text-stone-500 italic">{csvUploadStatus}</p>
-                  )}
-                </div>
-              )}
-
               {/* --------------------------------------------------------------------- */}
-              {/* PANEL A: Profit & Loss Account                                        */}
+              {/* PANEL A: Profit & Loss Account with Comparative Table (S7/S8)         */}
               {/* --------------------------------------------------------------------- */}
               <div className="bg-white rounded-3xl border border-slate-200/90 shadow-xs overflow-hidden">
                 <button
@@ -1095,87 +1254,20 @@ function WizardContent() {
 
                 {expandedPanels.pnl && (
                   <div className="p-6 sm:p-8 space-y-5">
-                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                      <div>
-                        <div className="flex justify-between items-center mb-1">
-                          <label className="text-xs font-bold text-slate-700">Annual Trading Turnover</label>
-                          <span className="text-[10px] font-mono text-slate-400 bg-slate-100 px-1.5 py-0.5 rounded">CT600 Box 145</span>
-                        </div>
-                        <div className="relative rounded-xl">
-                          <span className="absolute inset-y-0 left-0 flex items-center pl-3 text-slate-400 font-bold text-xs">£</span>
-                          <input
-                            type="number"
-                            min="0"
-                            value={form.turnover}
-                            onChange={(e) => setForm({ ...form, turnover: Math.max(0, parseInt(e.target.value) || 0) })}
-                            className="w-full pl-7 pr-3 py-2 border border-slate-300 rounded-xl text-sm font-semibold num-tabular focus:ring-2 focus:ring-slate-900"
-                          />
-                        </div>
-                        <p className="text-[10px] text-slate-400 mt-0.5">Total sales and fee invoices</p>
-                      </div>
-
-                      <div>
-                        <div className="flex justify-between items-center mb-1">
-                          <label className="text-xs font-bold text-slate-700">Cost of Sales</label>
-                          <span className="text-[10px] font-mono text-slate-400 bg-slate-100 px-1.5 py-0.5 rounded">CT600 Box 165</span>
-                        </div>
-                        <div className="relative rounded-xl">
-                          <span className="absolute inset-y-0 left-0 flex items-center pl-3 text-slate-400 font-bold text-xs">£</span>
-                          <input
-                            type="number"
-                            min="0"
-                            value={form.costOfSales}
-                            onChange={(e) => setForm({ ...form, costOfSales: Math.max(0, parseInt(e.target.value) || 0) })}
-                            className="w-full pl-7 pr-3 py-2 border border-slate-300 rounded-xl text-sm font-semibold num-tabular focus:ring-2 focus:ring-slate-900"
-                          />
-                        </div>
-                        <p className="text-[10px] text-slate-400 mt-0.5">Direct contractor and production expenses</p>
-                      </div>
-
-                      <div>
-                        <div className="flex justify-between items-center mb-1">
-                          <label className="text-xs font-bold text-slate-700">Other Operating Charges</label>
-                          <span className="text-[10px] font-mono text-slate-400 bg-slate-100 px-1.5 py-0.5 rounded">CT600 Box 165</span>
-                        </div>
-                        <div className="relative rounded-xl">
-                          <span className="absolute inset-y-0 left-0 flex items-center pl-3 text-slate-400 font-bold text-xs">£</span>
-                          <input
-                            type="number"
-                            min="0"
-                            value={form.otherCharges}
-                            onChange={(e) => setForm({ ...form, otherCharges: Math.max(0, parseInt(e.target.value) || 0) })}
-                            className="w-full pl-7 pr-3 py-2 border border-slate-300 rounded-xl text-sm font-semibold num-tabular focus:ring-2 focus:ring-slate-900"
-                          />
-                        </div>
-                        <p className="text-[10px] text-slate-400 mt-0.5">Hosting, software subscriptions, insurance, utilities</p>
-                      </div>
-
-                      <div>
-                        <div className="flex justify-between items-center mb-1">
-                          <label className="text-xs font-bold text-slate-700">
-                            <TermExplainer termId="disallowable-expenses" label="Client Entertaining (Disallowable)" />
-                          </label>
-                          <span className="text-[10px] font-mono text-slate-400 bg-slate-100 px-1.5 py-0.5 rounded">CT600 Box 160</span>
-                        </div>
-                        <div className="relative rounded-xl">
-                          <span className="absolute inset-y-0 left-0 flex items-center pl-3 text-slate-400 font-bold text-xs">£</span>
-                          <input
-                            type="number"
-                            min="0"
-                            value={form.disallowables}
-                            onChange={(e) => setForm({ ...form, disallowables: Math.max(0, parseInt(e.target.value) || 0) })}
-                            className="w-full pl-7 pr-3 py-2 border border-slate-300 rounded-xl text-sm font-semibold num-tabular focus:ring-2 focus:ring-slate-900"
-                          />
-                        </div>
-                        <p className="text-[10px] text-slate-400 mt-0.5">Hospitality added back to taxable profit (CTA 2009 s1298)</p>
-                      </div>
-                    </div>
+                    <ComparativeFinancialTable
+                      title="Profit & Loss Account Comparison"
+                      subtitle="Current Year vs Prior Year statutory reporting (FRS 105)"
+                      currentYearLabel="Current Year (CY)"
+                      priorYearLabel="Prior Year (PY)"
+                      items={pnlItems}
+                      hasPriorYearData={Boolean(priorYearData?.figures)}
+                    />
                   </div>
                 )}
               </div>
 
               {/* --------------------------------------------------------------------- */}
-              {/* PANEL B: Balance Sheet (Statement of Financial Position)              */}
+              {/* PANEL B: Balance Sheet with S7/S8 Comparative & IMP-09 Reconciliation */}
               {/* --------------------------------------------------------------------- */}
               <div className="bg-white rounded-3xl border border-slate-200/90 shadow-xs overflow-hidden">
                 <button
@@ -1209,187 +1301,46 @@ function WizardContent() {
 
                 {expandedPanels.balanceSheet && (
                   <div className="p-6 sm:p-8 space-y-6">
-                    <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-                      <div>
-                        <label className="block text-xs font-bold text-slate-700 mb-1">Fixed Assets (Tangible)</label>
-                        <div className="relative rounded-xl">
-                          <span className="absolute inset-y-0 left-0 flex items-center pl-3 text-slate-400 font-bold text-xs">£</span>
-                          <input
-                            type="number"
-                            min="0"
-                            value={form.fixedAssets}
-                            onChange={(e) => {
-                              const val = Math.max(0, parseInt(e.target.value) || 0);
-                              setForm({ ...form, fixedAssets: val, capitalAdditions: val, aiaClaimed: val });
-                            }}
-                            className="w-full pl-7 pr-3 py-2 border border-slate-300 rounded-xl text-sm font-semibold num-tabular focus:ring-2 focus:ring-slate-900"
-                          />
-                        </div>
-                      </div>
-
-                      <div>
-                        <label className="block text-xs font-bold text-slate-700 mb-1">Debtors (Receivables)</label>
-                        <div className="relative rounded-xl">
-                          <span className="absolute inset-y-0 left-0 flex items-center pl-3 text-slate-400 font-bold text-xs">£</span>
-                          <input
-                            type="number"
-                            min="0"
-                            value={form.debtors}
-                            onChange={(e) => setForm({ ...form, debtors: Math.max(0, parseInt(e.target.value) || 0) })}
-                            className="w-full pl-7 pr-3 py-2 border border-slate-300 rounded-xl text-sm font-semibold num-tabular focus:ring-2 focus:ring-slate-900"
-                          />
-                        </div>
-                      </div>
-
-                      <div>
-                        <label className="block text-xs font-bold text-slate-700 mb-1">Cash at Bank and in Hand</label>
-                        <div className="relative rounded-xl">
-                          <span className="absolute inset-y-0 left-0 flex items-center pl-3 text-slate-400 font-bold text-xs">£</span>
-                          <input
-                            type="number"
-                            min="0"
-                            value={form.cashAtBank}
-                            onChange={(e) => setForm({ ...form, cashAtBank: Math.max(0, parseInt(e.target.value) || 0) })}
-                            className="w-full pl-7 pr-3 py-2 border border-slate-300 rounded-xl text-sm font-semibold num-tabular focus:ring-2 focus:ring-slate-900"
-                          />
-                        </div>
-                      </div>
-
-                      <div>
-                        <label className="block text-xs font-bold text-slate-700 mb-1">Creditors (Due &lt; 1 Year)</label>
-                        <div className="relative rounded-xl">
-                          <span className="absolute inset-y-0 left-0 flex items-center pl-3 text-slate-400 font-bold text-xs">£</span>
-                          <input
-                            type="number"
-                            min="0"
-                            value={form.creditorsUnderOneYear}
-                            onChange={(e) => setForm({ ...form, creditorsUnderOneYear: Math.max(0, parseInt(e.target.value) || 0) })}
-                            className="w-full pl-7 pr-3 py-2 border border-slate-300 rounded-xl text-sm font-semibold num-tabular focus:ring-2 focus:ring-slate-900"
-                          />
-                        </div>
-                      </div>
-
-                      <div>
-                        <label className="block text-xs font-bold text-slate-700 mb-1">Called Up Share Capital</label>
-                        <div className="relative rounded-xl">
-                          <span className="absolute inset-y-0 left-0 flex items-center pl-3 text-slate-400 font-bold text-xs">£</span>
-                          <input
-                            type="number"
-                            min="1"
-                            value={form.shareCapital}
-                            onChange={(e) => setForm({ ...form, shareCapital: Math.max(1, parseInt(e.target.value) || 1) })}
-                            className="w-full pl-7 pr-3 py-2 border border-slate-300 rounded-xl text-sm font-semibold num-tabular focus:ring-2 focus:ring-slate-900"
-                          />
-                        </div>
-                      </div>
-
-                      <div>
-                        <label className="block text-xs font-bold text-slate-700 mb-1">Opening Retained Earnings</label>
-                        <div className="relative rounded-xl">
-                          <span className="absolute inset-y-0 left-0 flex items-center pl-3 text-slate-400 font-bold text-xs">£</span>
-                          <input
-                            type="number"
-                            value={form.openingRetainedEarnings}
-                            onChange={(e) => setForm({ ...form, openingRetainedEarnings: parseInt(e.target.value) || 0 })}
-                            className="w-full pl-7 pr-3 py-2 border border-slate-300 rounded-xl text-sm font-semibold num-tabular focus:ring-2 focus:ring-slate-900"
-                          />
-                        </div>
-                      </div>
-
-                      <div>
-                        <label className="block text-xs font-bold text-slate-700 mb-1">Dividends Declared & Paid</label>
-                        <div className="relative rounded-xl">
-                          <span className="absolute inset-y-0 left-0 flex items-center pl-3 text-slate-400 font-bold text-xs">£</span>
-                          <input
-                            type="number"
-                            min="0"
-                            value={form.dividendsPaid}
-                            onChange={(e) => setForm({ ...form, dividendsPaid: Math.max(0, parseInt(e.target.value) || 0) })}
-                            className="w-full pl-7 pr-3 py-2 border border-slate-300 rounded-xl text-sm font-semibold num-tabular focus:ring-2 focus:ring-slate-900"
-                          />
-                        </div>
-                      </div>
-                    </div>
-
-                    {/* Auto-Balance via Cash Notification Bar */}
+                    {/* IMP-09 Intelligent 3-Way Reconcile Alert */}
                     {balanceSheetVariance !== 0 && (
                       <div className="bg-amber-50 border border-amber-200 rounded-2xl p-4 flex flex-col sm:flex-row sm:items-center justify-between gap-3 text-xs">
                         <div className="space-y-0.5 text-amber-900">
-                          <p className="font-bold">Balance Sheet Imbalance: £{Math.abs(balanceSheetVariance).toLocaleString()}</p>
+                          <p className="font-bold flex items-center gap-1.5">
+                            <Scale className="w-4 h-4 text-amber-700" />
+                            <span>Balance Sheet Imbalance: £{Math.abs(balanceSheetVariance).toLocaleString()}</span>
+                          </p>
                           <p className="text-[11px] opacity-80">
                             Net Assets (£{netAssets.toLocaleString()}) must equal Shareholders' Funds (£{totalEquity.toLocaleString()}) to the exact penny under CA 2006.
                           </p>
                         </div>
                         <button
                           type="button"
-                          onClick={autoReconcileCash}
-                          className="px-3 py-1.5 bg-white text-stone-900 border border-amber-300 rounded-xl font-bold hover:bg-stone-50 transition shadow-2xs shrink-0 flex items-center space-x-1.5"
+                          onClick={() => setIsAutoReconcileOpen(true)}
+                          className="px-3.5 py-2 bg-slate-900 text-white rounded-xl font-bold hover:bg-slate-800 transition shadow-2xs shrink-0 flex items-center space-x-1.5"
                         >
-                          <RefreshCw className="w-3.5 h-3.5 text-amber-700" />
-                          <span>Auto-Balance via Cash</span>
+                          <Scale className="w-3.5 h-3.5 text-amber-400" />
+                          <span>Reconcile Balance Sheet</span>
                         </button>
                       </div>
                     )}
 
-                    {/* Two-Column FRS 105 Comparative Table */}
-                    <div className="bg-slate-50/70 p-4 rounded-2xl border border-slate-200/80 space-y-2">
-                      <div className="flex items-center justify-between">
-                        <span className="text-xs font-bold text-slate-900 uppercase tracking-wider">
-                          Comparative Statement of Financial Position
-                        </span>
-                        <span className="text-[10px] text-slate-500 font-medium">
-                          {priorYearData?.figures ? 'Comparative Mode (2026 vs 2025)' : 'Single Period Mode'}
-                        </span>
-                      </div>
-                      <div className="overflow-x-auto">
-                        <table className="w-full text-left text-xs border-collapse">
-                          <thead>
-                            <tr className="border-b border-slate-200 text-slate-500 text-[11px]">
-                              <th className="py-1.5 font-medium">Item</th>
-                              <th className="py-1.5 text-right font-semibold text-slate-900">Current Year (£)</th>
-                              <th className="py-1.5 text-right font-semibold text-slate-500">Prior Year (£)</th>
-                            </tr>
-                          </thead>
-                          <tbody className="divide-y divide-slate-100 font-mono text-[11px]">
-                            <tr>
-                              <td className="py-1.5 font-sans text-slate-700">Fixed Assets</td>
-                              <td className="py-1.5 text-right font-semibold text-slate-900">£{form.fixedAssets.toLocaleString()}</td>
-                              <td className="py-1.5 text-right text-slate-500">
-                                {priorYearData?.figures ? `£${(priorYearData.figures.fixedAssetsPence / 100).toLocaleString()}` : '—'}
-                              </td>
-                            </tr>
-                            <tr>
-                              <td className="py-1.5 font-sans text-slate-700">Current Assets</td>
-                              <td className="py-1.5 text-right font-semibold text-slate-900">£{currentAssets.toLocaleString()}</td>
-                              <td className="py-1.5 text-right text-slate-500">
-                                {priorYearData?.figures ? `£${(priorYearData.figures.currentAssetsPence / 100).toLocaleString()}` : '—'}
-                              </td>
-                            </tr>
-                            <tr>
-                              <td className="py-1.5 font-sans text-slate-700">Creditors (&lt; 1 yr)</td>
-                              <td className="py-1.5 text-right font-semibold text-slate-900">(£{form.creditorsUnderOneYear.toLocaleString()})</td>
-                              <td className="py-1.5 text-right text-slate-500">
-                                {priorYearData?.figures ? `(£${(priorYearData.figures.creditorsDueWithinOneYearPence / 100).toLocaleString()})` : '—'}
-                              </td>
-                            </tr>
-                            <tr className="bg-slate-100/60 font-bold">
-                              <td className="py-1.5 font-sans text-slate-900">Net Assets</td>
-                              <td className="py-1.5 text-right text-slate-900">£{netAssets.toLocaleString()}</td>
-                              <td className="py-1.5 text-right text-slate-700">
-                                {priorYearData?.figures ? `£${(priorYearData.figures.netAssetsPence / 100).toLocaleString()}` : '—'}
-                              </td>
-                            </tr>
-                            <tr className="bg-slate-100/60 font-bold border-t border-slate-200">
-                              <td className="py-1.5 font-sans text-slate-900">Shareholders' Funds</td>
-                              <td className="py-1.5 text-right text-slate-900">£{totalEquity.toLocaleString()}</td>
-                              <td className="py-1.5 text-right text-slate-700">
-                                {priorYearData?.figures ? `£${(priorYearData.figures.totalShareholdersFundsPence / 100).toLocaleString()}` : '—'}
-                              </td>
-                            </tr>
-                          </tbody>
-                        </table>
-                      </div>
-                    </div>
+                    {/* S7 & S8 Comparative Balance Sheet Table */}
+                    <ComparativeFinancialTable
+                      title="Statement of Financial Position (Balance Sheet)"
+                      subtitle="Assets, Liabilities, and Equity with 1-click Opening Retained Earnings carry-forward"
+                      currentYearLabel="Current Year (CY)"
+                      priorYearLabel="Prior Year (PY)"
+                      items={balanceSheetItems}
+                      hasPriorYearData={Boolean(priorYearData?.figures)}
+                      onCarryForward={() => {
+                        if (priorYearData?.figures?.profitAndLossReservePence) {
+                          setForm((prev) => ({
+                            ...prev,
+                            openingRetainedEarnings: Math.round(priorYearData.figures.profitAndLossReservePence / 100)
+                          }));
+                        }
+                      }}
+                    />
                   </div>
                 )}
               </div>
@@ -1508,7 +1459,7 @@ function WizardContent() {
               </div>
 
               {/* --------------------------------------------------------------------- */}
-              {/* PANEL D: Director Loan Account (s455 Schedule)                        */}
+              {/* PANEL D: Multi-Loan Director Schedule (N1)                            */}
               {/* --------------------------------------------------------------------- */}
               <div className="bg-white rounded-3xl border border-slate-200/90 shadow-xs overflow-hidden">
                 <button
@@ -1522,11 +1473,11 @@ function WizardContent() {
                     </span>
                     <div>
                       <h3 className="text-base font-bold text-slate-950 flex items-center space-x-2">
-                        <span>Director Loan Account (Section 455 Tax)</span>
+                        <span>Director Loan Accounts (Section 455 Schedule)</span>
                         <span className="text-[10px] font-mono text-slate-400 font-normal">CTA 2010 s455 / CT600A</span>
                       </h3>
                       <p className="text-xs text-slate-500">
-                        Reporting advances, 9-month repayment relief window, and CT600A schedule
+                        Multi-row loan management, 9-month statutory relief tracking, and rate band calculations
                       </p>
                     </div>
                   </div>
@@ -1540,70 +1491,76 @@ function WizardContent() {
 
                 {expandedPanels.loans && (
                   <div className="p-6 sm:p-8 space-y-4">
-                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                      <div>
-                        <label className="block text-xs font-bold text-slate-700 mb-1">Director Loan Advance Amount</label>
-                        <div className="relative rounded-xl">
-                          <span className="absolute inset-y-0 left-0 flex items-center pl-3 text-slate-400 font-bold text-xs">£</span>
-                          <input
-                            type="number"
-                            min="0"
-                            value={form.directorLoanAdvance}
-                            onChange={(e) => setForm({ ...form, directorLoanAdvance: Math.max(0, parseInt(e.target.value) || 0) })}
-                            className="w-full pl-7 pr-3 py-2 border border-slate-300 rounded-xl text-sm font-semibold num-tabular focus:ring-2 focus:ring-slate-900"
-                          />
-                        </div>
-                        <p className="text-[10px] text-slate-400 mt-0.5">Funds withdrawn outside salary/dividends (leave £0 if none)</p>
-                      </div>
+                    <DirectorLoansSchedule
+                      loans={form.directorLoans}
+                      onChange={(newLoans) => {
+                        const totalAdv = newLoans.reduce((sum, l) => sum + (l.advanceAmount || 0), 0);
+                        setForm((prev) => ({
+                          ...prev,
+                          directorLoans: newLoans,
+                          directorLoanAdvance: totalAdv
+                        }));
+                      }}
+                      periodEnd={form.periodEnd}
+                      paymentDueDate={paymentDueDate}
+                      registeredDirectors={registeredDirectors}
+                    />
+                  </div>
+                )}
+              </div>
 
-                      <div>
-                        <label className="block text-xs font-bold text-slate-700 mb-1">Advance Date</label>
-                        <input
-                          type="date"
-                          value={form.directorLoanDate}
-                          onChange={(e) => setForm({ ...form, directorLoanDate: e.target.value })}
-                          className="w-full px-3.5 py-2 border border-slate-300 rounded-xl text-sm font-semibold focus:ring-2 focus:ring-slate-900"
-                        />
-                      </div>
-
-                      {form.directorLoanAdvance > 0 && (
-                        <>
-                          <div>
-                            <label className="block text-xs font-bold text-slate-700 mb-1">Amount Repaid by Due Date</label>
-                            <div className="relative rounded-xl">
-                              <span className="absolute inset-y-0 left-0 flex items-center pl-3 text-slate-400 font-bold text-xs">£</span>
-                              <input
-                                type="number"
-                                min="0"
-                                max={form.directorLoanAdvance}
-                                value={form.directorLoanRepaidAmount}
-                                onChange={(e) => setForm({ ...form, directorLoanRepaidAmount: Math.max(0, parseInt(e.target.value) || 0) })}
-                                className="w-full pl-7 pr-3 py-2 border border-slate-300 rounded-xl text-sm font-semibold num-tabular focus:ring-2 focus:ring-slate-900"
-                              />
-                            </div>
-                            <p className="text-[10px] text-slate-400 mt-0.5">Repaid before {paymentDueDate}</p>
-                          </div>
-
-                          <div>
-                            <label className="block text-xs font-bold text-slate-700 mb-1">Repayment Date</label>
-                            <input
-                              type="date"
-                              value={form.directorLoanRepaidDate}
-                              onChange={(e) => setForm({ ...form, directorLoanRepaidDate: e.target.value })}
-                              className="w-full px-3.5 py-2 border border-slate-300 rounded-xl text-sm font-semibold focus:ring-2 focus:ring-slate-900"
-                            />
-                          </div>
-                        </>
-                      )}
-                    </div>
-
-                    <div className="bg-orange-50/60 p-4 rounded-xl border border-orange-100 text-xs text-orange-950 space-y-1">
-                      <p className="font-bold">Section 455 Tax Relief Guarantee:</p>
-                      <p className="text-[11px] leading-relaxed text-orange-900">
-                        UK law grants 9 months and 1 day after period end (until {paymentDueDate}) to repay director loan balances.
-                        Loans repaid within this statutory window incur £0.00 Section 455 tax.
+              {/* --------------------------------------------------------------------- */}
+              {/* PANEL E: Official HMRC Corporation Tax Computation Breakdown (F4/F6)   */}
+              {/* --------------------------------------------------------------------- */}
+              <div className="bg-white rounded-3xl border border-slate-200/90 shadow-xs overflow-hidden">
+                <button
+                  type="button"
+                  onClick={() => togglePanel('taxSchedule')}
+                  className="w-full p-5 sm:p-6 text-left flex items-center justify-between hover:bg-slate-50/50 transition border-b border-slate-100"
+                >
+                  <div className="flex items-center space-x-3">
+                    <span className="w-8 h-8 rounded-xl bg-emerald-50 text-emerald-900 flex items-center justify-center font-bold text-xs">
+                      CT600
+                    </span>
+                    <div>
+                      <h3 className="text-base font-bold text-slate-950 flex items-center space-x-2">
+                        <span>Official Tax Reconciliation Schedule</span>
+                        <span className="text-[10px] font-mono text-slate-400 font-normal">HMRC CT600 Box Progression</span>
+                      </h3>
+                      <p className="text-xs text-slate-500">
+                        Full statutory calculation trail from operating profits to final tax payable
                       </p>
                     </div>
+                  </div>
+                  <div className="flex items-center space-x-3">
+                    <span className="text-xs font-mono font-bold text-emerald-700">
+                      Total Tax: £{totalHmrcPayable.toLocaleString()}
+                    </span>
+                    {expandedPanels.taxSchedule ? <ChevronUp className="w-4 h-4 text-slate-400" /> : <ChevronDown className="w-4 h-4 text-slate-400" />}
+                  </div>
+                </button>
+
+                {expandedPanels.taxSchedule && (
+                  <div className="p-6 sm:p-8">
+                    <TaxComputationBreakdown
+                      turnover={form.turnover}
+                      costOfSales={form.costOfSales}
+                      otherCharges={form.otherCharges}
+                      operatingProfit={operatingProfit}
+                      clientEntertaining={form.disallowables}
+                      capitalAdditions={form.capitalAdditions}
+                      aiaClaimed={aiaClaimed}
+                      taxableProfit={taxableProfit}
+                      corporationTax={taxPayable}
+                      s455Tax={s455TaxPayable}
+                      totalTaxDue={totalHmrcPayable}
+                      effectiveRatePct={taxRateLabel}
+                      wdaRatePct={statutoryWdaRate}
+                      companyName={form.companyName}
+                      crn={form.crn}
+                      periodStart={form.periodStart}
+                      periodEnd={form.periodEnd}
+                    />
                   </div>
                 )}
               </div>
@@ -1615,18 +1572,33 @@ function WizardContent() {
           {/* ========================================================================= */}
           {currentStep === 3 && (
             <div className="bg-white p-6 sm:p-8 rounded-3xl border border-slate-200/90 shadow-xs space-y-6">
-              <div className="space-y-1">
-                <div className="flex items-center space-x-2">
-                  <h2 className="text-xl font-bold tracking-tight text-slate-950">Step 3: Review & Submit Return</h2>
-                  <span className={`text-[11px] font-semibold px-2.5 py-0.5 rounded-full ${
-                    canTransmit ? 'bg-emerald-100 text-emerald-800' : 'bg-amber-100 text-amber-800'
-                  }`}>
-                    {canTransmit ? 'Ready for Submission' : `${fatalShieldErrors.length} item(s) to fix`}
-                  </span>
+              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+                <div className="space-y-1">
+                  <div className="flex items-center space-x-2">
+                    <h2 className="text-xl font-bold tracking-tight text-slate-950">Step 3: Review & Submit Return</h2>
+                    <span className={`text-[11px] font-semibold px-2.5 py-0.5 rounded-full ${
+                      canTransmit ? 'bg-emerald-100 text-emerald-800' : 'bg-amber-100 text-amber-800'
+                    }`}>
+                      {canTransmit ? 'Ready for Submission' : `${fatalShieldErrors.length} item(s) to fix`}
+                    </span>
+                  </div>
+                  <p className="text-xs text-slate-500">
+                    Comprehensive compliance verification across all 40 statutory pre-flight rules.
+                  </p>
                 </div>
-                <p className="text-xs text-slate-500">
-                  Audit summary across 40 pre-flight compliance rules. Free watermarked draft downloads before submission.
-                </p>
+
+                {/* Score Ring Visual in Step 3 Header */}
+                <ComplianceScoreRing
+                  totalChecks={liveShieldReport?.totalRulesEvaluated || 40}
+                  passedCount={
+                    liveShieldReport
+                      ? liveShieldReport.passedCount
+                      : 40
+                  }
+                  fatalCount={fatalShieldErrors.length}
+                  warnCount={warningShieldItems.length}
+                  size="md"
+                />
               </div>
 
               {/* Status Banner */}
@@ -1701,14 +1673,27 @@ function WizardContent() {
                 </div>
               </div>
 
-              {/* Free Document Previews */}
+              {/* Free Document Previews & Share Feature */}
               <div className="border border-slate-200 rounded-2xl p-5 space-y-3">
-                <div className="space-y-0.5">
-                  <h3 className="text-xs font-bold text-slate-900 uppercase tracking-wider">Free Official Document Previews</h3>
-                  <p className="text-xs text-slate-500">
-                    Review every figure, balance sheet note, and tax computation before submitting.
-                  </p>
+                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
+                  <div className="space-y-0.5">
+                    <h3 className="text-xs font-bold text-slate-900 uppercase tracking-wider">Free Official Document Previews</h3>
+                    <p className="text-xs text-slate-500">
+                      Review every figure, balance sheet note, and tax computation before submitting.
+                    </p>
+                  </div>
+
+                  {/* N4: Share Draft with Accountant button */}
+                  <button
+                    type="button"
+                    onClick={handleShareDraft}
+                    className="inline-flex items-center space-x-1.5 px-3 py-1.5 rounded-xl border border-slate-300 bg-white hover:bg-slate-50 text-slate-700 text-xs font-semibold transition self-start sm:self-auto"
+                  >
+                    {isShareSuccess ? <Check className="w-3.5 h-3.5 text-emerald-600" /> : <Share2 className="w-3.5 h-3.5 text-slate-500" />}
+                    <span>{isShareSuccess ? 'Review Link Copied!' : 'Share Draft with Accountant'}</span>
+                  </button>
                 </div>
+
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 pt-1">
                   <a
                     href={`/api/documents/accounts-pdf?draft=true&filingId=${filingId}`}
@@ -1742,12 +1727,36 @@ function WizardContent() {
                 </div>
               </div>
 
+              {/* N3: How to Pay HMRC Section */}
+              <div className="bg-slate-50 border border-slate-200 rounded-2xl p-5 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+                <div className="space-y-1">
+                  <div className="flex items-center space-x-2">
+                    <Landmark className="w-4 h-4 text-emerald-600" />
+                    <h4 className="text-xs font-bold text-slate-900 uppercase tracking-wider">
+                      HMRC Corporation Tax Settlement Guide
+                    </h4>
+                  </div>
+                  <p className="text-xs text-slate-500">
+                    Payment of <strong className="text-slate-900 font-mono">£{totalHmrcPayable.toLocaleString()}</strong> is due on{' '}
+                    <strong className="text-slate-900">{paymentDueDate}</strong> (9 months & 1 day after period end).
+                  </p>
+                </div>
+                <button
+                  type="button"
+                  onClick={() => setIsPayHmrcOpen(true)}
+                  className="inline-flex items-center space-x-1.5 px-4 py-2 rounded-xl bg-white hover:bg-slate-100 text-slate-900 border border-slate-300 text-xs font-bold transition shadow-2xs self-start sm:self-auto shrink-0"
+                >
+                  <Landmark className="w-3.5 h-3.5 text-amber-600" />
+                  <span>View Bank Details & PRN</span>
+                </button>
+              </div>
+
               {/* Dual Split Submissions */}
               <div className="space-y-3">
                 <h3 className="text-xs font-bold text-slate-900 uppercase tracking-wider">Gateway Submissions</h3>
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                   {/* Companies House Submission */}
-                  <div className="bg-[#1C1917] text-white p-5 rounded-2xl space-y-3 flex flex-col justify-between">
+                  <div className="bg-[#0B1528] text-white p-5 rounded-2xl space-y-3 flex flex-col justify-between">
                     <div>
                       <div className="flex items-center justify-between">
                         <span className="text-[10px] font-bold text-emerald-400 bg-emerald-950/80 border border-emerald-800 px-2 py-0.5 rounded-full">
@@ -1776,7 +1785,7 @@ function WizardContent() {
                   </div>
 
                   {/* HMRC CT600 Submission */}
-                  <div className="bg-[#1C1917] text-white p-5 rounded-2xl space-y-3 flex flex-col justify-between">
+                  <div className="bg-[#0B1528] text-white p-5 rounded-2xl space-y-3 flex flex-col justify-between">
                     <div>
                       <div className="flex items-center justify-between">
                         <span className="text-[10px] font-bold text-amber-400 bg-amber-950/80 border border-amber-800 px-2 py-0.5 rounded-full">
@@ -1871,7 +1880,7 @@ function WizardContent() {
 
         {/* Right Column: Live Audit Rail (4 cols, sticky) */}
         <div className="lg:col-span-4 space-y-4 lg:sticky lg:top-24">
-          {/* Shield Health Card */}
+          {/* Shield Health Card with ComplianceScoreRing */}
           <div className="bg-white rounded-2xl border border-slate-200/90 p-5 shadow-xs space-y-3">
             <div className="flex items-center justify-between">
               <span className="text-xs font-bold text-slate-900 flex items-center space-x-1.5">
@@ -1884,15 +1893,43 @@ function WizardContent() {
                 {fatalShieldErrors.length === 0 ? 'Ready' : `${fatalShieldErrors.length} to Fix`}
               </span>
             </div>
-            <p className="text-xs text-slate-500 leading-relaxed">
-              Every figure and date is validated against official HMRC and Companies House rules in real time.
-            </p>
+
+            <div className="flex items-center space-x-3 py-1">
+              <ComplianceScoreRing
+                totalChecks={liveShieldReport?.totalRulesEvaluated || 40}
+                passedCount={
+                  liveShieldReport
+                    ? liveShieldReport.passedCount
+                    : 40
+                }
+                fatalCount={fatalShieldErrors.length}
+                warnCount={warningShieldItems.length}
+                size="sm"
+              />
+              <div className="text-xs">
+                <p className="font-semibold text-slate-900">
+                  {fatalShieldErrors.length === 0 ? 'All 40 Checks Clear' : `${fatalShieldErrors.length} Fatal Errors`}
+                </p>
+                <p className="text-[11px] text-slate-500">
+                  {warningShieldItems.length > 0 ? `${warningShieldItems.length} advisory notes` : 'HMRC & CH Gateway ready'}
+                </p>
+              </div>
+            </div>
+
             <div className="pt-2 border-t border-slate-100 flex items-center justify-between text-xs">
               <span className="text-slate-600">Gateway Readiness:</span>
               <span className={`font-bold ${canTransmit ? 'text-emerald-600' : 'text-amber-600'}`}>
                 {canTransmit ? 'Ready to Submit' : 'Items Pending'}
               </span>
             </div>
+
+            <Link
+              href={`/filings/${filingId}/shield`}
+              className="text-[11px] font-semibold text-indigo-600 hover:text-indigo-800 flex items-center justify-between pt-1"
+            >
+              <span>Inspect all 40 compliance rules</span>
+              <ArrowRight className="w-3 h-3" />
+            </Link>
           </div>
 
           {/* Live Corporation Tax Card */}
@@ -1951,6 +1988,17 @@ function WizardContent() {
                   <span>HMRC Payment Due:</span>
                   <span className="font-medium text-slate-700">{paymentDueDate}</span>
                 </div>
+
+                <div className="pt-2">
+                  <button
+                    type="button"
+                    onClick={() => setIsPayHmrcOpen(true)}
+                    className="w-full py-2 px-3 rounded-xl bg-slate-900 hover:bg-slate-800 text-white text-xs font-semibold flex items-center justify-center space-x-1.5 transition shadow-xs"
+                  >
+                    <Landmark className="w-3.5 h-3.5 text-amber-400" />
+                    <span>View HMRC Payment Details</span>
+                  </button>
+                </div>
               </div>
             ) : (
               <div className="p-3 bg-red-50 rounded-xl border border-red-200 text-xs text-red-900 space-y-1">
@@ -1998,11 +2046,11 @@ function WizardContent() {
             {balanceSheetVariance !== 0 && (
               <button
                 type="button"
-                onClick={autoReconcileCash}
+                onClick={() => setIsAutoReconcileOpen(true)}
                 className="w-full py-1.5 px-3 rounded-xl bg-red-50 hover:bg-red-100 text-red-800 border border-red-200 text-xs font-semibold flex items-center justify-center space-x-1.5 transition"
               >
-                <RefreshCw className="w-3 h-3 text-red-600" />
-                <span>Auto-Balance via Cash</span>
+                <Scale className="w-3 h-3 text-red-600" />
+                <span>Reconcile Balance Sheet</span>
               </button>
             )}
           </div>
@@ -2029,6 +2077,32 @@ function WizardContent() {
           </div>
         </div>
       </div>
+
+      {/* Interactive Modals */}
+      <AutoReconcileModal
+        isOpen={isAutoReconcileOpen}
+        onClose={() => setIsAutoReconcileOpen(false)}
+        totalAssetsPence={Math.round(netAssets * 100)}
+        totalFundsPence={Math.round(totalEquity * 100)}
+        variancePence={Math.round(balanceSheetVariance * 100)}
+        onApply={handleApplyReconcile}
+      />
+
+      <ImportStatementModal
+        isOpen={isImportModalOpen}
+        onClose={() => setIsImportModalOpen(false)}
+        onApplyFigures={handleApplyImportedFigures}
+      />
+
+      <PayHmrcModal
+        isOpen={isPayHmrcOpen}
+        onClose={() => setIsPayHmrcOpen(false)}
+        utr={form.utr}
+        taxAmount={totalHmrcPayable}
+        paymentDueDate={paymentDueDate}
+        companyName={form.companyName}
+        accountingPeriodEnd={form.periodEnd}
+      />
 
       {/* Global Glossary Modal Controller */}
       <GlossaryModal

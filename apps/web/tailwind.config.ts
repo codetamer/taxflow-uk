@@ -18,6 +18,10 @@ const config: Config = {
           800: '#0C4A6E',
           900: '#0F172A',
         },
+        navy: {
+          900: '#0B1528',
+          950: '#060B14',
+        },
         shield: {
           pass: '#10B981',
           warn: '#F59E0B',
@@ -25,6 +29,9 @@ const config: Config = {
           bg: '#0F172A',
         }
       },
+      animation: {
+        'pulse-subtle': 'pulse 3s cubic-bezier(0.4, 0, 0.6, 1) infinite',
+      }
     },
   },
   plugins: [],

@@ -29,6 +29,7 @@ import { runPreFlightShield } from '@taxflow/shield';
 import type { ShieldInput, ShieldReport, RuleEvaluation } from '@taxflow/shield';
 import { TermExplainer } from '@/components/TermExplainer';
 import { GlossaryModal } from '@/components/GlossaryModal';
+import { ComplianceScoreRing } from '@/components/ComplianceScoreRing';
 
 const GBP = (pounds: number) => Math.round(pounds * 100);
 
@@ -380,6 +381,22 @@ export default function ShieldDashboardPage() {
     return Array.from(map.entries());
   }, [filteredEvaluations]);
 
+  const getWizardFixLink = (category: string) => {
+    if (category.includes('Category 1') || category.includes('Category 2')) {
+      return `/filings/${filingId}/wizard?step=2#balanceSheet`;
+    }
+    if (category.includes('Category 3')) {
+      return `/filings/${filingId}/wizard?step=2#pnl`;
+    }
+    if (category.includes('Category 6')) {
+      return `/filings/${filingId}/wizard?step=2#loans`;
+    }
+    if (category.includes('Category 7')) {
+      return `/filings/${filingId}/wizard?step=2#allowances`;
+    }
+    return `/filings/${filingId}/wizard?step=1`;
+  };
+
   return (
     <div className="space-y-8 max-w-6xl mx-auto py-2">
       {/* Cockpit Status Banner */}
@@ -403,22 +420,42 @@ export default function ShieldDashboardPage() {
           </div>
         </div>
 
-        {/* Live Gateway Gate Badge */}
-        <div className={`p-4 rounded-2xl border flex items-center space-x-3 self-start md:self-auto ${
-          report.passed
-            ? 'bg-emerald-950/40 border-emerald-800/80 text-emerald-300'
-            : 'bg-red-950/40 border-red-800/80 text-red-300'
-        }`}>
-          <div className={`w-8 h-8 rounded-xl flex items-center justify-center ${
-            report.passed ? 'bg-emerald-500 text-slate-950' : 'bg-red-500 text-white'
-          }`}>
-            {report.passed ? <Unlock className="w-4 h-4" /> : <Lock className="w-4 h-4" />}
+        {/* Live Gateway Gate Badge & Score Ring */}
+        <div className="flex flex-col sm:flex-row items-start sm:items-center gap-4 self-start md:self-auto">
+          <div className="bg-slate-900/90 border border-slate-800 p-3 rounded-2xl flex items-center space-x-3">
+            <ComplianceScoreRing
+              totalChecks={report.totalRulesEvaluated}
+              passedCount={report.passedCount}
+              fatalCount={fatalErrors.length}
+              warnCount={warnings.length}
+              size="md"
+            />
+            <div className="text-left">
+              <p className="text-xs font-bold text-white font-mono">
+                {report.passedCount} / {report.totalRulesEvaluated} Checks
+              </p>
+              <p className="text-[10px] text-slate-400">
+                {fatalErrors.length === 0 ? 'All Rules Verified' : `${fatalErrors.length} Fatal Blockers`}
+              </p>
+            </div>
           </div>
-          <div>
-            <p className="text-[11px] uppercase tracking-wider text-slate-400 font-semibold">Government Gateway Status</p>
-            <p className="text-sm font-bold font-mono">
-              {report.passed ? 'UNLOCKED (0 FATAL ERRORS)' : `BLOCKED (${fatalErrors.length} FATAL ERROR)`}
-            </p>
+
+          <div className={`p-4 rounded-2xl border flex items-center space-x-3 ${
+            report.passed
+              ? 'bg-emerald-950/40 border-emerald-800/80 text-emerald-300'
+              : 'bg-red-950/40 border-red-800/80 text-red-300'
+          }`}>
+            <div className={`w-8 h-8 rounded-xl flex items-center justify-center ${
+              report.passed ? 'bg-emerald-500 text-slate-950' : 'bg-red-500 text-white'
+            }`}>
+              {report.passed ? <Unlock className="w-4 h-4" /> : <Lock className="w-4 h-4" />}
+            </div>
+            <div>
+              <p className="text-[11px] uppercase tracking-wider text-slate-400 font-semibold">Government Gateway Status</p>
+              <p className="text-sm font-bold font-mono">
+                {report.passed ? 'UNLOCKED (0 FATAL ERRORS)' : `BLOCKED (${fatalErrors.length} FATAL ERROR)`}
+              </p>
+            </div>
           </div>
         </div>
       </div>
@@ -615,6 +652,15 @@ export default function ShieldDashboardPage() {
                     <p className="text-slate-600">{err.remediation}</p>
                   </div>
                 )}
+                <div className="pt-2 flex justify-end">
+                  <Link
+                    href={getWizardFixLink(err.category)}
+                    className="inline-flex items-center space-x-1.5 px-3 py-1.5 bg-red-600 hover:bg-red-700 text-white rounded-xl text-xs font-bold transition shadow-xs"
+                  >
+                    <span>Fix in Wizard</span>
+                    <ArrowRight className="w-3.5 h-3.5" />
+                  </Link>
+                </div>
               </div>
             ))}
           </div>
@@ -796,6 +842,15 @@ export default function ShieldDashboardPage() {
                         </div>
 
                         <div className="flex items-center space-x-2 self-end sm:self-auto shrink-0">
+                          {!isPass && (
+                            <Link
+                              href={getWizardFixLink(rule.category)}
+                              className="text-[11px] font-bold text-slate-900 hover:text-white bg-slate-100 hover:bg-slate-900 border border-slate-200 px-2.5 py-1 rounded-lg transition flex items-center space-x-1"
+                            >
+                              <span>Fix</span>
+                              <ArrowRight className="w-3 h-3 text-amber-500" />
+                            </Link>
+                          )}
                           <button
                             type="button"
                             onClick={() => toggleRuleExpand(rule.id)}
