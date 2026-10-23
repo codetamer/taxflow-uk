@@ -73,8 +73,9 @@ export async function POST(req: NextRequest) {
     mode = body.mode;
 
     // Base64 PDF Ingestion
-    if (body.base64Content) {
-      const pdfBuffer = Buffer.from(body.base64Content, 'base64');
+    const base64Str = body.base64Content || body.pdfBase64 || body.base64;
+    if (base64Str) {
+      const pdfBuffer = Buffer.from(base64Str, 'base64');
       const pdfResult = await ingestFinancialPdf(pdfBuffer, mode);
 
       return NextResponse.json({
