@@ -20,4 +20,5 @@ data/
 *.db-shm
 .vercel
 .env*.local
+.agents/
 
