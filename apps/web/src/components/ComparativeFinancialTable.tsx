@@ -26,6 +26,13 @@ interface ComparativeFinancialTableProps {
   hasPriorYearData?: boolean;
 }
 
+function formatAccounting(val: number): string {
+  if (val < 0) {
+    return `(£${Math.abs(val).toLocaleString()})`;
+  }
+  return `£${val.toLocaleString()}`;
+}
+
 export function ComparativeFinancialTable({
   title,
   subtitle,
@@ -108,8 +115,8 @@ export function ComparativeFinancialTable({
                     {/* Current Year Input */}
                     <td className="py-2 px-3 text-right">
                       {item.isTotal ? (
-                        <span className="font-mono tabular-nums text-slate-900 font-bold">
-                          £{item.currentValue.toLocaleString()}
+                        <span className={`font-mono tabular-nums font-bold ${item.currentValue < 0 ? 'text-amber-800' : 'text-slate-900'}`}>
+                          {formatAccounting(item.currentValue)}
                         </span>
                       ) : (
                         <div className="relative inline-block w-28">
@@ -130,7 +137,7 @@ export function ComparativeFinancialTable({
                     <td className="py-2 px-3 text-right">
                       {item.isTotal ? (
                         <span className="font-mono tabular-nums text-slate-500">
-                          £{(item.priorValue ?? 0).toLocaleString()}
+                          {formatAccounting(item.priorValue ?? 0)}
                         </span>
                       ) : item.onChangePrior ? (
                         <div className="relative inline-block w-28">
@@ -146,7 +153,7 @@ export function ComparativeFinancialTable({
                         </div>
                       ) : (
                         <span className="font-mono tabular-nums text-slate-600">
-                          £{(item.priorValue ?? 0).toLocaleString()}
+                          {formatAccounting(item.priorValue ?? 0)}
                         </span>
                       )}
                     </td>

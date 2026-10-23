@@ -35,7 +35,12 @@ import {
   ExternalLink,
   HelpCircle,
   Clock,
-  Printer
+  Printer,
+  Home,
+  Briefcase,
+  Layers,
+  PauseCircle,
+  Info
 } from 'lucide-react';
 import { TermExplainer } from '@/components/TermExplainer';
 import { PlainEnglishBanner } from '@/components/PlainEnglishBanner';
@@ -52,6 +57,15 @@ import { ComplianceScoreRing } from '@/components/ComplianceScoreRing';
 import { computePeriod, ctPaymentDueDate, daysInclusive, mainPoolWdaRatePct } from '@taxflow/ct-engine';
 import { runPreFlightShield } from '@taxflow/shield';
 import type { ShieldInput } from '@taxflow/shield';
+
+function formatAccounting(val: number, isCurrency = true): string {
+  const absVal = Math.abs(val).toLocaleString('en-GB', { minimumFractionDigits: 0, maximumFractionDigits: 2 });
+  const prefix = isCurrency ? '£' : '';
+  if (val < 0) {
+    return `(${prefix}${absVal})`;
+  }
+  return `${prefix}${absVal}`;
+}
 
 export default function WizardPage() {
   return (
@@ -72,6 +86,11 @@ function WizardContent() {
   const searchParams = useSearchParams();
   const filingId = (params?.id as string) || 'fil_demo';
 
+  // Filing Mode: dual | ct600_only | accounts_only
+  const filingMode = (searchParams.get('mode') as 'dual' | 'ct600_only' | 'accounts_only') || 'dual';
+  const isCustomDates = searchParams.get('customDates') === 'true';
+  const customReason = searchParams.get('reason') || '';
+
   // 3-Step Wizard Navigation
   const [currentStep, setCurrentStep] = useState<number>(1);
   const [isGlossaryOpen, setIsGlossaryOpen] = useState<boolean>(false);
@@ -87,11 +106,11 @@ function WizardContent() {
     'Muhammad Saif Raza'
   ]);
 
-  // Form State initialized to DropLogicX Ltd benchmark
+  // Form State: Supports 4 Entity Archetypes non-destructively
   const [form, setForm] = useState({
     companyName: 'DROPLOGICX LTD',
     crn: '15152081',
-    companyType: 'TRADING' as 'TRADING' | 'PROPERTY' | 'DORMANT',
+    companyType: 'TRADING' as 'TRADING' | 'PROPERTY' | 'DORMANT' | 'MIXED',
     utr: '1234567890',
     registeredAddress: '71-75 Shelton Street, Covent Garden, London, WC2H 9JQ',
     directorName: 'Muhammad Saif Raza',
@@ -100,6 +119,7 @@ function WizardContent() {
     associatedCompanies: 0,
     averageEmployees: 1,
     isDirectorApproved: true,
+    // Trading Stream
     turnover: 100000,
     costOfSales: 20000,
     otherCharges: 48100,
@@ -109,12 +129,22 @@ function WizardContent() {
     carAdditions: 0,
     mainPoolBroughtForward: 0,
     aiaClaimed: 15000,
+    // Balance Sheet
     debtors: 10000,
     cashAtBank: 33400,
     creditorsUnderOneYear: 25000,
     shareCapital: 100,
     dividendsPaid: 10000,
     openingRetainedEarnings: 15200,
+    // Property SPV Specifics (Schedule A)
+    propertyRentalIncome: 36000,
+    propertyAllowableExpenses: 6000,
+    propertyMortgageInterest: 12000, // NTLR Debit Box 260
+    propertyLossBroughtForward: 0, // Box 805
+    // Mixed Income Specifics
+    exemptDistributions: 0, // FII Box 620
+    chargeableGains: 0,
+    // Director Loans
     directorLoanAdvance: 0,
     directorLoanDate: '2026-05-01',
     directorLoanRepaidAmount: 0,
@@ -140,13 +170,14 @@ function WizardContent() {
   // Collapsible Accordions in Step 2 (Annual Figures)
   const [expandedPanels, setExpandedPanels] = useState({
     pnl: true,
+    propertySchedule: true,
     balanceSheet: true,
     allowances: true,
     loans: true,
     taxSchedule: true
   });
 
-  const togglePanel = (panel: 'pnl' | 'balanceSheet' | 'allowances' | 'loans' | 'taxSchedule') => {
+  const togglePanel = (panel: 'pnl' | 'propertySchedule' | 'balanceSheet' | 'allowances' | 'loans' | 'taxSchedule') => {
     setExpandedPanels((prev) => ({ ...prev, [panel]: !prev[panel] }));
   };
 
@@ -183,7 +214,7 @@ function WizardContent() {
     }
   };
 
-  // 1. Initial State Hydration: Load saved draft on mount
+  // Initial State Hydration: Load saved draft on mount
   useEffect(() => {
     async function loadSavedDraft() {
       try {
@@ -251,7 +282,7 @@ function WizardContent() {
     fetchPriorYearAccounts('15152081');
   }, [filingId]);
 
-  // 2. Debounced Autosave: Saves draft to database and local cache on every field edit
+  // Debounced Autosave: Saves draft to database and local cache on every field edit
   useEffect(() => {
     const timer = setTimeout(async () => {
       try {
@@ -278,11 +309,6 @@ function WizardContent() {
 
     return () => clearTimeout(timer);
   }, [form, filingId]);
-
-  const openGlossaryWith = (termId: string) => {
-    setInitialGlossaryTerm(termId);
-    setIsGlossaryOpen(true);
-  };
 
   // Debounced search for Companies House
   useEffect(() => {
@@ -342,17 +368,23 @@ function WizardContent() {
     }
   };
 
-  // URL Query Parameters Pre-population from Homepage Hero Search
+  // URL Query Parameters Pre-population
   useEffect(() => {
     const urlCrn = searchParams.get('crn');
     const urlName = searchParams.get('name');
     const urlTurnover = searchParams.get('turnover');
     const urlExpenses = searchParams.get('expenses');
+    const urlStart = searchParams.get('periodStart');
+    const urlEnd = searchParams.get('periodEnd');
 
     if (urlCrn) {
       selectCompany(urlCrn);
     } else if (urlName) {
       setForm((prev) => ({ ...prev, companyName: urlName }));
+    }
+
+    if (urlStart && urlEnd) {
+      setForm((prev) => ({ ...prev, periodStart: urlStart, periodEnd: urlEnd }));
     }
 
     if (urlTurnover) {
@@ -374,23 +406,21 @@ function WizardContent() {
     }
   }, [searchParams]);
 
-  // Reconciliation handler for IMP-09
   const handleApplyReconcile = (target: 'cash' | 'retainedEarnings' | 'creditors') => {
     if (target === 'cash') {
-      const neededCash = totalEquity - form.fixedAssets - form.debtors + form.creditorsUnderOneYear;
+      const neededCash = totalEquity - activeFixedAssets - activeDebtors + activeCreditorsUnderOneYear;
       setForm((prev) => ({ ...prev, cashAtBank: Math.max(0, neededCash) }));
     } else if (target === 'retainedEarnings') {
       const currentNetProfit = operatingProfit - taxPayable;
       const neededOpening = netAssets - form.shareCapital - currentNetProfit + form.dividendsPaid;
       setForm((prev) => ({ ...prev, openingRetainedEarnings: neededOpening }));
     } else if (target === 'creditors') {
-      const totalCurrentAssets = form.debtors + form.cashAtBank;
-      const neededCreditors = form.fixedAssets + totalCurrentAssets - totalEquity;
+      const totalCurrentAssets = activeDebtors + activeCashAtBank;
+      const neededCreditors = activeFixedAssets + totalCurrentAssets - totalEquity;
       setForm((prev) => ({ ...prev, creditorsUnderOneYear: Math.max(0, neededCreditors) }));
     }
   };
 
-  // Statement Ingestion handler for F9
   const handleApplyImportedFigures = (figures: {
     turnover?: number;
     costOfSales?: number;
@@ -437,13 +467,29 @@ function WizardContent() {
     }
   };
 
-  // 1. Core Operating and Taxable Profit Metrics
-  const grossProfit = form.companyType === 'DORMANT' ? 0 : form.turnover - form.costOfSales;
-  const operatingProfit = form.companyType === 'DORMANT' ? 0 : grossProfit - form.otherCharges;
+  // -------------------------------------------------------------------------
+  // FINANCIAL COMPUTATION ENGINE BY ARCHETYPE
+  // -------------------------------------------------------------------------
+  const isDormant = form.companyType === 'DORMANT';
+  const isProperty = form.companyType === 'PROPERTY';
+  const isMixed = form.companyType === 'MIXED';
+  const isTrading = form.companyType === 'TRADING';
 
-  // 2. Capital Allowances & AIA Computation
+  // 1. Trading stream figures
+  const tradingGrossProfit = isDormant ? 0 : form.turnover - form.costOfSales;
+  const tradingOperatingProfit = isDormant ? 0 : tradingGrossProfit - form.otherCharges;
+
+  // 2. Property SPV stream figures (Schedule A & CTA 2009 Part 5)
+  const propertyGrossIncome = isDormant || isTrading ? 0 : form.propertyRentalIncome;
+  const propertyExpenses = isDormant || isTrading ? 0 : form.propertyAllowableExpenses;
+  const propertyMortgageInterest = isDormant || isTrading ? 0 : form.propertyMortgageInterest; // Box 260 NTLR debit
+  const propertyNetBeforeFinance = propertyGrossIncome - propertyExpenses;
+  const propertyNetTaxableProfit = Math.max(0, propertyNetBeforeFinance - propertyMortgageInterest); // Box 190
+  const propertyLossCarriedForward = Math.max(0, (propertyExpenses + propertyMortgageInterest) - propertyGrossIncome); // Box 805
+
+  // 3. Capital Allowances & AIA Computation
   const qualifyingAdditions = form.capitalAdditions ?? form.fixedAssets ?? 15000;
-  const aiaClaimed = Math.min(qualifyingAdditions, form.aiaClaimed ?? 15000);
+  const aiaClaimed = isDormant ? 0 : Math.min(qualifyingAdditions, form.aiaClaimed ?? 15000);
   const mainPoolAdditions = Math.max(0, qualifyingAdditions - aiaClaimed) + (form.carAdditions ?? 0) + (form.mainPoolBroughtForward ?? 0);
   const periodDayCount = form.periodStart && form.periodEnd ? daysInclusive(form.periodStart, form.periodEnd) : 0;
   const isPeriodValid = periodDayCount > 0 && periodDayCount <= 366;
@@ -451,17 +497,35 @@ function WizardContent() {
     ? mainPoolWdaRatePct({ start: form.periodStart, end: form.periodEnd })
     : 14.0;
   const mainPoolWda = Math.round(mainPoolAdditions * (statutoryWdaRate / 100));
-  const totalCapitalAllowances = form.companyType === 'DORMANT' ? 0 : aiaClaimed + mainPoolWda;
+  const totalCapitalAllowances = isDormant ? 0 : aiaClaimed + mainPoolWda;
 
-  // 3. Taxable Trading Profit (CTA 2009 / CTA 2010)
-  const taxableProfit = form.companyType === 'DORMANT'
+  // 4. Combined Operating Profit & Taxable Trading Profit
+  const tradingTaxableProfit = isDormant
     ? 0
-    : Math.max(0, operatingProfit + form.disallowables - totalCapitalAllowances);
+    : Math.max(0, tradingOperatingProfit + form.disallowables - totalCapitalAllowances);
 
-  // 4. Official Due Date and Loan Scheduling
+  // Overall Operating Profit reported in P&L
+  const operatingProfit = isDormant
+    ? 0
+    : isProperty
+    ? propertyNetBeforeFinance - propertyMortgageInterest
+    : isMixed
+    ? tradingOperatingProfit + propertyNetBeforeFinance - propertyMortgageInterest
+    : tradingOperatingProfit;
+
+  // Overall Total Taxable Profits (TTP Box 315 / 335)
+  const taxableProfit = isDormant
+    ? 0
+    : isProperty
+    ? propertyNetTaxableProfit
+    : isMixed
+    ? tradingTaxableProfit + propertyNetTaxableProfit
+    : tradingTaxableProfit;
+
+  // Payment due date
   const paymentDueDate = form.periodEnd ? ctPaymentDueDate(form.periodEnd) : '2027-07-01';
 
-  // Multi-Loan Schedule Mapping for s455 (N1)
+  // Multi-Loan Schedule Mapping for s455
   const directorLoansList = useMemo(() => {
     const loans = form.directorLoans && form.directorLoans.length > 0
       ? form.directorLoans
@@ -502,18 +566,28 @@ function WizardContent() {
     paymentDueDate
   ]);
 
-  // 5. Official Corporation Tax & s455 Computation Engine
+  // 5. Corporation Tax & s455 Computation Engine
   const ctResult = useMemo(() => {
     try {
-      if (!isPeriodValid || form.companyType === 'DORMANT') return null;
+      if (!isPeriodValid || isDormant) return null;
+
+      const nonTradingIncome = isProperty
+        ? Math.round(propertyNetTaxableProfit * 100)
+        : isMixed
+        ? Math.round(propertyNetTaxableProfit * 100)
+        : 0;
+
+      const tradingProfits = isProperty
+        ? 0
+        : Math.round(tradingTaxableProfit * 100);
 
       return computePeriod({
         period: { start: form.periodStart, end: form.periodEnd },
         daysInYearBasis: 365,
         associatedCompanies: Number(form.associatedCompanies) || 0,
-        tradingProfitAfterAllowancesPence: Math.round(taxableProfit * 100),
-        nonTradingIncomePence: 0,
-        exemptDistributionsPence: 0,
+        tradingProfitAfterAllowancesPence: tradingProfits,
+        nonTradingIncomePence: nonTradingIncome,
+        exemptDistributionsPence: Math.round(form.exemptDistributions * 100),
         tradingLossesBroughtForwardPence: 0,
         setOffCurrentLossAgainstOtherProfits: false,
         closeCompany: true,
@@ -522,11 +596,22 @@ function WizardContent() {
     } catch {
       return null;
     }
-  }, [form.periodStart, form.periodEnd, isPeriodValid, form.companyType, form.associatedCompanies, taxableProfit, directorLoansList]);
+  }, [
+    form.periodStart,
+    form.periodEnd,
+    isPeriodValid,
+    isDormant,
+    isProperty,
+    isMixed,
+    form.associatedCompanies,
+    tradingTaxableProfit,
+    propertyNetTaxableProfit,
+    form.exemptDistributions,
+    directorLoansList
+  ]);
 
-  // Tax Payable is strictly 0 if period is invalid or dormant
-  const taxPayable = isPeriodValid && ctResult ? Math.round(ctResult.corporationTaxPence / 100) : 0;
-  const s455TaxPayable = ctResult ? Math.round(ctResult.s455TaxPence / 100) : 0;
+  const taxPayable = isPeriodValid && ctResult && !isDormant ? Math.round(ctResult.corporationTaxPence / 100) : 0;
+  const s455TaxPayable = ctResult && !isDormant ? Math.round(ctResult.s455TaxPence / 100) : 0;
   const totalHmrcPayable = taxPayable + s455TaxPayable;
 
   let taxRateLabel = 'Small Profits (19%)';
@@ -538,15 +623,20 @@ function WizardContent() {
     }
   }
 
-  // 6. P&L Bottom Line and Balance Sheet Calculations
-  const netProfit = operatingProfit - taxPayable;
-  const closingRetainedEarnings = form.openingRetainedEarnings + netProfit - form.dividendsPaid;
+  // 6. Balance Sheet Calculations by Archetype
+  const netProfit = isDormant ? 0 : operatingProfit - taxPayable;
+  const closingRetainedEarnings = isDormant ? 0 : form.openingRetainedEarnings + netProfit - form.dividendsPaid;
 
-  const currentAssets = form.debtors + form.cashAtBank;
-  const netCurrentAssets = currentAssets - form.creditorsUnderOneYear;
-  const netAssets = form.fixedAssets + netCurrentAssets;
+  const activeFixedAssets = isDormant ? 0 : form.fixedAssets;
+  const activeDebtors = isDormant ? 0 : form.debtors;
+  const activeCashAtBank = isDormant ? form.shareCapital : form.cashAtBank;
+  const activeCreditorsUnderOneYear = isDormant ? 0 : form.creditorsUnderOneYear;
+
+  const currentAssets = activeDebtors + activeCashAtBank;
+  const netCurrentAssets = currentAssets - activeCreditorsUnderOneYear;
+  const netAssets = activeFixedAssets + netCurrentAssets;
   const totalEquity = form.shareCapital + closingRetainedEarnings;
-  const balanceSheetVariance = netAssets - totalEquity;
+  const balanceSheetVariance = isDormant ? 0 : netAssets - totalEquity;
 
   // 7. Validation Rules
   const isUtrValid = /^\d{10}$/.test(form.utr.trim());
@@ -559,7 +649,7 @@ function WizardContent() {
         entity: {
           crn: form.crn,
           companyName: form.companyName,
-          companyType: form.companyType,
+          companyType: isDormant ? 'DORMANT' : isProperty ? 'PROPERTY' : isMixed ? 'MIXED_INCOME' : 'TRADING',
           utr: form.utr,
           isCloseCompany: true,
           isCharityOrPlc: false,
@@ -578,32 +668,32 @@ function WizardContent() {
           isDirectorApproved: form.isDirectorApproved
         },
         ledger: {
-          turnoverPence: Math.round(form.turnover * 100),
-          costOfSalesPence: Math.round(form.costOfSales * 100),
+          turnoverPence: isDormant ? 0 : Math.round((isProperty ? propertyGrossIncome : form.turnover) * 100),
+          costOfSalesPence: isDormant || isProperty ? 0 : Math.round(form.costOfSales * 100),
           staffCostsPence: 0,
           depreciationPence: 0,
-          otherChargesPence: Math.round(form.otherCharges * 100),
-          clientEntertainingPence: Math.round(form.disallowables * 100),
+          otherChargesPence: isDormant ? 0 : Math.round((isProperty ? propertyExpenses + propertyMortgageInterest : form.otherCharges) * 100),
+          clientEntertainingPence: isDormant || isProperty ? 0 : Math.round(form.disallowables * 100),
           finesPence: 0,
           bankInterestPence: 0,
           taxExpensePence: Math.round(taxPayable * 100),
           netProfitAfterTaxPence: Math.round(netProfit * 100),
-          dividendsPaidPence: Math.round(form.dividendsPaid * 100),
-          openingRetainedEarningsPence: Math.round(form.openingRetainedEarnings * 100),
-          closingRetainedEarningsPence: Math.round(closingRetainedEarnings * 100),
-          fixedAssetsPence: Math.round(form.fixedAssets * 100),
-          debtorsPence: Math.round(form.debtors * 100),
-          cashPence: Math.round(form.cashAtBank * 100),
-          creditorsUnderOneYearPence: Math.round(form.creditorsUnderOneYear * 100),
+          dividendsPaidPence: isDormant ? 0 : Math.round(form.dividendsPaid * 100),
+          openingRetainedEarningsPence: isDormant ? 0 : Math.round(form.openingRetainedEarnings * 100),
+          closingRetainedEarningsPence: isDormant ? 0 : Math.round(closingRetainedEarnings * 100),
+          fixedAssetsPence: Math.round(activeFixedAssets * 100),
+          debtorsPence: Math.round(activeDebtors * 100),
+          cashPence: Math.round(activeCashAtBank * 100),
+          creditorsUnderOneYearPence: Math.round(activeCreditorsUnderOneYear * 100),
           creditorsOverOneYearPence: 0,
           provisionsPence: 0,
           shareCapitalPence: Math.round(form.shareCapital * 100),
-          employeeCount: form.averageEmployees || 1
+          employeeCount: isDormant ? 0 : (form.averageEmployees || 1)
         },
         tax: {
-          tradingProfitPence: Math.round(taxableProfit * 100),
-          nonTradingIncomePence: 0,
-          exemptDistributionsPence: 0,
+          tradingProfitPence: isProperty ? 0 : Math.round(taxableProfit * 100),
+          nonTradingIncomePence: isProperty ? Math.round(taxableProfit * 100) : 0,
+          exemptDistributionsPence: Math.round(form.exemptDistributions * 100),
           ttpPence: Math.round(taxableProfit * 100),
           augmentedProfitsPence: ctResult?.augmentedProfitsPence ?? Math.round(taxableProfit * 100),
           lowerLimitPence: ctResult?.lowerLimitPence ?? 5000000,
@@ -625,6 +715,16 @@ function WizardContent() {
     }
   }, [
     form,
+    isDormant,
+    isProperty,
+    isMixed,
+    propertyGrossIncome,
+    propertyExpenses,
+    propertyMortgageInterest,
+    activeFixedAssets,
+    activeDebtors,
+    activeCashAtBank,
+    activeCreditorsUnderOneYear,
     taxableProfit,
     taxPayable,
     s455TaxPayable,
@@ -652,8 +752,8 @@ function WizardContent() {
 
   // 3-Step Structure
   const steps = [
-    { num: 1, title: 'Company & Period', desc: 'CRN, dates & prior sync' },
-    { num: 2, title: 'Annual Figures', desc: 'P&L, Balance Sheet, Allowances & Loans' },
+    { num: 1, title: 'Company & Period', desc: 'CRN, entity archetype & dates' },
+    { num: 2, title: 'Annual Figures', desc: 'P&L, Schedule A, Balance Sheet & Loans' },
     { num: 3, title: 'Review & Submit', desc: 'Pre-flight checks, drafts & dispatch' }
   ];
 
@@ -696,9 +796,9 @@ function WizardContent() {
     },
     {
       id: 'operatingProfit',
-      label: 'Operating Profit / (Loss)',
+      label: 'Trading Profit / (Loss)',
       isTotal: true,
-      currentValue: operatingProfit,
+      currentValue: tradingOperatingProfit,
       priorValue: priorYearData?.figures
         ? Math.round(
             (priorYearData.figures.turnoverPence -
@@ -709,42 +809,77 @@ function WizardContent() {
         : undefined,
       onChangeCurrent: () => {}
     }
-  ], [form.turnover, form.costOfSales, form.otherCharges, form.disallowables, operatingProfit, priorYearData]);
+  ], [form.turnover, form.costOfSales, form.otherCharges, form.disallowables, tradingOperatingProfit, priorYearData]);
+
+  // Property SPV Schedule A Line Items
+  const propertyScheduleItems: FinancialLineItem[] = useMemo(() => [
+    {
+      id: 'propertyRentalIncome',
+      label: 'Gross Rental Receipts',
+      boxLabel: 'Schedule A',
+      tooltip: 'Total rent received from commercial and residential tenants',
+      currentValue: form.propertyRentalIncome,
+      onChangeCurrent: (val) => setForm((prev) => ({ ...prev, propertyRentalIncome: val }))
+    },
+    {
+      id: 'propertyAllowableExpenses',
+      label: 'Allowable Property Expenses',
+      boxLabel: 'Schedule A',
+      tooltip: 'Repairs, estate management, insurance, and professional fees',
+      currentValue: form.propertyAllowableExpenses,
+      onChangeCurrent: (val) => setForm((prev) => ({ ...prev, propertyAllowableExpenses: val }))
+    },
+    {
+      id: 'propertyMortgageInterest',
+      label: 'Loan Interest & Finance Costs (NTLR Debit)',
+      boxLabel: 'Box 260',
+      tooltip: 'CTA 2009 Part 5: Buy-to-let mortgage interest deducted from property profits',
+      currentValue: form.propertyMortgageInterest,
+      onChangeCurrent: (val) => setForm((prev) => ({ ...prev, propertyMortgageInterest: val }))
+    },
+    {
+      id: 'propertyNetTaxableProfit',
+      label: 'Net Chargeable Property Income (Box 190)',
+      isTotal: true,
+      currentValue: propertyNetTaxableProfit,
+      onChangeCurrent: () => {}
+    }
+  ], [form.propertyRentalIncome, form.propertyAllowableExpenses, form.propertyMortgageInterest, propertyNetTaxableProfit]);
 
   const balanceSheetItems: FinancialLineItem[] = useMemo(() => [
     {
       id: 'fixedAssets',
-      label: 'Fixed Assets (Tangible)',
-      boxLabel: 'FRS 105',
-      tooltip: 'Plant, hardware, computers, and office machinery',
-      currentValue: form.fixedAssets,
+      label: isProperty ? 'Investment Property / Land & Buildings' : 'Fixed Assets (Tangible)',
+      boxLabel: isProperty ? 'FRS 105 s13' : 'FRS 105',
+      tooltip: isProperty ? 'Freehold/leasehold property portfolio valuation' : 'Plant, hardware, computers, and office machinery',
+      currentValue: activeFixedAssets,
       priorValue: priorYearData?.figures ? Math.round(priorYearData.figures.fixedAssetsPence / 100) : undefined,
       onChangeCurrent: (val) => setForm((prev) => ({ ...prev, fixedAssets: val, capitalAdditions: val, aiaClaimed: val }))
     },
     {
       id: 'debtors',
-      label: 'Debtors (Receivables)',
+      label: isProperty ? 'Tenant Rent Arrears & Deposits' : 'Debtors (Receivables)',
       boxLabel: 'FRS 105',
-      tooltip: 'Unpaid client invoices due within 1 year',
-      currentValue: form.debtors,
+      tooltip: isProperty ? 'Outstanding tenant rent due within 1 year' : 'Unpaid client invoices due within 1 year',
+      currentValue: activeDebtors,
       priorValue: priorYearData?.figures ? Math.round(priorYearData.figures.debtorsPence / 100) : undefined,
       onChangeCurrent: (val) => setForm((prev) => ({ ...prev, debtors: val }))
     },
     {
       id: 'cashAtBank',
-      label: 'Cash at Bank and in Hand',
+      label: isProperty ? 'Designated Rental Client Account' : 'Cash at Bank and in Hand',
       boxLabel: 'FRS 105',
       tooltip: 'Bank and liquid balances at period end',
-      currentValue: form.cashAtBank,
+      currentValue: activeCashAtBank,
       priorValue: priorYearData?.figures ? Math.round(priorYearData.figures.cashAtBankPence / 100) : undefined,
       onChangeCurrent: (val) => setForm((prev) => ({ ...prev, cashAtBank: val }))
     },
     {
       id: 'creditorsUnderOneYear',
-      label: 'Creditors (Due < 1 Year)',
+      label: isProperty ? 'Short-Term Trade Payables & Deposits' : 'Creditors (Due < 1 Year)',
       boxLabel: 'FRS 105',
       tooltip: 'Liabilities, VAT, PAYE, supplier invoices due < 1 year',
-      currentValue: form.creditorsUnderOneYear,
+      currentValue: activeCreditorsUnderOneYear,
       priorValue: priorYearData?.figures ? Math.round(priorYearData.figures.creditorsDueWithinOneYearPence / 100) : undefined,
       onChangeCurrent: (val) => setForm((prev) => ({ ...prev, creditorsUnderOneYear: val }))
     },
@@ -770,7 +905,7 @@ function WizardContent() {
       label: 'Opening Retained Earnings',
       boxLabel: 'Reserves',
       tooltip: 'Brought forward from prior period balance sheet',
-      currentValue: form.openingRetainedEarnings,
+      currentValue: isDormant ? 0 : form.openingRetainedEarnings,
       priorValue: priorYearData?.figures ? Math.round(priorYearData.figures.profitAndLossReservePence / 100) : undefined,
       onChangeCurrent: (val) => setForm((prev) => ({ ...prev, openingRetainedEarnings: val }))
     },
@@ -779,7 +914,7 @@ function WizardContent() {
       label: 'Dividends Declared & Paid',
       boxLabel: 'Distributions',
       tooltip: 'Interim & final dividends distributed in the period',
-      currentValue: form.dividendsPaid,
+      currentValue: isDormant ? 0 : form.dividendsPaid,
       onChangeCurrent: (val) => setForm((prev) => ({ ...prev, dividendsPaid: val }))
     },
     {
@@ -791,10 +926,12 @@ function WizardContent() {
       onChangeCurrent: () => {}
     }
   ], [
-    form.fixedAssets,
-    form.debtors,
-    form.cashAtBank,
-    form.creditorsUnderOneYear,
+    isProperty,
+    isDormant,
+    activeFixedAssets,
+    activeDebtors,
+    activeCashAtBank,
+    activeCreditorsUnderOneYear,
     netAssets,
     form.shareCapital,
     form.openingRetainedEarnings,
@@ -809,13 +946,19 @@ function WizardContent() {
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-2 border-b border-slate-200">
         <div>
           <h1 className="text-xl sm:text-2xl font-bold tracking-tight text-slate-950 flex items-center gap-2">
-            <span>Filing Studio: Micro-Entity Accounts & CT600</span>
+            <span>Filing Studio: UK Corporation Tax &amp; Accounts</span>
             <span className="text-[10px] font-semibold text-emerald-800 bg-emerald-50 border border-emerald-200 px-2 py-0.5 rounded-full">
-              Live Gateway Connected
+              {filingMode === 'ct600_only' ? 'CT600 Only' : filingMode === 'accounts_only' ? 'Accounts Only' : 'Dual Gateway'}
             </span>
           </h1>
           <p className="text-xs text-slate-500">
-            3-step unified statutory return with real-time HMRC & Companies House pre-submission gateway compliance.
+            {isDormant
+              ? 'Companies Act 2006 s480 Dormant Company simplified statutory return.'
+              : isProperty
+              ? 'Dedicated Buy-to-Let Property SPV return with Schedule A & Box 260 NTLR deductions.'
+              : isMixed
+              ? 'Multi-stream segregated return combining trading operations and UK property profits.'
+              : 'Unified FRS 105 Micro-Entity Accounts and HMRC CT600 Corporation Tax Return.'}
           </p>
         </div>
 
@@ -842,6 +985,19 @@ function WizardContent() {
           </button>
         </div>
       </div>
+
+      {/* Custom Dates Notice if active */}
+      {isCustomDates && (
+        <div className="p-4 bg-amber-50 border border-amber-200 rounded-2xl flex items-start space-x-3 text-amber-950 text-xs">
+          <Info className="w-5 h-5 text-amber-600 shrink-0 mt-0.5" />
+          <div className="space-y-0.5">
+            <p className="font-bold">Custom Accounting Period Active</p>
+            <p className="text-amber-800 leading-relaxed">
+              Filing for custom date range <strong>{form.periodStart}</strong> to <strong>{form.periodEnd}</strong> ({periodDayCount} days). Reason: {customReason || 'HMRC CT603 notice or ARD variance alignment'}.
+            </p>
+          </div>
+        </div>
+      )}
 
       {/* Stepper Navigation */}
       <div className="bg-white rounded-2xl border border-stone-200/90 p-2.5 shadow-xs">
@@ -898,67 +1054,152 @@ function WizardContent() {
         <div className="lg:col-span-8 space-y-6">
 
           {/* ========================================================================= */}
-          {/* STEP 1: Company Profile & Accounting Period                               */}
+          {/* STEP 1: Company Profile, Archetype Selector & Accounting Period          */}
           {/* ========================================================================= */}
           {currentStep === 1 && (
             <div className="bg-white p-6 sm:p-8 rounded-3xl border border-slate-200/90 shadow-xs space-y-6">
               <div className="space-y-1">
                 <div className="flex items-center space-x-2">
-                  <h2 className="text-xl font-bold tracking-tight text-slate-950">Step 1: Company & Accounting Period</h2>
+                  <h2 className="text-xl font-bold tracking-tight text-slate-950">Step 1: Company Profile &amp; Archetype</h2>
                   <span className="text-[11px] font-semibold text-emerald-800 bg-emerald-50 border border-emerald-200 px-2.5 py-0.5 rounded-full">
                     Companies House Linked
                   </span>
                 </div>
                 <p className="text-xs text-slate-500">
-                  Verify your company registration and period dates. We cross-check against official registry records.
+                  Select your corporate archetype and verify your statutory accounting reference dates.
                 </p>
               </div>
 
-              {/* Companies House Search & Company Type */}
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                <div className="space-y-1">
-                  <label className="block text-xs font-bold text-slate-700">Company Type</label>
-                  <select
-                    value={form.companyType}
-                    onChange={(e) => setForm({ ...form, companyType: e.target.value as any })}
-                    className="w-full px-3.5 py-2.5 border border-slate-300 rounded-xl text-xs font-semibold focus:outline-none focus:ring-2 focus:ring-slate-900 bg-white"
+              {/* 1.2 Segmented Radio Archetype Cards (Phase 1 Doctrine) */}
+              <div className="space-y-2.5">
+                <label className="block text-xs font-bold text-slate-700">
+                  Select Company Archetype (Tailors Form Schedules Dynamically)
+                </label>
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                  {/* Archetype 1: Trading Company */}
+                  <div
+                    onClick={() => setForm({ ...form, companyType: 'TRADING' })}
+                    className={`p-4 rounded-2xl border-2 transition cursor-pointer flex flex-col justify-between space-y-2 ${
+                      form.companyType === 'TRADING'
+                        ? 'border-slate-900 bg-slate-50/70 shadow-xs ring-1 ring-slate-900'
+                        : 'border-slate-200 hover:border-slate-300 bg-white'
+                    }`}
                   >
-                    <option value="TRADING">Trading Company (Standard Micro-Entity)</option>
-                    <option value="PROPERTY">Property Investment Company</option>
-                    <option value="DORMANT">Dormant Company (Balance Sheet Only)</option>
-                  </select>
-                </div>
-
-                <div className="space-y-1">
-                  <label className="block text-xs font-bold text-slate-700">
-                    Search Registered Name or CRN
-                  </label>
-                  <div className="relative">
-                    <input
-                      type="text"
-                      placeholder="e.g. DropLogicX or 15152081"
-                      value={chQuery}
-                      onChange={(e) => setChQuery(e.target.value)}
-                      className="w-full pl-9 pr-4 py-2 border border-slate-300 rounded-xl text-xs font-medium focus:outline-none focus:ring-2 focus:ring-slate-900"
-                    />
-                    <Search className="w-4 h-4 text-slate-400 absolute left-3 top-2.5" />
-                  </div>
-                  {chResults.length > 0 && (
-                    <div className="absolute bg-white border border-slate-200 rounded-xl shadow-lg z-30 max-h-48 overflow-y-auto divide-y divide-slate-100">
-                      {chResults.map((item) => (
-                        <button
-                          key={item.company_number}
-                          type="button"
-                          onClick={() => selectCompany(item.company_number)}
-                          className="w-full text-left p-2.5 hover:bg-slate-50 text-xs transition"
-                        >
-                          <div className="font-bold text-slate-900">{item.title}</div>
-                          <div className="text-[10px] text-slate-500 font-mono">CRN: {item.company_number}</div>
-                        </button>
-                      ))}
+                    <div className="flex items-center justify-between">
+                      <div className="flex items-center space-x-2">
+                        <Briefcase className={`w-4 h-4 ${form.companyType === 'TRADING' ? 'text-amber-600' : 'text-slate-400'}`} />
+                        <span className="font-bold text-xs text-slate-900">Trading Company</span>
+                      </div>
+                      <span className="text-[10px] font-semibold px-2 py-0.5 rounded-full bg-slate-200/80 text-slate-700">
+                        FRS 105
+                      </span>
                     </div>
-                  )}
+                    <p className="text-[11px] text-slate-500 leading-relaxed">
+                      Standard commercial business with sales, direct contractor costs, operating expenses, and 100% AIA capital allowances.
+                    </p>
+                  </div>
+
+                  {/* Archetype 2: Property Company (Buy-to-Let SPV) */}
+                  <div
+                    onClick={() => setForm({ ...form, companyType: 'PROPERTY' })}
+                    className={`p-4 rounded-2xl border-2 transition cursor-pointer flex flex-col justify-between space-y-2 ${
+                      form.companyType === 'PROPERTY'
+                        ? 'border-indigo-600 bg-indigo-50/50 shadow-xs ring-1 ring-indigo-600'
+                        : 'border-slate-200 hover:border-slate-300 bg-white'
+                    }`}
+                  >
+                    <div className="flex items-center justify-between">
+                      <div className="flex items-center space-x-2">
+                        <Home className={`w-4 h-4 ${form.companyType === 'PROPERTY' ? 'text-indigo-600' : 'text-slate-400'}`} />
+                        <span className="font-bold text-xs text-indigo-950">Property Company (SPV)</span>
+                      </div>
+                      <span className="text-[10px] font-semibold px-2 py-0.5 rounded-full bg-indigo-100 text-indigo-800">
+                        Schedule A
+                      </span>
+                    </div>
+                    <p className="text-[11px] text-slate-500 leading-relaxed">
+                      Buy-to-let SPV with rental receipts, property repairs, and CTA 2009 Part 5 mortgage interest (Box 260 NTLR).
+                    </p>
+                  </div>
+
+                  {/* Archetype 3: Dormant Company */}
+                  <div
+                    onClick={() => setForm({ ...form, companyType: 'DORMANT', averageEmployees: 0 })}
+                    className={`p-4 rounded-2xl border-2 transition cursor-pointer flex flex-col justify-between space-y-2 ${
+                      form.companyType === 'DORMANT'
+                        ? 'border-emerald-600 bg-emerald-50/50 shadow-xs ring-1 ring-emerald-600'
+                        : 'border-slate-200 hover:border-slate-300 bg-white'
+                    }`}
+                  >
+                    <div className="flex items-center justify-between">
+                      <div className="flex items-center space-x-2">
+                        <PauseCircle className={`w-4 h-4 ${form.companyType === 'DORMANT' ? 'text-emerald-600' : 'text-slate-400'}`} />
+                        <span className="font-bold text-xs text-emerald-950">Dormant Company</span>
+                      </div>
+                      <span className="text-[10px] font-semibold px-2 py-0.5 rounded-full bg-emerald-100 text-emerald-800">
+                        CA 2006 s480
+                      </span>
+                    </div>
+                    <p className="text-[11px] text-slate-500 leading-relaxed">
+                      Zero trading activity. P&amp;L is unmounted, headcount is locked to 0, and streamlined AA02 balance sheet is filed.
+                    </p>
+                  </div>
+
+                  {/* Archetype 4: Mixed Income */}
+                  <div
+                    onClick={() => setForm({ ...form, companyType: 'MIXED' })}
+                    className={`p-4 rounded-2xl border-2 transition cursor-pointer flex flex-col justify-between space-y-2 ${
+                      form.companyType === 'MIXED'
+                        ? 'border-purple-600 bg-purple-50/50 shadow-xs ring-1 ring-purple-600'
+                        : 'border-slate-200 hover:border-slate-300 bg-white'
+                    }`}
+                  >
+                    <div className="flex items-center justify-between">
+                      <div className="flex items-center space-x-2">
+                        <Layers className={`w-4 h-4 ${form.companyType === 'MIXED' ? 'text-purple-600' : 'text-slate-400'}`} />
+                        <span className="font-bold text-xs text-purple-950">Mixed Income (Advanced)</span>
+                      </div>
+                      <span className="text-[10px] font-semibold px-2 py-0.5 rounded-full bg-purple-100 text-purple-800">
+                        Multi-Stream
+                      </span>
+                    </div>
+                    <p className="text-[11px] text-slate-500 leading-relaxed">
+                      Parallel schedules combining trading profits (Box 155), property income (Box 190), and loan relationship debits.
+                    </p>
+                  </div>
                 </div>
+              </div>
+
+              {/* Companies House Search & Verification */}
+              <div className="space-y-1">
+                <label className="block text-xs font-bold text-slate-700">
+                  Search Registered Name or 8-Digit CRN
+                </label>
+                <div className="relative">
+                  <input
+                    type="text"
+                    placeholder="e.g. DropLogicX or 15152081"
+                    value={chQuery}
+                    onChange={(e) => setChQuery(e.target.value)}
+                    className="w-full pl-9 pr-4 py-2.5 border border-slate-300 rounded-xl text-xs font-medium focus:outline-none focus:ring-2 focus:ring-slate-900"
+                  />
+                  <Search className="w-4 h-4 text-slate-400 absolute left-3 top-3" />
+                </div>
+                {chResults.length > 0 && (
+                  <div className="absolute bg-white border border-slate-200 rounded-xl shadow-lg z-30 max-h-48 overflow-y-auto divide-y divide-slate-100 w-full max-w-md">
+                    {chResults.map((item) => (
+                      <button
+                        key={item.company_number}
+                        type="button"
+                        onClick={() => selectCompany(item.company_number)}
+                        className="w-full text-left p-2.5 hover:bg-slate-50 text-xs transition"
+                      >
+                        <div className="font-bold text-slate-900">{item.title}</div>
+                        <div className="text-[10px] text-slate-500 font-mono">CRN: {item.company_number}</div>
+                      </button>
+                    ))}
+                  </div>
+                )}
               </div>
 
               {/* Verified Company Card */}
@@ -993,7 +1234,6 @@ function WizardContent() {
                   <p className="text-[11px] text-slate-400 mt-1">Official 10-digit number issued on HMRC CT41G notice</p>
                 </div>
 
-                {/* F10: Active Directors Dropdown populated from Companies House */}
                 <div>
                   <div className="flex justify-between items-center mb-1">
                     <label className="block text-xs font-bold text-slate-700">
@@ -1057,78 +1297,43 @@ function WizardContent() {
                   )}
                   {isPeriodValid && (
                     <p className="text-[11px] text-slate-400 mt-1">
-                      Period duration: {periodDayCount} days (Valid 12-month period)
+                      Period duration: {periodDayCount} days (Valid statutory period)
                     </p>
                   )}
                 </div>
 
-                <div>
-                  <label className="block text-xs font-bold text-slate-700 mb-1">
-                    <TermExplainer termId="associated-companies" label="Associated Companies (N)" />
-                  </label>
-                  <input
-                    type="number"
-                    min="0"
-                    max="50"
-                    value={form.associatedCompanies}
-                    onChange={(e) => setForm({ ...form, associatedCompanies: Math.max(0, parseInt(e.target.value) || 0) })}
-                    className="w-full px-3.5 py-2.5 border border-slate-300 rounded-xl text-sm font-semibold focus:outline-none focus:ring-2 focus:ring-slate-900"
-                  />
-                  <p className="text-[11px] text-slate-400 mt-1">Other active companies you control (divides thresholds by N+1)</p>
-                </div>
-
-                <div>
-                  <label className="block text-xs font-bold text-slate-700 mb-1">
-                    Average Number of Employees (CA 2006 s411)
-                  </label>
-                  <input
-                    type="number"
-                    min="1"
-                    max="10"
-                    value={form.averageEmployees}
-                    onChange={(e) => setForm({ ...form, averageEmployees: Math.max(1, parseInt(e.target.value) || 1) })}
-                    className="w-full px-3.5 py-2.5 border border-slate-300 rounded-xl text-sm font-semibold focus:outline-none focus:ring-2 focus:ring-slate-900"
-                  />
-                  <p className="text-[11px] text-slate-400 mt-1">Mandatory note in FRS 105 accounts (default 1 for single-director)</p>
-                </div>
-              </div>
-
-              {/* F8: Collapsible Statutory Guidance Drawer */}
-              <div className="border border-slate-200 rounded-2xl overflow-hidden bg-white">
-                <button
-                  type="button"
-                  onClick={() => setIsStatutoryGuidanceOpen(!isStatutoryGuidanceOpen)}
-                  className="w-full p-4 text-left flex items-center justify-between hover:bg-slate-50 transition text-xs font-semibold text-slate-900"
-                >
-                  <div className="flex items-center space-x-2">
-                    <BookOpen className="w-4 h-4 text-amber-700" />
-                    <span>Statutory Requirements & Micro-Entity Thresholds (CA 2006 / FRS 105)</span>
-                  </div>
-                  {isStatutoryGuidanceOpen ? <ChevronUp className="w-4 h-4 text-slate-400" /> : <ChevronDown className="w-4 h-4 text-slate-400" />}
-                </button>
-                {isStatutoryGuidanceOpen && (
-                  <div className="p-4 bg-slate-50/70 border-t border-slate-100 text-xs text-slate-600 space-y-3 leading-relaxed">
-                    <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
-                      <div className="bg-white p-3 rounded-xl border border-slate-200">
-                        <p className="font-bold text-slate-900 text-[11px]">Turnover Threshold</p>
-                        <p className="font-mono text-emerald-700 font-bold text-sm">≤ £1,020,000</p>
-                        <p className="text-[10px] text-slate-400">Section 384A statutory limit</p>
-                      </div>
-                      <div className="bg-white p-3 rounded-xl border border-slate-200">
-                        <p className="font-bold text-slate-900 text-[11px]">Balance Sheet Total</p>
-                        <p className="font-mono text-emerald-700 font-bold text-sm">≤ £510,000</p>
-                        <p className="text-[10px] text-slate-400">Gross assets before liabilities</p>
-                      </div>
-                      <div className="bg-white p-3 rounded-xl border border-slate-200">
-                        <p className="font-bold text-slate-900 text-[11px]">Average Headcount</p>
-                        <p className="font-mono text-emerald-700 font-bold text-sm">≤ 10 Employees</p>
-                        <p className="text-[10px] text-slate-400">Monthly payroll average</p>
-                      </div>
+                {!isDormant && (
+                  <>
+                    <div>
+                      <label className="block text-xs font-bold text-slate-700 mb-1">
+                        <TermExplainer termId="associated-companies" label="Associated Companies (N)" />
+                      </label>
+                      <input
+                        type="number"
+                        min="0"
+                        max="50"
+                        value={form.associatedCompanies}
+                        onChange={(e) => setForm({ ...form, associatedCompanies: Math.max(0, parseInt(e.target.value) || 0) })}
+                        className="w-full px-3.5 py-2.5 border border-slate-300 rounded-xl text-sm font-semibold focus:outline-none focus:ring-2 focus:ring-slate-900"
+                      />
+                      <p className="text-[11px] text-slate-400 mt-1">Other active companies you control (divides limits by N+1)</p>
                     </div>
-                    <p className="text-[11px] text-slate-600">
-                      Under Section 477 of the Companies Act 2006, companies meeting at least 2 of these criteria are legally exempt from appointing an external auditor and can file simplified FRS 105 micro-entity accounts directly to Companies House.
-                    </p>
-                  </div>
+
+                    <div>
+                      <label className="block text-xs font-bold text-slate-700 mb-1">
+                        Average Number of Employees (CA 2006 s411)
+                      </label>
+                      <input
+                        type="number"
+                        min="1"
+                        max="10"
+                        value={form.averageEmployees}
+                        onChange={(e) => setForm({ ...form, averageEmployees: Math.max(1, parseInt(e.target.value) || 1) })}
+                        className="w-full px-3.5 py-2.5 border border-slate-300 rounded-xl text-sm font-semibold focus:outline-none focus:ring-2 focus:ring-slate-900"
+                      />
+                      <p className="text-[11px] text-slate-400 mt-1">Mandatory note in FRS 105 accounts (default 1 for single-director)</p>
+                    </div>
+                  </>
                 )}
               </div>
 
@@ -1190,84 +1395,199 @@ function WizardContent() {
                   className="w-4 h-4 mt-0.5 text-slate-950 rounded border-slate-300 focus:ring-slate-900"
                 />
                 <label htmlFor="directorApproved" className="text-xs text-slate-700 leading-relaxed font-normal">
-                  I confirm as director that the board has approved these accounts and authorized the micro-entity audit exemption declaration under{' '}
-                  <TermExplainer termId="s477-exemption" label="Section 477 of the Companies Act 2006" />.
+                  {isDormant ? (
+                    <span>
+                      I confirm as director that the board has approved these dormant accounts and authorized the dormant audit exemption declaration under{' '}
+                      <strong>Section 480 of the Companies Act 2006</strong>.
+                    </span>
+                  ) : (
+                    <span>
+                      I confirm as director that the board has approved these accounts and authorized the micro-entity audit exemption declaration under{' '}
+                      <TermExplainer termId="s477-exemption" label="Section 477 of the Companies Act 2006" />.
+                    </span>
+                  )}
                 </label>
               </div>
             </div>
           )}
 
           {/* ========================================================================= */}
-          {/* STEP 2: Annual Figures & Statutory Computations (Unified Accordion Page) */}
+          {/* STEP 2: Annual Figures & Statutory Computations (Adaptive by Archetype)   */}
           {/* ========================================================================= */}
           {currentStep === 2 && (
             <div className="space-y-5">
-              {/* Top Action Bar with CSV / Trial Balance Modal Trigger (F9) */}
+              {/* Top Action Bar with CSV / Trial Balance Modal Trigger */}
               <div className="bg-white p-5 rounded-3xl border border-slate-200/90 shadow-xs flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
                 <div>
-                  <h2 className="text-xl font-bold tracking-tight text-slate-950">Step 2: Annual Figures & Computations</h2>
+                  <h2 className="text-xl font-bold tracking-tight text-slate-950">
+                    Step 2: Annual Figures &amp; Computations
+                  </h2>
                   <p className="text-xs text-slate-500">
-                    Enter your annual figures below with side-by-side prior-year comparisons, or import directly from bank statements.
+                    {isDormant
+                      ? 'Dormant Company: Profit & Loss account is unmounted. Balance sheet is streamlined to AA02 format.'
+                      : isProperty
+                      ? 'Property SPV: Enter Schedule A gross rental income and allowable property costs.'
+                      : 'Enter your annual figures below with side-by-side prior-year comparisons, or import directly from bank statements.'}
                   </p>
                 </div>
 
-                <button
-                  type="button"
-                  onClick={() => setIsImportModalOpen(true)}
-                  className="inline-flex items-center space-x-1.5 px-4 py-2 rounded-xl text-xs font-bold bg-[#0B1528] text-white hover:bg-slate-800 transition shadow-xs"
-                >
-                  <UploadCloud className="w-4 h-4 text-amber-400" />
-                  <span>Import Bank CSV / Statement</span>
-                </button>
-              </div>
-
-              {/* --------------------------------------------------------------------- */}
-              {/* PANEL A: Profit & Loss Account with Comparative Table (S7/S8)         */}
-              {/* --------------------------------------------------------------------- */}
-              <div className="bg-white rounded-3xl border border-slate-200/90 shadow-xs overflow-hidden">
-                <button
-                  type="button"
-                  onClick={() => togglePanel('pnl')}
-                  className="w-full p-5 sm:p-6 text-left flex items-center justify-between hover:bg-slate-50/50 transition border-b border-slate-100"
-                >
-                  <div className="flex items-center space-x-3">
-                    <span className="w-8 h-8 rounded-xl bg-amber-50 text-amber-900 flex items-center justify-center font-bold text-xs">
-                      P&L
-                    </span>
-                    <div>
-                      <h3 className="text-base font-bold text-slate-950 flex items-center space-x-2">
-                        <span>Profit & Loss Account (Income Statement)</span>
-                        <span className="text-[10px] font-mono text-slate-400 font-normal">FRS 105 Section 3</span>
-                      </h3>
-                      <p className="text-xs text-slate-500">
-                        Operating turnover, costs, and disallowable add-backs
-                      </p>
-                    </div>
-                  </div>
-                  <div className="flex items-center space-x-3">
-                    <span className="text-xs font-mono font-bold text-slate-900">
-                      Operating Profit: £{operatingProfit.toLocaleString()}
-                    </span>
-                    {expandedPanels.pnl ? <ChevronUp className="w-4 h-4 text-slate-400" /> : <ChevronDown className="w-4 h-4 text-slate-400" />}
-                  </div>
-                </button>
-
-                {expandedPanels.pnl && (
-                  <div className="p-6 sm:p-8 space-y-5">
-                    <ComparativeFinancialTable
-                      title="Profit & Loss Account Comparison"
-                      subtitle="Current Year vs Prior Year statutory reporting (FRS 105)"
-                      currentYearLabel="Current Year (CY)"
-                      priorYearLabel="Prior Year (PY)"
-                      items={pnlItems}
-                      hasPriorYearData={Boolean(priorYearData?.figures)}
-                    />
-                  </div>
+                {!isDormant && (
+                  <button
+                    type="button"
+                    onClick={() => setIsImportModalOpen(true)}
+                    className="inline-flex items-center space-x-1.5 px-4 py-2 rounded-xl text-xs font-bold bg-[#0B1528] text-white hover:bg-slate-800 transition shadow-xs shrink-0"
+                  >
+                    <UploadCloud className="w-4 h-4 text-amber-400" />
+                    <span>Import Bank CSV / Statement</span>
+                  </button>
                 )}
               </div>
 
+              {/* DORMANT STATUTORY NOTICE (P&L UNMOUNTED) */}
+              {isDormant && (
+                <div className="bg-emerald-50/70 border border-emerald-200 rounded-3xl p-6 space-y-3 text-xs text-emerald-950">
+                  <div className="flex items-center space-x-2 font-bold text-sm text-emerald-900">
+                    <CheckCircle2 className="w-5 h-5 text-emerald-600" />
+                    <span>Companies Act 2006 s480 Dormant Exemption Applied</span>
+                  </div>
+                  <p className="leading-relaxed text-emerald-900">
+                    Because this company had no significant accounting transactions during the financial year, it is exempt from filing a Profit and Loss account. All trading income and charges are locked to <strong className="font-mono">£0.00</strong>, and employee headcount is locked to <strong className="font-mono">0</strong>.
+                  </p>
+                  <div className="p-3 bg-white/80 rounded-xl border border-emerald-200 font-mono text-[11px] grid grid-cols-3 gap-2">
+                    <div>Turnover: <strong className="text-slate-900">£0.00</strong></div>
+                    <div>Taxable Profit: <strong className="text-slate-900">£0.00</strong></div>
+                    <div>Corporation Tax: <strong className="text-emerald-700">£0.00</strong></div>
+                  </div>
+                </div>
+              )}
+
               {/* --------------------------------------------------------------------- */}
-              {/* PANEL B: Balance Sheet with S7/S8 Comparative & IMP-09 Reconciliation */}
+              {/* PANEL A: Trading Profit & Loss Account (Trading & Mixed Archetypes)   */}
+              {/* --------------------------------------------------------------------- */}
+              {(!isDormant && !isProperty) && (
+                <div className="bg-white rounded-3xl border border-slate-200/90 shadow-xs overflow-hidden">
+                  <button
+                    type="button"
+                    onClick={() => togglePanel('pnl')}
+                    className="w-full p-5 sm:p-6 text-left flex items-center justify-between hover:bg-slate-50/50 transition border-b border-slate-100"
+                  >
+                    <div className="flex items-center space-x-3">
+                      <span className="w-8 h-8 rounded-xl bg-amber-50 text-amber-900 flex items-center justify-center font-bold text-xs">
+                        P&amp;L
+                      </span>
+                      <div>
+                        <h3 className="text-base font-bold text-slate-950 flex items-center space-x-2">
+                          <span>Trading Profit &amp; Loss Account</span>
+                          <span className="text-[10px] font-mono text-slate-400 font-normal">FRS 105 Section 3</span>
+                        </h3>
+                        <p className="text-xs text-slate-500">
+                          Operating commercial turnover, cost of sales, and allowable trading charges
+                        </p>
+                      </div>
+                    </div>
+                    <div className="flex items-center space-x-3">
+                      <span className="text-xs font-mono font-bold text-slate-900">
+                        Trading Profit: {formatAccounting(tradingOperatingProfit)}
+                      </span>
+                      {expandedPanels.pnl ? <ChevronUp className="w-4 h-4 text-slate-400" /> : <ChevronDown className="w-4 h-4 text-slate-400" />}
+                    </div>
+                  </button>
+
+                  {expandedPanels.pnl && (
+                    <div className="p-6 sm:p-8 space-y-5">
+                      <ComparativeFinancialTable
+                        title="Trading Profit & Loss Account Comparison"
+                        subtitle="Current Year vs Prior Year statutory reporting (FRS 105)"
+                        currentYearLabel="Current Year (CY)"
+                        priorYearLabel="Prior Year (PY)"
+                        items={pnlItems}
+                        hasPriorYearData={Boolean(priorYearData?.figures)}
+                      />
+                    </div>
+                  )}
+                </div>
+              )}
+
+              {/* --------------------------------------------------------------------- */}
+              {/* PANEL A2: Dedicated Property SPV Schedule A (Property & Mixed)        */}
+              {/* --------------------------------------------------------------------- */}
+              {(isProperty || isMixed) && (
+                <div className="bg-white rounded-3xl border border-slate-200/90 shadow-xs overflow-hidden">
+                  <button
+                    type="button"
+                    onClick={() => togglePanel('propertySchedule')}
+                    className="w-full p-5 sm:p-6 text-left flex items-center justify-between hover:bg-slate-50/50 transition border-b border-slate-100"
+                  >
+                    <div className="flex items-center space-x-3">
+                      <span className="w-8 h-8 rounded-xl bg-indigo-50 text-indigo-900 flex items-center justify-center font-bold text-xs">
+                        SPV
+                      </span>
+                      <div>
+                        <h3 className="text-base font-bold text-slate-950 flex items-center space-x-2">
+                          <span>Property Rental Schedule A (CTA 2009 Part 4 &amp; 5)</span>
+                          <span className="text-[10px] font-mono text-indigo-700 bg-indigo-50 border border-indigo-200 px-2 py-0.5 rounded-full font-semibold">
+                            Buy-to-Let SPV
+                          </span>
+                        </h3>
+                        <p className="text-xs text-slate-500">
+                          Rental receipts, allowable maintenance, and Box 260 NTLR mortgage interest
+                        </p>
+                      </div>
+                    </div>
+                    <div className="flex items-center space-x-3">
+                      <span className="text-xs font-mono font-bold text-indigo-950">
+                        Box 190: {formatAccounting(propertyNetTaxableProfit)}
+                      </span>
+                      {expandedPanels.propertySchedule ? <ChevronUp className="w-4 h-4 text-slate-400" /> : <ChevronDown className="w-4 h-4 text-slate-400" />}
+                    </div>
+                  </button>
+
+                  {expandedPanels.propertySchedule && (
+                    <div className="p-6 sm:p-8 space-y-5">
+                      {/* CTA 2009 Part 5 Guardrail Notice */}
+                      <div className="p-4 bg-amber-50/70 border border-amber-200 rounded-2xl flex items-start space-x-3 text-amber-950 text-xs">
+                        <Info className="w-5 h-5 text-amber-600 shrink-0 mt-0.5" />
+                        <div className="space-y-1">
+                          <p className="font-bold">CTA 2009 Part 5 Mortgage Interest Guardrail</p>
+                          <p className="text-amber-800 leading-relaxed">
+                            Under UK corporation tax law, mortgage and commercial loan interest in a property investment company is treated as a <strong>Non-Trading Loan Relationship (NTLR) debit</strong> reported in <strong>CT600 Box 260</strong>. It must NOT be added to standard trading expenses.
+                          </p>
+                        </div>
+                      </div>
+
+                      <ComparativeFinancialTable
+                        title="Schedule A: UK Property Business Computation"
+                        subtitle="Rental income, allowable property costs, and finance deductions"
+                        currentYearLabel="Current Year (CY)"
+                        priorYearLabel="Prior Year (PY)"
+                        items={propertyScheduleItems}
+                        hasPriorYearData={false}
+                      />
+
+                      {/* Box 805 Deficit Callout if in loss */}
+                      {propertyLossCarriedForward > 0 && (
+                        <div className="p-4 bg-rose-50 border border-rose-200 rounded-2xl flex items-center justify-between text-xs text-rose-950">
+                          <div className="space-y-0.5">
+                            <span className="font-bold flex items-center gap-1.5">
+                              <AlertCircle className="w-4 h-4 text-rose-600" />
+                              <span>Property Business Deficit Recorded: {formatAccounting(propertyLossCarriedForward)}</span>
+                            </span>
+                            <p className="text-rose-800 text-[11px]">
+                              Expenses exceed rental income. Box 190 is automatically set to £0.00, and the deficit rolls into <strong>CT600 Box 805</strong> to offset future property profits.
+                            </p>
+                          </div>
+                          <span className="font-mono font-bold text-sm bg-rose-100 text-rose-900 px-3 py-1 rounded-xl">
+                            Box 805: {formatAccounting(propertyLossCarriedForward)}
+                          </span>
+                        </div>
+                      )}
+                    </div>
+                  )}
+                </div>
+              )}
+
+              {/* --------------------------------------------------------------------- */}
+              {/* PANEL B: Balance Sheet (Adapted for Archetype)                       */}
               {/* --------------------------------------------------------------------- */}
               <div className="bg-white rounded-3xl border border-slate-200/90 shadow-xs overflow-hidden">
                 <button
@@ -1281,11 +1601,19 @@ function WizardContent() {
                     </span>
                     <div>
                       <h3 className="text-base font-bold text-slate-950 flex items-center space-x-2">
-                        <span>Balance Sheet (Statement of Financial Position)</span>
-                        <span className="text-[10px] font-mono text-slate-400 font-normal">CA 2006 s396 / FRS 105</span>
+                        <span>
+                          {isDormant ? 'Streamlined Dormant Balance Sheet (AA02)' : 'Balance Sheet (Statement of Financial Position)'}
+                        </span>
+                        <span className="text-[10px] font-mono text-slate-400 font-normal">
+                          {isDormant ? 'CA 2006 s480' : 'CA 2006 s396 / FRS 105'}
+                        </span>
                       </h3>
                       <p className="text-xs text-slate-500">
-                        Assets, liabilities, share capital, and comparative prior-year reporting
+                        {isDormant
+                          ? 'Called up share capital and bank balance (no P&L transactions)'
+                          : isProperty
+                          ? 'Property assets, tenant arrears, cash, and mortgage liabilities'
+                          : 'Assets, liabilities, share capital, and comparative prior-year reporting'}
                       </p>
                     </div>
                   </div>
@@ -1310,7 +1638,7 @@ function WizardContent() {
                             <span>Balance Sheet Imbalance: £{Math.abs(balanceSheetVariance).toLocaleString()}</span>
                           </p>
                           <p className="text-[11px] opacity-80">
-                            Net Assets (£{netAssets.toLocaleString()}) must equal Shareholders' Funds (£{totalEquity.toLocaleString()}) to the exact penny under CA 2006.
+                            Net Assets ({formatAccounting(netAssets)}) must equal Shareholders' Funds ({formatAccounting(totalEquity)}) to the exact penny under CA 2006.
                           </p>
                         </div>
                         <button
@@ -1326,8 +1654,8 @@ function WizardContent() {
 
                     {/* S7 & S8 Comparative Balance Sheet Table */}
                     <ComparativeFinancialTable
-                      title="Statement of Financial Position (Balance Sheet)"
-                      subtitle="Assets, Liabilities, and Equity with 1-click Opening Retained Earnings carry-forward"
+                      title={isDormant ? 'Dormant Company Statement of Financial Position' : 'Statement of Financial Position (Balance Sheet)'}
+                      subtitle={isDormant ? 'Simplified called up share capital and bank reserves' : "Assets, Liabilities, and Equity with 1-click carry-forward"}
                       currentYearLabel="Current Year (CY)"
                       priorYearLabel="Prior Year (PY)"
                       items={balanceSheetItems}
@@ -1341,176 +1669,147 @@ function WizardContent() {
                         }
                       }}
                     />
+
+                    {/* Dormant Statutory Declaration Box */}
+                    {isDormant && (
+                      <div className="p-4 bg-slate-50 border border-slate-200 rounded-2xl space-y-2 text-xs text-slate-700">
+                        <p className="font-bold text-slate-900">Companies Act 2006 Section 480 Audit Exemption Statement</p>
+                        <p className="text-[11px] leading-relaxed text-slate-600">
+                          "For the year ending {form.periodEnd}, the company was entitled to exemption from audit under section 480 of the Companies Act 2006 relating to dormant companies. The members have not required the company to obtain an audit in accordance with section 476. The directors acknowledge their responsibilities for complying with the requirements of the Act with respect to accounting records and the preparation of accounts."
+                        </p>
+                      </div>
+                    )}
                   </div>
                 )}
               </div>
 
               {/* --------------------------------------------------------------------- */}
-              {/* PANEL C: Capital Allowances & AIA Schedule                           */}
+              {/* PANEL C: Capital Allowances (Trading & Mixed Archetypes)             */}
               {/* --------------------------------------------------------------------- */}
-              <div className="bg-white rounded-3xl border border-slate-200/90 shadow-xs overflow-hidden">
-                <button
-                  type="button"
-                  onClick={() => togglePanel('allowances')}
-                  className="w-full p-5 sm:p-6 text-left flex items-center justify-between hover:bg-slate-50/50 transition border-b border-slate-100"
-                >
-                  <div className="flex items-center space-x-3">
-                    <span className="w-8 h-8 rounded-xl bg-purple-50 text-purple-900 flex items-center justify-center font-bold text-xs">
-                      AIA
-                    </span>
-                    <div>
-                      <h3 className="text-base font-bold text-slate-950 flex items-center space-x-2">
-                        <span>Capital Allowances & Tax Pools</span>
-                        <span className="text-[10px] font-mono text-slate-400 font-normal">CAA 2001 / FA 2024</span>
-                      </h3>
-                      <p className="text-xs text-slate-500">
-                        Annual Investment Allowance (100% deduction) and Writing Down Allowance rates
-                      </p>
-                    </div>
-                  </div>
-                  <div className="flex items-center space-x-3">
-                    <span className="text-xs font-mono font-bold text-purple-800">
-                      Total Allowance: £{totalCapitalAllowances.toLocaleString()}
-                    </span>
-                    {expandedPanels.allowances ? <ChevronUp className="w-4 h-4 text-slate-400" /> : <ChevronDown className="w-4 h-4 text-slate-400" />}
-                  </div>
-                </button>
-
-                {expandedPanels.allowances && (
-                  <div className="p-6 sm:p-8 space-y-4">
-                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+              {(!isDormant && !isProperty) && (
+                <div className="bg-white rounded-3xl border border-slate-200/90 shadow-xs overflow-hidden">
+                  <button
+                    type="button"
+                    onClick={() => togglePanel('allowances')}
+                    className="w-full p-5 sm:p-6 text-left flex items-center justify-between hover:bg-slate-50/50 transition border-b border-slate-100"
+                  >
+                    <div className="flex items-center space-x-3">
+                      <span className="w-8 h-8 rounded-xl bg-purple-50 text-purple-900 flex items-center justify-center font-bold text-xs">
+                        AIA
+                      </span>
                       <div>
-                        <div className="flex justify-between items-center mb-1">
-                          <label className="text-xs font-bold text-slate-700">Plant & Machinery Additions (AIA Eligible)</label>
-                          <span className="text-[10px] font-mono text-slate-400 bg-slate-100 px-1.5 py-0.5 rounded">CT600 Box 705</span>
-                        </div>
-                        <input
-                          type="number"
-                          min="0"
-                          value={form.capitalAdditions}
-                          onChange={(e) => {
-                            const val = Math.max(0, parseInt(e.target.value) || 0);
-                            setForm({ ...form, capitalAdditions: val, aiaClaimed: val });
-                          }}
-                          className="w-full px-3.5 py-2 border border-slate-300 rounded-xl text-sm font-semibold num-tabular focus:ring-2 focus:ring-slate-900"
-                        />
-                        <p className="text-[10px] text-slate-400 mt-0.5">Computers, hardware, tooling (up to £1,000,000 allowance)</p>
-                      </div>
-
-                      <div>
-                        <div className="flex justify-between items-center mb-1">
-                          <label className="text-xs font-bold text-slate-700">Annual Investment Allowance (AIA) Claimed</label>
-                          <span className="text-[10px] font-mono text-slate-400 bg-slate-100 px-1.5 py-0.5 rounded">100% Tax Relief</span>
-                        </div>
-                        <input
-                          type="number"
-                          min="0"
-                          max={form.capitalAdditions}
-                          value={form.aiaClaimed}
-                          onChange={(e) => setForm({ ...form, aiaClaimed: Math.min(form.capitalAdditions, Math.max(0, parseInt(e.target.value) || 0)) })}
-                          className="w-full px-3.5 py-2 border border-slate-300 rounded-xl text-sm font-semibold num-tabular focus:ring-2 focus:ring-slate-900"
-                        />
-                        <p className="text-[10px] text-slate-400 mt-0.5">Deducted 100% against taxable profits</p>
-                      </div>
-
-                      <div>
-                        <div className="flex justify-between items-center mb-1">
-                          <label className="text-xs font-bold text-slate-700">Motor Cars Additions (Ineligible for AIA)</label>
-                          <span className="text-[10px] font-mono text-slate-400 bg-slate-100 px-1.5 py-0.5 rounded">CAA 2001 s38B</span>
-                        </div>
-                        <input
-                          type="number"
-                          min="0"
-                          value={form.carAdditions}
-                          onChange={(e) => setForm({ ...form, carAdditions: Math.max(0, parseInt(e.target.value) || 0) })}
-                          className="w-full px-3.5 py-2 border border-slate-300 rounded-xl text-sm font-semibold num-tabular focus:ring-2 focus:ring-slate-900"
-                        />
-                        <p className="text-[10px] text-slate-400 mt-0.5">Allocated to Writing Down Allowance pools</p>
-                      </div>
-
-                      <div>
-                        <div className="flex justify-between items-center mb-1">
-                          <label className="text-xs font-bold text-slate-700">Main Pool Balance Brought Forward</label>
-                          <span className="text-[10px] font-mono text-slate-400 bg-slate-100 px-1.5 py-0.5 rounded">CT600 Box 705</span>
-                        </div>
-                        <input
-                          type="number"
-                          min="0"
-                          value={form.mainPoolBroughtForward}
-                          onChange={(e) => setForm({ ...form, mainPoolBroughtForward: Math.max(0, parseInt(e.target.value) || 0) })}
-                          className="w-full px-3.5 py-2 border border-slate-300 rounded-xl text-sm font-semibold num-tabular focus:ring-2 focus:ring-slate-900"
-                        />
-                        <p className="text-[10px] text-slate-400 mt-0.5">From previous period tax computations</p>
+                        <h3 className="text-base font-bold text-slate-950 flex items-center space-x-2">
+                          <span>Capital Allowances &amp; Plant Reliefs</span>
+                          <span className="text-[10px] font-mono text-slate-400 font-normal">CAA 2001 / CT600 Box 705</span>
+                        </h3>
+                        <p className="text-xs text-slate-500">
+                          100% Annual Investment Allowance (AIA) and Writing Down Allowance (WDA)
+                        </p>
                       </div>
                     </div>
+                    <div className="flex items-center space-x-3">
+                      <span className="text-xs font-mono font-bold text-emerald-700">
+                        Total Relief: {formatAccounting(totalCapitalAllowances)}
+                      </span>
+                      {expandedPanels.allowances ? <ChevronUp className="w-4 h-4 text-slate-400" /> : <ChevronDown className="w-4 h-4 text-slate-400" />}
+                    </div>
+                  </button>
 
-                    <div className="bg-purple-50/60 p-3.5 rounded-xl border border-purple-100 flex items-center justify-between text-xs text-purple-950">
-                      <div>
-                        <span className="font-bold">Statutory Main Pool WDA Rate: </span>
-                        <span className="font-mono font-bold">{statutoryWdaRate.toFixed(2)}%</span>
-                        <span className="text-[11px] text-purple-700 block sm:inline sm:ml-2">
-                          (Day-weighted hybrid rate for period straddling 1 April 2026 under CAA 2001 s56)
-                        </span>
+                  {expandedPanels.allowances && (
+                    <div className="p-6 sm:p-8 space-y-5">
+                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                        <div>
+                          <label className="block text-xs font-bold text-slate-700 mb-1">
+                            Qualifying Plant &amp; Machinery Additions
+                          </label>
+                          <input
+                            type="number"
+                            min="0"
+                            value={form.capitalAdditions}
+                            onChange={(e) => {
+                              const val = Math.max(0, parseInt(e.target.value) || 0);
+                              setForm({ ...form, capitalAdditions: val, aiaClaimed: val, fixedAssets: val });
+                            }}
+                            className="w-full px-3.5 py-2.5 border border-slate-300 rounded-xl text-sm font-semibold focus:outline-none focus:ring-2 focus:ring-slate-900"
+                          />
+                          <p className="text-[11px] text-slate-400 mt-1">Laptops, servers, tools, hardware (100% eligible for AIA)</p>
+                        </div>
+
+                        <div>
+                          <label className="block text-xs font-bold text-slate-700 mb-1">
+                            AIA Claimed this Period (Max £1,000,000)
+                          </label>
+                          <input
+                            type="number"
+                            min="0"
+                            max={form.capitalAdditions}
+                            value={form.aiaClaimed}
+                            onChange={(e) => setForm({ ...form, aiaClaimed: Math.min(form.capitalAdditions, Math.max(0, parseInt(e.target.value) || 0)) })}
+                            className="w-full px-3.5 py-2.5 border border-slate-300 rounded-xl text-sm font-semibold focus:outline-none focus:ring-2 focus:ring-slate-900"
+                          />
+                          <p className="text-[11px] text-slate-400 mt-1">Deducted 100% against trading profit in CT600 Box 705</p>
+                        </div>
                       </div>
-                      <span className="font-mono font-bold">WDA: £{mainPoolWda.toLocaleString()}</span>
                     </div>
-                  </div>
-                )}
-              </div>
+                  )}
+                </div>
+              )}
 
               {/* --------------------------------------------------------------------- */}
-              {/* PANEL D: Multi-Loan Director Schedule (N1)                            */}
+              {/* PANEL D: Director Loan Account & Section 455 Schedule               */}
               {/* --------------------------------------------------------------------- */}
-              <div className="bg-white rounded-3xl border border-slate-200/90 shadow-xs overflow-hidden">
-                <button
-                  type="button"
-                  onClick={() => togglePanel('loans')}
-                  className="w-full p-5 sm:p-6 text-left flex items-center justify-between hover:bg-slate-50/50 transition border-b border-slate-100"
-                >
-                  <div className="flex items-center space-x-3">
-                    <span className="w-8 h-8 rounded-xl bg-orange-50 text-orange-900 flex items-center justify-center font-bold text-xs">
-                      s455
-                    </span>
-                    <div>
-                      <h3 className="text-base font-bold text-slate-950 flex items-center space-x-2">
-                        <span>Director Loan Accounts (Section 455 Schedule)</span>
-                        <span className="text-[10px] font-mono text-slate-400 font-normal">CTA 2010 s455 / CT600A</span>
-                      </h3>
-                      <p className="text-xs text-slate-500">
-                        Multi-row loan management, 9-month statutory relief tracking, and rate band calculations
-                      </p>
+              {!isDormant && (
+                <div className="bg-white rounded-3xl border border-slate-200/90 shadow-xs overflow-hidden">
+                  <button
+                    type="button"
+                    onClick={() => togglePanel('loans')}
+                    className="w-full p-5 sm:p-6 text-left flex items-center justify-between hover:bg-slate-50/50 transition border-b border-slate-100"
+                  >
+                    <div className="flex items-center space-x-3">
+                      <span className="w-8 h-8 rounded-xl bg-amber-50 text-amber-900 flex items-center justify-center font-bold text-xs">
+                        s455
+                      </span>
+                      <div>
+                        <h3 className="text-base font-bold text-slate-950 flex items-center space-x-2">
+                          <span>Director Loan Accounts &amp; CT600A Schedule</span>
+                          <span className="text-[10px] font-mono text-slate-400 font-normal">CTA 2010 s455</span>
+                        </h3>
+                        <p className="text-xs text-slate-500">
+                          Tracks overdrawn director loan advances and Section 455 tax exposure
+                        </p>
+                      </div>
                     </div>
-                  </div>
-                  <div className="flex items-center space-x-3">
-                    <span className="text-xs font-mono font-bold text-orange-800">
-                      s455 Tax: £{s455TaxPayable.toLocaleString()}
-                    </span>
-                    {expandedPanels.loans ? <ChevronUp className="w-4 h-4 text-slate-400" /> : <ChevronDown className="w-4 h-4 text-slate-400" />}
-                  </div>
-                </button>
+                    <div className="flex items-center space-x-3">
+                      <span className="text-xs font-mono font-bold text-slate-900">
+                        {s455TaxPayable > 0 ? `s455 Tax: £${s455TaxPayable.toLocaleString()}` : '0 Overdrawn Loans'}
+                      </span>
+                      {expandedPanels.loans ? <ChevronUp className="w-4 h-4 text-slate-400" /> : <ChevronDown className="w-4 h-4 text-slate-400" />}
+                    </div>
+                  </button>
 
-                {expandedPanels.loans && (
-                  <div className="p-6 sm:p-8 space-y-4">
-                    <DirectorLoansSchedule
-                      loans={form.directorLoans}
-                      onChange={(newLoans) => {
-                        const totalAdv = newLoans.reduce((sum, l) => sum + (l.advanceAmount || 0), 0);
-                        setForm((prev) => ({
-                          ...prev,
-                          directorLoans: newLoans,
-                          directorLoanAdvance: totalAdv
-                        }));
-                      }}
-                      periodEnd={form.periodEnd}
-                      paymentDueDate={paymentDueDate}
-                      registeredDirectors={registeredDirectors}
-                    />
-                  </div>
-                )}
-              </div>
+                  {expandedPanels.loans && (
+                    <div className="p-6 sm:p-8 space-y-4">
+                      <DirectorLoansSchedule
+                        loans={form.directorLoans}
+                        onChange={(newLoans) => {
+                          const totalAdv = newLoans.reduce((acc, l) => acc + (l.advanceAmount || 0), 0);
+                          setForm((prev) => ({
+                            ...prev,
+                            directorLoans: newLoans,
+                            directorLoanAdvance: totalAdv
+                          }));
+                        }}
+                        periodEnd={form.periodEnd}
+                        paymentDueDate={paymentDueDate}
+                        registeredDirectors={registeredDirectors}
+                      />
+                    </div>
+                  )}
+                </div>
+              )}
 
               {/* --------------------------------------------------------------------- */}
-              {/* PANEL E: Official HMRC Corporation Tax Computation Breakdown (F4/F6)   */}
+              {/* PANEL E: Official HMRC Corporation Tax Computation Breakdown          */}
               {/* --------------------------------------------------------------------- */}
               <div className="bg-white rounded-3xl border border-slate-200/90 shadow-xs overflow-hidden">
                 <button
@@ -1534,7 +1833,7 @@ function WizardContent() {
                   </div>
                   <div className="flex items-center space-x-3">
                     <span className="text-xs font-mono font-bold text-emerald-700">
-                      Total Tax: £{totalHmrcPayable.toLocaleString()}
+                      Total Tax: {formatAccounting(totalHmrcPayable)}
                     </span>
                     {expandedPanels.taxSchedule ? <ChevronUp className="w-4 h-4 text-slate-400" /> : <ChevronDown className="w-4 h-4 text-slate-400" />}
                   </div>
@@ -1543,6 +1842,7 @@ function WizardContent() {
                 {expandedPanels.taxSchedule && (
                   <div className="p-6 sm:p-8">
                     <TaxComputationBreakdown
+                      companyType={form.companyType}
                       turnover={form.turnover}
                       costOfSales={form.costOfSales}
                       otherCharges={form.otherCharges}
@@ -1560,6 +1860,11 @@ function WizardContent() {
                       crn={form.crn}
                       periodStart={form.periodStart}
                       periodEnd={form.periodEnd}
+                      propertyRentalIncome={propertyGrossIncome}
+                      propertyAllowableExpenses={propertyExpenses}
+                      propertyMortgageInterest={propertyMortgageInterest}
+                      propertyNetProfit={propertyNetTaxableProfit}
+                      propertyLossCarriedForward={propertyLossCarriedForward}
                     />
                   </div>
                 )}
@@ -1575,7 +1880,7 @@ function WizardContent() {
               <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
                 <div className="space-y-1">
                   <div className="flex items-center space-x-2">
-                    <h2 className="text-xl font-bold tracking-tight text-slate-950">Step 3: Review & Submit Return</h2>
+                    <h2 className="text-xl font-bold tracking-tight text-slate-950">Step 3: Review &amp; Submit Return</h2>
                     <span className={`text-[11px] font-semibold px-2.5 py-0.5 rounded-full ${
                       canTransmit ? 'bg-emerald-100 text-emerald-800' : 'bg-amber-100 text-amber-800'
                     }`}>
@@ -1583,11 +1888,14 @@ function WizardContent() {
                     </span>
                   </div>
                   <p className="text-xs text-slate-500">
-                    Comprehensive compliance verification across all 40 statutory pre-flight rules.
+                    {filingMode === 'ct600_only'
+                      ? 'Corporation Tax (CT600) only mode: Submitting digital tax return to HMRC.'
+                      : filingMode === 'accounts_only'
+                      ? 'Accounts only mode: Submitting iXBRL accounts to Companies House.'
+                      : 'Dual Gateway: Simultaneous submission of Accounts to Companies House & CT600 to HMRC.'}
                   </p>
                 </div>
 
-                {/* Score Ring Visual in Step 3 Header */}
                 <ComplianceScoreRing
                   totalChecks={liveShieldReport?.totalRulesEvaluated || 40}
                   passedCount={
@@ -1659,7 +1967,7 @@ function WizardContent() {
                       onChange={(e) => setForm({ ...form, hasGatewayChecked: e.target.checked })}
                       className="w-4 h-4 rounded text-slate-900 border-slate-300 focus:ring-slate-900"
                     />
-                    <span>HMRC Government Gateway User ID & Password (enrolled in Corporation Tax)</span>
+                    <span>HMRC Government Gateway User ID &amp; Password (enrolled in Corporation Tax)</span>
                   </label>
                   <label className="flex items-center space-x-2.5 cursor-pointer">
                     <input
@@ -1683,7 +1991,6 @@ function WizardContent() {
                     </p>
                   </div>
 
-                  {/* N4: Share Draft with Accountant button */}
                   <button
                     type="button"
                     onClick={handleShareDraft}
@@ -1703,11 +2010,15 @@ function WizardContent() {
                     <div className="flex items-center space-x-2.5">
                       <FileDown className="w-4 h-4 text-slate-500" />
                       <div>
-                        <div className="font-bold text-slate-900">Full Accounts (PDF)</div>
-                        <div className="text-[10px] text-slate-500">FRS 105 for shareholders</div>
+                        <div className="font-bold text-slate-900">
+                          {isDormant ? 'Dormant Accounts AA02 (PDF)' : 'Full Accounts (PDF)'}
+                        </div>
+                        <div className="text-[10px] text-slate-500">
+                          {isDormant ? 'CA 2006 s480 for Companies House' : 'FRS 105 for shareholders'}
+                        </div>
                       </div>
                     </div>
-                    <span className="font-mono font-bold text-slate-800">£{netProfit.toLocaleString()}</span>
+                    <span className="font-mono font-bold text-slate-800">{formatAccounting(netProfit)}</span>
                   </a>
 
                   <a
@@ -1722,95 +2033,135 @@ function WizardContent() {
                         <div className="text-[10px] text-slate-500">HMRC Corporation Tax form</div>
                       </div>
                     </div>
-                    <span className="font-mono font-bold text-emerald-700">£{totalHmrcPayable.toLocaleString()}</span>
+                    <span className="font-mono font-bold text-emerald-700">{formatAccounting(totalHmrcPayable)}</span>
                   </a>
                 </div>
               </div>
 
-              {/* N3: How to Pay HMRC Section */}
-              <div className="bg-slate-50 border border-slate-200 rounded-2xl p-5 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-                <div className="space-y-1">
-                  <div className="flex items-center space-x-2">
-                    <Landmark className="w-4 h-4 text-emerald-600" />
-                    <h4 className="text-xs font-bold text-slate-900 uppercase tracking-wider">
-                      HMRC Corporation Tax Settlement Guide
-                    </h4>
+              {/* HMRC Payment Section */}
+              {!isDormant && (
+                <div className="bg-slate-50 border border-slate-200 rounded-2xl p-5 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+                  <div className="space-y-1">
+                    <div className="flex items-center space-x-2">
+                      <Landmark className="w-4 h-4 text-emerald-600" />
+                      <h4 className="text-xs font-bold text-slate-900 uppercase tracking-wider">
+                        HMRC Corporation Tax Settlement Guide
+                      </h4>
+                    </div>
+                    <p className="text-xs text-slate-500">
+                      Payment of <strong className="text-slate-900 font-mono">{formatAccounting(totalHmrcPayable)}</strong> is due on{' '}
+                      <strong className="text-slate-900">{paymentDueDate}</strong> (9 months &amp; 1 day after period end).
+                    </p>
                   </div>
-                  <p className="text-xs text-slate-500">
-                    Payment of <strong className="text-slate-900 font-mono">£{totalHmrcPayable.toLocaleString()}</strong> is due on{' '}
-                    <strong className="text-slate-900">{paymentDueDate}</strong> (9 months & 1 day after period end).
-                  </p>
+                  <button
+                    type="button"
+                    onClick={() => setIsPayHmrcOpen(true)}
+                    className="inline-flex items-center space-x-1.5 px-4 py-2 rounded-xl bg-white hover:bg-slate-100 text-slate-900 border border-slate-300 text-xs font-bold transition shadow-2xs self-start sm:self-auto shrink-0"
+                  >
+                    <Landmark className="w-3.5 h-3.5 text-amber-600" />
+                    <span>View Bank Details &amp; PRN</span>
+                  </button>
                 </div>
-                <button
-                  type="button"
-                  onClick={() => setIsPayHmrcOpen(true)}
-                  className="inline-flex items-center space-x-1.5 px-4 py-2 rounded-xl bg-white hover:bg-slate-100 text-slate-900 border border-slate-300 text-xs font-bold transition shadow-2xs self-start sm:self-auto shrink-0"
-                >
-                  <Landmark className="w-3.5 h-3.5 text-amber-600" />
-                  <span>View Bank Details & PRN</span>
-                </button>
-              </div>
+              )}
 
-              {/* Dual Split Submissions */}
+              {/* Submissions Section (Mode-Aware) */}
               <div className="space-y-3">
                 <h3 className="text-xs font-bold text-slate-900 uppercase tracking-wider">Gateway Submissions</h3>
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                   {/* Companies House Submission */}
-                  <div className="bg-[#0B1528] text-white p-5 rounded-2xl space-y-3 flex flex-col justify-between">
+                  <div className={`p-5 rounded-2xl space-y-3 flex flex-col justify-between ${
+                    filingMode === 'ct600_only'
+                      ? 'bg-slate-100 text-slate-600 border border-slate-200'
+                      : 'bg-[#0B1528] text-white'
+                  }`}>
                     <div>
                       <div className="flex items-center justify-between">
-                        <span className="text-[10px] font-bold text-emerald-400 bg-emerald-950/80 border border-emerald-800 px-2 py-0.5 rounded-full">
-                          Free Statutory Filing
+                        <span className={`text-[10px] font-bold px-2 py-0.5 rounded-full ${
+                          filingMode === 'ct600_only'
+                            ? 'bg-slate-200 text-slate-700'
+                            : 'text-emerald-400 bg-emerald-950/80 border border-emerald-800'
+                        }`}>
+                          {filingMode === 'ct600_only' ? 'Filed Externally' : 'Free Statutory Filing'}
                         </span>
                         <span className="text-[10px] text-stone-400">9-Month Deadline</span>
                       </div>
-                      <h4 className="font-bold text-sm text-white mt-2">Companies House Accounts</h4>
-                      <p className="text-[11px] text-stone-300 mt-1">
-                        Electronic submission of FRS 105 micro-entity accounts directly to the public registry.
+                      <h4 className={`font-bold text-sm mt-2 ${filingMode === 'ct600_only' ? 'text-slate-900' : 'text-white'}`}>
+                        Companies House Accounts
+                      </h4>
+                      <p className={`text-[11px] mt-1 ${filingMode === 'ct600_only' ? 'text-slate-500' : 'text-stone-300'}`}>
+                        {filingMode === 'ct600_only'
+                          ? 'Statutory accounts already filed or managed separately at Companies House.'
+                          : 'Electronic submission of statutory micro-entity/dormant accounts directly to Companies House.'}
                       </p>
                     </div>
-                    <button
-                      type="button"
-                      disabled={!canTransmit}
-                      onClick={() => alert('TaxFlow UK: Test mode active. Ready to transmit FRS 105 Accounts directly to Companies House gateway.')}
-                      className={`w-full py-2.5 rounded-xl text-xs font-bold transition flex items-center justify-center space-x-1.5 ${
-                        canTransmit
-                          ? 'bg-white hover:bg-stone-100 text-stone-950 cursor-pointer shadow-sm'
-                          : 'bg-stone-800 text-stone-500 cursor-not-allowed border border-stone-700'
-                      }`}
-                    >
-                      <Lock className="w-3.5 h-3.5" />
-                      <span>Submit Accounts to Companies House</span>
-                    </button>
+
+                    {filingMode === 'ct600_only' ? (
+                      <div className="text-[11px] text-slate-500 font-semibold py-2">
+                        ✓ Omitted from this filing flow
+                      </div>
+                    ) : (
+                      <button
+                        type="button"
+                        disabled={!canTransmit}
+                        onClick={() => alert('TaxFlow UK: Test mode active. Ready to transmit Accounts directly to Companies House gateway.')}
+                        className={`w-full py-2.5 rounded-xl text-xs font-bold transition flex items-center justify-center space-x-1.5 ${
+                          canTransmit
+                            ? 'bg-white hover:bg-stone-100 text-stone-950 cursor-pointer shadow-sm'
+                            : 'bg-stone-800 text-stone-500 cursor-not-allowed border border-stone-700'
+                        }`}
+                      >
+                        <Lock className="w-3.5 h-3.5" />
+                        <span>Submit Accounts to Companies House</span>
+                      </button>
+                    )}
                   </div>
 
                   {/* HMRC CT600 Submission */}
-                  <div className="bg-[#0B1528] text-white p-5 rounded-2xl space-y-3 flex flex-col justify-between">
+                  <div className={`p-5 rounded-2xl space-y-3 flex flex-col justify-between ${
+                    filingMode === 'accounts_only'
+                      ? 'bg-slate-100 text-slate-600 border border-slate-200'
+                      : 'bg-[#0B1528] text-white'
+                  }`}>
                     <div>
                       <div className="flex items-center justify-between">
-                        <span className="text-[10px] font-bold text-amber-400 bg-amber-950/80 border border-amber-800 px-2 py-0.5 rounded-full">
-                          £49.00 Flat Fee
+                        <span className={`text-[10px] font-bold px-2 py-0.5 rounded-full ${
+                          filingMode === 'accounts_only'
+                            ? 'bg-slate-200 text-slate-700'
+                            : 'text-amber-400 bg-amber-950/80 border border-amber-800'
+                        }`}>
+                          {filingMode === 'accounts_only' ? 'Excluded' : isDormant ? 'Nil Return' : '£49.00 Flat Fee'}
                         </span>
                         <span className="text-[10px] text-stone-400">12-Month Deadline</span>
                       </div>
-                      <h4 className="font-bold text-sm text-white mt-2">HMRC CT600 & Computations</h4>
-                      <p className="text-[11px] text-stone-300 mt-1">
-                        Digital dispatch with certified C14N IRmark and full capital allowances schedules.
+                      <h4 className={`font-bold text-sm mt-2 ${filingMode === 'accounts_only' ? 'text-slate-900' : 'text-white'}`}>
+                        HMRC CT600 &amp; Computations
+                      </h4>
+                      <p className={`text-[11px] mt-1 ${filingMode === 'accounts_only' ? 'text-slate-500' : 'text-stone-300'}`}>
+                        {filingMode === 'accounts_only'
+                          ? 'CT600 return excluded. Submitting accounts only to Companies House.'
+                          : 'Digital dispatch with certified C14N IRmark and full capital allowances schedules.'}
                       </p>
                     </div>
-                    <button
-                      type="button"
-                      disabled={!canTransmit}
-                      onClick={() => alert('TaxFlow UK: Test mode active. Ready to submit CT600 and Tax Computations to HMRC with certified digital IRmark.')}
-                      className={`w-full py-2.5 rounded-xl text-xs font-bold transition flex items-center justify-center space-x-1.5 ${
-                        canTransmit
-                          ? 'bg-gradient-to-r from-amber-500 to-orange-500 hover:from-amber-600 hover:to-orange-600 text-stone-950 cursor-pointer shadow-sm'
-                          : 'bg-stone-800 text-stone-500 cursor-not-allowed border border-stone-700'
-                      }`}
-                    >
-                      <Lock className="w-3.5 h-3.5" />
-                      <span>Submit CT600 to HMRC (£49.00)</span>
-                    </button>
+
+                    {filingMode === 'accounts_only' ? (
+                      <div className="text-[11px] text-slate-500 font-semibold py-2">
+                        ✓ Omitted from this filing flow
+                      </div>
+                    ) : (
+                      <button
+                        type="button"
+                        disabled={!canTransmit}
+                        onClick={() => alert('TaxFlow UK: Test mode active. Ready to submit CT600 and Tax Computations to HMRC with certified digital IRmark.')}
+                        className={`w-full py-2.5 rounded-xl text-xs font-bold transition flex items-center justify-center space-x-1.5 ${
+                          canTransmit
+                            ? 'bg-gradient-to-r from-amber-500 to-orange-500 hover:from-amber-600 hover:to-orange-600 text-stone-950 cursor-pointer shadow-sm'
+                            : 'bg-stone-800 text-stone-500 cursor-not-allowed border border-stone-700'
+                        }`}
+                      >
+                        <Lock className="w-3.5 h-3.5" />
+                        <span>{isDormant ? 'Submit Nil CT600 to HMRC (Free)' : 'Submit CT600 to HMRC (£49.00)'}</span>
+                      </button>
+                    )}
                   </div>
                 </div>
               </div>
@@ -1911,7 +2262,7 @@ function WizardContent() {
                   {fatalShieldErrors.length === 0 ? 'All 40 Checks Clear' : `${fatalShieldErrors.length} Fatal Errors`}
                 </p>
                 <p className="text-[11px] text-slate-500">
-                  {warningShieldItems.length > 0 ? `${warningShieldItems.length} advisory notes` : 'HMRC & CH Gateway ready'}
+                  {warningShieldItems.length > 0 ? `${warningShieldItems.length} advisory notes` : 'HMRC &amp; CH Gateway ready'}
                 </p>
               </div>
             </div>
@@ -1938,50 +2289,93 @@ function WizardContent() {
               <span className="text-xs font-bold text-slate-900 flex items-center space-x-1.5">
                 <Receipt className="w-4 h-4 text-slate-700" />
                 <span>
-                  <TermExplainer termId="ct600" label="HMRC CT600 Estimate" />
+                  <TermExplainer termId="ct600" label={isDormant ? 'Dormant Nil Return' : isProperty ? 'Property SPV Tax' : 'HMRC CT600 Estimate'} />
                 </span>
               </span>
               <span className="text-[10px] font-semibold text-slate-600 bg-slate-100 px-2 py-0.5 rounded-full">
-                {isPeriodValid ? taxRateLabel : 'Pending Dates'}
+                {isDormant ? 'Nil Liability' : isPeriodValid ? taxRateLabel : 'Pending Dates'}
               </span>
             </div>
 
-            {isPeriodValid ? (
+            {isDormant ? (
               <div className="space-y-1.5 text-xs">
                 <div className="flex justify-between text-slate-600">
                   <span>Box 145 (Turnover):</span>
-                  <span className="font-semibold text-slate-900 num-tabular">£{form.turnover.toLocaleString()}</span>
+                  <span className="font-semibold text-slate-900 font-mono">£0.00</span>
                 </div>
                 <div className="flex justify-between text-slate-600">
-                  <span>Box 155 (Trading Profit):</span>
-                  <span className="font-semibold text-slate-900 num-tabular">£{operatingProfit.toLocaleString()}</span>
-                </div>
-                <div className="flex justify-between text-slate-500 text-[11px] pl-2 border-l border-slate-200">
-                  <span>+ Disallowables:</span>
-                  <span className="font-semibold num-tabular">£{form.disallowables.toLocaleString()}</span>
-                </div>
-                <div className="flex justify-between text-slate-500 text-[11px] pl-2 border-l border-slate-200">
-                  <span>- Capital Allowances (AIA):</span>
-                  <span className="font-semibold num-tabular">(£{totalCapitalAllowances.toLocaleString()})</span>
-                </div>
-                <div className="flex justify-between text-slate-600 pt-0.5 border-t border-slate-100 font-medium">
-                  <span>Box 315 (Total Taxable):</span>
-                  <span className="font-semibold text-slate-900 num-tabular">£{taxableProfit.toLocaleString()}</span>
+                  <span>Box 315 (Profits):</span>
+                  <span className="font-semibold text-slate-900 font-mono">£0.00</span>
                 </div>
                 <div className="pt-2 border-t border-slate-100 flex justify-between text-sm font-bold text-slate-900">
                   <span>Box 440 (CT Due):</span>
-                  <span className="text-emerald-700 num-tabular">£{taxPayable.toLocaleString()}</span>
+                  <span className="text-emerald-700 font-mono">£0.00</span>
+                </div>
+              </div>
+            ) : isPeriodValid ? (
+              <div className="space-y-1.5 text-xs">
+                {isProperty ? (
+                  <>
+                    <div className="flex justify-between text-slate-600">
+                      <span>Rental Receipts:</span>
+                      <span className="font-semibold text-slate-900 num-tabular">{formatAccounting(propertyGrossIncome)}</span>
+                    </div>
+                    <div className="flex justify-between text-slate-600">
+                      <span>Property Costs:</span>
+                      <span className="font-semibold text-slate-900 num-tabular">-{formatAccounting(propertyExpenses)}</span>
+                    </div>
+                    <div className="flex justify-between text-amber-700">
+                      <span>Box 260 (Mortgage Int.):</span>
+                      <span className="font-semibold num-tabular">-{formatAccounting(propertyMortgageInterest)}</span>
+                    </div>
+                    <div className="flex justify-between text-slate-600 pt-0.5 border-t border-slate-100 font-medium">
+                      <span>Box 190 (Property Profit):</span>
+                      <span className="font-semibold text-indigo-950 num-tabular">{formatAccounting(propertyNetTaxableProfit)}</span>
+                    </div>
+                  </>
+                ) : (
+                  <>
+                    <div className="flex justify-between text-slate-600">
+                      <span>Box 145 (Turnover):</span>
+                      <span className="font-semibold text-slate-900 num-tabular">{formatAccounting(form.turnover)}</span>
+                    </div>
+                    <div className="flex justify-between text-slate-600">
+                      <span>Box 155 (Trading Profit):</span>
+                      <span className="font-semibold text-slate-900 num-tabular">{formatAccounting(tradingOperatingProfit)}</span>
+                    </div>
+                    {form.disallowables > 0 && (
+                      <div className="flex justify-between text-slate-500 text-[11px] pl-2 border-l border-slate-200">
+                        <span>+ Disallowables:</span>
+                        <span className="font-semibold num-tabular">+{formatAccounting(form.disallowables)}</span>
+                      </div>
+                    )}
+                    {totalCapitalAllowances > 0 && (
+                      <div className="flex justify-between text-slate-500 text-[11px] pl-2 border-l border-slate-200">
+                        <span>- Capital Allowances (AIA):</span>
+                        <span className="font-semibold num-tabular">({formatAccounting(totalCapitalAllowances)})</span>
+                      </div>
+                    )}
+                    <div className="flex justify-between text-slate-600 pt-0.5 border-t border-slate-100 font-medium">
+                      <span>Box 315 (Total Taxable):</span>
+                      <span className="font-semibold text-slate-900 num-tabular">{formatAccounting(taxableProfit)}</span>
+                    </div>
+                  </>
+                )}
+
+                <div className="pt-2 border-t border-slate-100 flex justify-between text-sm font-bold text-slate-900">
+                  <span>Box 440 (CT Due):</span>
+                  <span className="text-emerald-700 num-tabular">{formatAccounting(taxPayable)}</span>
                 </div>
                 {s455TaxPayable > 0 && (
                   <div className="flex justify-between text-xs font-bold text-amber-700">
                     <span>CT600A (s455 Tax):</span>
-                    <span className="num-tabular">£{s455TaxPayable.toLocaleString()}</span>
+                    <span className="num-tabular">+{formatAccounting(s455TaxPayable)}</span>
                   </div>
                 )}
                 {s455TaxPayable > 0 && (
                   <div className="pt-1 border-t border-slate-100 flex justify-between text-xs font-black text-slate-950">
                     <span>Total HMRC Due:</span>
-                    <span className="text-emerald-700 num-tabular">£{totalHmrcPayable.toLocaleString()}</span>
+                    <span className="text-emerald-700 num-tabular">{formatAccounting(totalHmrcPayable)}</span>
                   </div>
                 )}
                 <div className="pt-2 border-t border-slate-100 text-[11px] text-slate-500 flex justify-between">
@@ -2035,11 +2429,11 @@ function WizardContent() {
             <div className="text-[11px] text-slate-500 space-y-1">
               <div className="flex justify-between">
                 <span>Net Assets:</span>
-                <span className="font-mono text-slate-800">£{netAssets.toLocaleString()}</span>
+                <span className="font-mono text-slate-800">{formatAccounting(netAssets)}</span>
               </div>
               <div className="flex justify-between">
                 <span>Total Shareholders' Funds:</span>
-                <span className="font-mono text-slate-800">£{totalEquity.toLocaleString()}</span>
+                <span className="font-mono text-slate-800">{formatAccounting(totalEquity)}</span>
               </div>
             </div>
 

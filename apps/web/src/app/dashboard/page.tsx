@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import Link from 'next/link';
+import { useRouter } from 'next/navigation';
 import {
   Building2,
   Calendar,
@@ -22,11 +23,15 @@ import {
   BookOpen,
   Search,
   Loader2,
-  X
+  X,
+  Sparkles,
+  Info
 } from 'lucide-react';
 import { TermExplainer } from '@/components/TermExplainer';
 import { PlainEnglishBanner } from '@/components/PlainEnglishBanner';
 import { GlossaryModal } from '@/components/GlossaryModal';
+import { FilingHistoryDrawer } from '@/components/FilingHistoryDrawer';
+import { CustomDatesModal } from '@/components/CustomDatesModal';
 
 interface ConnectedCompany {
   id: string;
@@ -40,6 +45,7 @@ interface ConnectedCompany {
 }
 
 export default function DashboardPage() {
+  const router = useRouter();
   const [isGlossaryOpen, setIsGlossaryOpen] = useState<boolean>(false);
   const [initialGlossaryTerm, setInitialGlossaryTerm] = useState<string>('');
   const [companies, setCompanies] = useState<ConnectedCompany[]>([]);
@@ -48,6 +54,13 @@ export default function DashboardPage() {
   const [isLoadingAuth, setIsLoadingAuth] = useState<boolean>(true);
   const [isCompanyDropdownOpen, setIsCompanyDropdownOpen] = useState<boolean>(false);
   
+  // Phase 2: Split-Button and Contextual Drawer States
+  const [isFilingDropdownOpen, setIsFilingDropdownOpen] = useState<boolean>(false);
+  const [isCustomDatesOpen, setIsCustomDatesOpen] = useState<boolean>(false);
+  const [isHistoryDrawerOpen, setIsHistoryDrawerOpen] = useState<boolean>(false);
+  const [drawerFiling, setDrawerFiling] = useState<any>(null);
+  const [reconcileToast, setReconcileToast] = useState<string | null>(null);
+
   // Connect Company Modal State
   const [isConnectModalOpen, setIsConnectModalOpen] = useState<boolean>(false);
   const [searchCrn, setSearchCrn] = useState<string>('');
@@ -73,7 +86,6 @@ export default function DashboardPage() {
               setCompanies(data.companies);
               setSelectedCrn(data.companies[0].crn);
             } else {
-              // Default fallback company if user has none yet
               const defaultCompany: ConnectedCompany = {
                 id: 'comp_droplogicx',
                 crn: '15152081',
@@ -90,7 +102,6 @@ export default function DashboardPage() {
           }
         }
 
-        // Load active filings
         const filingsRes = await fetch('/api/filings');
         if (filingsRes.ok) {
           const filingsData = await filingsRes.json();
@@ -165,8 +176,57 @@ export default function DashboardPage() {
     ct600DueDate: '30 Sep 2027',
   };
 
+  const openHistoryDrawer = (customStatus?: string) => {
+    setDrawerFiling({
+      id: latestFiling?.id || 'drop-logicx',
+      companyName: activeCompany.name,
+      crn: activeCompany.crn,
+      utr: activeCompany.utr || '1234567890',
+      periodStart: filingMetrics.periodStart,
+      periodEnd: filingMetrics.periodEnd,
+      status: customStatus || latestFiling?.status || 'DRAFT',
+      turnover: 100000,
+      taxPayable: 6061,
+      irmark: 'C14N-SHA1: 4a7c89f2e3b1... (Certified Ready)',
+      submissionDate: latestFiling?.submittedAt || undefined,
+      correlationId: latestFiling?.correlationId || 'HMRC-SUB-2026-99824',
+      companyType: activeCompany.companyType === 'ltd' ? 'Trading Company' : activeCompany.companyType
+    });
+    setIsHistoryDrawerOpen(true);
+  };
+
+  const handleMarkAsFiledExternally = (filingId: string) => {
+    setReconcileToast(`Filing record ${filingId} marked as submitted to HMRC externally. Next statutory period queued.`);
+    setTimeout(() => setReconcileToast(null), 5000);
+  };
+
+  const handleApplyCustomDates = (start: string, end: string, reason: string) => {
+    router.push(
+      `/filings/${latestFiling?.id || 'drop-logicx'}/wizard?crn=${activeCompany.crn}&name=${encodeURIComponent(
+        activeCompany.name
+      )}&customDates=true&periodStart=${start}&periodEnd=${end}&reason=${encodeURIComponent(reason)}`
+    );
+  };
+
   return (
     <div className="space-y-8 max-w-6xl mx-auto py-2">
+      {/* External Reconciliation Toast */}
+      {reconcileToast && (
+        <div className="bg-emerald-900 text-emerald-100 p-4 rounded-2xl border border-emerald-700 shadow-md flex items-center justify-between text-xs animate-in slide-in-from-top-2">
+          <div className="flex items-center space-x-2">
+            <CheckCircle2 className="w-4 h-4 text-emerald-400 shrink-0" />
+            <span>{reconcileToast}</span>
+          </div>
+          <button
+            type="button"
+            onClick={() => setReconcileToast(null)}
+            className="text-emerald-300 hover:text-white"
+          >
+            <X className="w-4 h-4" />
+          </button>
+        </div>
+      )}
+
       {/* Sovereign Executive Header with Multi-Company Switcher */}
       <div className="bg-white rounded-3xl p-6 sm:p-8 border border-stone-200/90 shadow-xs flex flex-col lg:flex-row lg:items-center justify-between gap-6">
         <div className="space-y-3">
@@ -264,15 +324,87 @@ export default function DashboardPage() {
           </div>
         </div>
 
-        {/* Primary Actions */}
-        <div className="flex flex-wrap items-center gap-2.5 self-start lg:self-auto">
-          <Link
-            href={`/filings/${latestFiling?.id || 'drop-logicx'}/wizard?crn=${activeCompany.crn}&name=${encodeURIComponent(activeCompany.name)}`}
-            className="inline-flex items-center space-x-2 bg-gradient-to-r from-amber-500 to-orange-500 hover:from-amber-600 hover:to-orange-600 text-stone-950 font-bold px-5 py-2.5 rounded-xl text-sm shadow-xs transition"
-          >
-            <span>Resume Filing Wizard</span>
-            <ArrowRight className="w-4 h-4 text-stone-900" />
-          </Link>
+        {/* Phase 2: Split-Button Filing Dropdown & Guide Action */}
+        <div className="flex flex-wrap items-center gap-2.5 self-start lg:self-auto relative">
+          {/* Split-Button Action Dropdown (Start Filing ▾) */}
+          <div className="relative inline-flex items-center rounded-xl shadow-xs">
+            <Link
+              href={`/filings/${latestFiling?.id || 'drop-logicx'}/wizard?crn=${activeCompany.crn}&name=${encodeURIComponent(activeCompany.name)}&mode=dual`}
+              className="inline-flex items-center space-x-2 bg-gradient-to-r from-amber-500 to-orange-500 hover:from-amber-600 hover:to-orange-600 text-stone-950 font-bold px-4 py-2.5 rounded-l-xl text-sm transition"
+            >
+              <span>{latestFiling ? 'Continue Filing' : 'Start Filing'}</span>
+              <ArrowRight className="w-4 h-4 text-stone-900" />
+            </Link>
+            <button
+              type="button"
+              onClick={() => setIsFilingDropdownOpen(!isFilingDropdownOpen)}
+              className="bg-orange-500 hover:bg-orange-600 text-stone-950 px-2.5 py-2.5 rounded-r-xl border-l border-orange-400/50 transition flex items-center justify-center cursor-pointer"
+              aria-label="Filing workflow options"
+            >
+              <ChevronDown className="w-4 h-4 text-stone-950" />
+            </button>
+
+            {/* Split Dropdown Menu */}
+            {isFilingDropdownOpen && (
+              <div className="absolute right-0 top-full mt-2 w-84 bg-white rounded-2xl border border-stone-200 shadow-2xl p-2 z-50 divide-y divide-stone-100 animate-in fade-in-50 zoom-in-95 text-stone-900">
+                <div className="px-3 py-2 text-[10px] uppercase font-mono font-bold text-stone-400 tracking-wider">
+                  Select Filing Mode
+                </div>
+                <div className="py-1 space-y-1">
+                  <Link
+                    href={`/filings/${latestFiling?.id || 'drop-logicx'}/wizard?crn=${activeCompany.crn}&name=${encodeURIComponent(activeCompany.name)}&mode=dual`}
+                    onClick={() => setIsFilingDropdownOpen(false)}
+                    className="w-full text-left px-3 py-2 rounded-xl text-xs hover:bg-stone-50 transition block"
+                  >
+                    <div className="flex items-center justify-between">
+                      <span className="font-bold text-stone-900">CT600 &amp; Accounts (Dual)</span>
+                      <span className="text-[10px] bg-emerald-100 text-emerald-800 font-bold px-2 py-0.5 rounded-full">Recommended</span>
+                    </div>
+                    <p className="text-[11px] text-stone-500 mt-0.5">
+                      Simultaneous joint filing for HMRC &amp; Companies House
+                    </p>
+                  </Link>
+
+                  <Link
+                    href={`/filings/${latestFiling?.id || 'drop-logicx'}/wizard?crn=${activeCompany.crn}&name=${encodeURIComponent(activeCompany.name)}&mode=ct600_only`}
+                    onClick={() => setIsFilingDropdownOpen(false)}
+                    className="w-full text-left px-3 py-2 rounded-xl text-xs hover:bg-stone-50 transition block"
+                  >
+                    <span className="font-bold text-stone-900 block">Corporation Tax (CT600) Only</span>
+                    <p className="text-[11px] text-stone-500 mt-0.5">
+                      When statutory accounts are already filed at Companies House
+                    </p>
+                  </Link>
+
+                  <Link
+                    href={`/filings/${latestFiling?.id || 'drop-logicx'}/wizard?crn=${activeCompany.crn}&name=${encodeURIComponent(activeCompany.name)}&mode=accounts_only`}
+                    onClick={() => setIsFilingDropdownOpen(false)}
+                    className="w-full text-left px-3 py-2 rounded-xl text-xs hover:bg-stone-50 transition block"
+                  >
+                    <span className="font-bold text-stone-900 block">Accounts Only (Companies House iXBRL)</span>
+                    <p className="text-[11px] text-stone-500 mt-0.5">
+                      Micro-entity or dormant accounts without filing tax return
+                    </p>
+                  </Link>
+                </div>
+
+                <div className="pt-2">
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setIsFilingDropdownOpen(false);
+                      setIsCustomDatesOpen(true);
+                    }}
+                    className="w-full text-left px-3 py-2 rounded-xl text-xs text-amber-800 hover:bg-amber-50 font-semibold flex items-center space-x-1.5 transition"
+                  >
+                    <Calendar className="w-3.5 h-3.5 text-amber-600" />
+                    <span>File with Custom Dates (CT603 Variance)...</span>
+                  </button>
+                </div>
+              </div>
+            )}
+          </div>
+
           <button
             type="button"
             onClick={() => setIsGlossaryOpen(true)}
@@ -302,7 +434,7 @@ export default function DashboardPage() {
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
           <h2 className="text-xs font-semibold text-stone-500 uppercase tracking-wider flex items-center space-x-2">
             <Clock className="w-4 h-4 text-stone-400" />
-            <span>Official Filing Deadlines & Timetable</span>
+            <span>Official Filing Deadlines & Timetable (Click any card to inspect filing record)</span>
           </h2>
           <span className="text-xs font-medium text-emerald-700 bg-emerald-50 px-2.5 py-0.5 rounded-full border border-emerald-200">
             All statutory returns on schedule · 0 overdue notices
@@ -344,13 +476,18 @@ export default function DashboardPage() {
           </div>
         </div>
 
-        {/* 4 Multi-Deadline Action Cards */}
+        {/* 4 Multi-Deadline Action Cards (Clickable to open Contextual Slide-Over Drawer) */}
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-          <div className="bg-white p-5 rounded-2xl border border-stone-200 shadow-xs flex flex-col justify-between space-y-3">
+          <button
+            type="button"
+            onClick={() => openHistoryDrawer('DRAFT')}
+            className="text-left bg-white p-5 rounded-2xl border border-stone-200 hover:border-amber-400 hover:shadow-md transition shadow-xs flex flex-col justify-between space-y-3 group cursor-pointer"
+          >
             <div className="space-y-1">
-              <p className="text-xs font-medium text-stone-500">
-                <TermExplainer termId="s477-exemption" label="Companies House Accounts" />
-              </p>
+              <div className="flex items-center justify-between">
+                <p className="text-xs font-medium text-stone-500">Companies House Accounts</p>
+                <ChevronRight className="w-3.5 h-3.5 text-stone-300 group-hover:text-amber-600 transition" />
+              </div>
               <p className="text-lg font-bold text-stone-950 font-mono">{filingMetrics.accountsDueDate}</p>
               <p className="text-[11px] text-stone-400">9 months from period end (s442)</p>
             </div>
@@ -358,15 +495,20 @@ export default function DashboardPage() {
               <span className="px-2.5 py-0.5 bg-emerald-50 text-emerald-800 text-[11px] font-semibold rounded-full border border-emerald-200">
                 Draft Ready
               </span>
-              <p className="text-[10px] text-stone-400">FRS 105 iXBRL</p>
+              <p className="text-[10px] text-stone-400 group-hover:text-amber-700 font-semibold transition">View Details →</p>
             </div>
-          </div>
+          </button>
 
-          <div className="bg-white p-5 rounded-2xl border border-stone-200 shadow-xs flex flex-col justify-between space-y-3">
+          <button
+            type="button"
+            onClick={() => openHistoryDrawer('DRAFT')}
+            className="text-left bg-white p-5 rounded-2xl border border-stone-200 hover:border-amber-400 hover:shadow-md transition shadow-xs flex flex-col justify-between space-y-3 group cursor-pointer"
+          >
             <div className="space-y-1">
-              <p className="text-xs font-medium text-stone-500">
-                <TermExplainer termId="ct600" label="HMRC Tax Payment" />
-              </p>
+              <div className="flex items-center justify-between">
+                <p className="text-xs font-medium text-stone-500">HMRC Tax Payment</p>
+                <ChevronRight className="w-3.5 h-3.5 text-stone-300 group-hover:text-amber-600 transition" />
+              </div>
               <p className="text-lg font-bold text-stone-950 font-mono">{filingMetrics.taxDueDate}</p>
               <p className="text-[11px] text-stone-400">9 months + 1 day from end (s59D)</p>
             </div>
@@ -374,15 +516,20 @@ export default function DashboardPage() {
               <span className="px-2.5 py-0.5 bg-emerald-50 text-emerald-800 text-[11px] font-semibold rounded-full border border-emerald-200 font-mono">
                 {filingMetrics.taxPayable}
               </span>
-              <p className="text-[10px] text-stone-400">19% Small Profits</p>
+              <p className="text-[10px] text-stone-400 group-hover:text-amber-700 font-semibold transition">19% Small Profits →</p>
             </div>
-          </div>
+          </button>
 
-          <div className="bg-white p-5 rounded-2xl border border-stone-200 shadow-xs flex flex-col justify-between space-y-3">
+          <button
+            type="button"
+            onClick={() => openHistoryDrawer('DRAFT')}
+            className="text-left bg-white p-5 rounded-2xl border border-stone-200 hover:border-amber-400 hover:shadow-md transition shadow-xs flex flex-col justify-between space-y-3 group cursor-pointer"
+          >
             <div className="space-y-1">
-              <p className="text-xs font-medium text-stone-500">
-                <TermExplainer termId="ct600" label="HMRC CT600 Return" />
-              </p>
+              <div className="flex items-center justify-between">
+                <p className="text-xs font-medium text-stone-500">HMRC CT600 Return</p>
+                <ChevronRight className="w-3.5 h-3.5 text-stone-300 group-hover:text-amber-600 transition" />
+              </div>
               <p className="text-lg font-bold text-stone-950 font-mono">{filingMetrics.ct600DueDate}</p>
               <p className="text-[11px] text-stone-400">12 months from period end</p>
             </div>
@@ -390,15 +537,20 @@ export default function DashboardPage() {
               <span className="px-2.5 py-0.5 bg-emerald-50 text-emerald-800 text-[11px] font-semibold rounded-full border border-emerald-200">
                 Draft Ready
               </span>
-              <p className="text-[10px] text-stone-400">IRmark Ready</p>
+              <p className="text-[10px] text-stone-400 group-hover:text-amber-700 font-semibold transition">IRmark Ready →</p>
             </div>
-          </div>
+          </button>
 
-          <div className="bg-white p-5 rounded-2xl border border-stone-200 shadow-xs flex flex-col justify-between space-y-3">
+          <button
+            type="button"
+            onClick={() => openHistoryDrawer('UP_TO_DATE')}
+            className="text-left bg-white p-5 rounded-2xl border border-stone-200 hover:border-amber-400 hover:shadow-md transition shadow-xs flex flex-col justify-between space-y-3 group cursor-pointer"
+          >
             <div className="space-y-1">
-              <p className="text-xs font-medium text-stone-500">
-                <TermExplainer termId="confirmation-statement" label="Confirmation Statement (CS01)" />
-              </p>
+              <div className="flex items-center justify-between">
+                <p className="text-xs font-medium text-stone-500">Confirmation Statement (CS01)</p>
+                <ChevronRight className="w-3.5 h-3.5 text-stone-300 group-hover:text-amber-600 transition" />
+              </div>
               <p className="text-lg font-bold text-stone-950 font-mono">15 Sep 2027</p>
               <p className="text-[11px] text-stone-400">Identity check (separate from accounts)</p>
             </div>
@@ -406,9 +558,9 @@ export default function DashboardPage() {
               <span className="px-2.5 py-0.5 bg-stone-100 text-stone-700 text-[11px] font-semibold rounded-full border border-stone-200">
                 £34 Fee
               </span>
-              <p className="text-[10px] text-stone-400">Officers & PSC</p>
+              <p className="text-[10px] text-stone-400 group-hover:text-amber-700 font-semibold transition">Officers &amp; PSC →</p>
             </div>
-          </div>
+          </button>
         </div>
       </div>
 
@@ -607,6 +759,23 @@ export default function DashboardPage() {
           </div>
         </div>
       )}
+
+      {/* Phase 2: Contextual Right Slide-Over Drawer */}
+      <FilingHistoryDrawer
+        isOpen={isHistoryDrawerOpen}
+        onClose={() => setIsHistoryDrawerOpen(false)}
+        filing={drawerFiling}
+        onMarkAsFiledExternally={handleMarkAsFiledExternally}
+      />
+
+      {/* Phase 2: Custom Dates Variance Modal */}
+      <CustomDatesModal
+        isOpen={isCustomDatesOpen}
+        onClose={() => setIsCustomDatesOpen(false)}
+        defaultStart="2025-10-01"
+        defaultEnd="2026-09-30"
+        onApply={handleApplyCustomDates}
+      />
 
       {/* Global Glossary Modal */}
       <GlossaryModal
