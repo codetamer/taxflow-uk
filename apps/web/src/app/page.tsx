@@ -21,7 +21,7 @@ import {
 } from 'lucide-react';
 import { TermExplainer } from '@/components/TermExplainer';
 import { GlossaryModal } from '@/components/GlossaryModal';
-import { CompaniesHouseHeroSearch } from '@/components/CompaniesHouseHeroSearch';
+import { CompaniesHouseHeroSearch, SearchResultItem } from '@/components/CompaniesHouseHeroSearch';
 
 export default function HomePage() {
   // Live Simulator State
@@ -29,6 +29,8 @@ export default function HomePage() {
   const [expenses, setExpenses] = useState<number>(68100);
   const [isGlossaryOpen, setIsGlossaryOpen] = useState<boolean>(false);
   const [initialGlossaryTerm, setInitialGlossaryTerm] = useState<string>('');
+  const [selectedCompany, setSelectedCompany] = useState<SearchResultItem | null>(null);
+  const [isSimulatorCollapsed, setIsSimulatorCollapsed] = useState<boolean>(false);
 
   const openGlossary = (termId: string) => {
     setInitialGlossaryTerm(termId);
@@ -77,25 +79,27 @@ export default function HomePage() {
 
         {/* Live Companies House Search Engine */}
         <div className="py-2">
-          <CompaniesHouseHeroSearch />
+          <CompaniesHouseHeroSearch onSelectChange={setSelectedCompany} />
         </div>
 
-        <div className="flex flex-col sm:flex-row items-center justify-center gap-3 pt-2">
-          <Link
-            href="/filings/drop-logicx/wizard"
-            className="w-full sm:w-auto inline-flex items-center justify-center space-x-2 bg-stone-950 text-white hover:bg-stone-800 px-6 py-3.5 rounded-xl font-semibold shadow-xs hover:shadow transition"
-          >
-            <span>Start Micro-Entity Filing</span>
-            <ArrowRight className="w-4 h-4 text-amber-400" />
-          </Link>
-          <Link
-            href="/glossary"
-            className="w-full sm:w-auto inline-flex items-center justify-center space-x-2 bg-white text-stone-800 border border-stone-300 hover:bg-stone-50 px-6 py-3.5 rounded-xl font-semibold transition"
-          >
-            <BookOpen className="w-4 h-4 text-amber-700" />
-            <span>Director's Tax & Compliance Guide</span>
-          </Link>
-        </div>
+        {!selectedCompany && (
+          <div className="flex flex-col sm:flex-row items-center justify-center gap-3 pt-2 animate-in fade-in-50 duration-150">
+            <Link
+              href="/filings/drop-logicx/wizard"
+              className="w-full sm:w-auto inline-flex items-center justify-center space-x-2 bg-stone-950 text-white hover:bg-stone-800 px-6 py-3.5 rounded-xl font-semibold shadow-xs hover:shadow transition"
+            >
+              <span>Start Micro-Entity Filing</span>
+              <ArrowRight className="w-4 h-4 text-amber-400" />
+            </Link>
+            <Link
+              href="/glossary"
+              className="w-full sm:w-auto inline-flex items-center justify-center space-x-2 bg-white text-stone-800 border border-stone-300 hover:bg-stone-50 px-6 py-3.5 rounded-xl font-semibold transition"
+            >
+              <BookOpen className="w-4 h-4 text-amber-700" />
+              <span>Director's Tax &amp; Compliance Guide</span>
+            </Link>
+          </div>
+        )}
 
         {/* Quiet Trust Bar */}
         <div className="pt-6 flex flex-wrap items-center justify-center gap-y-2 gap-x-8 text-xs text-stone-500">
@@ -136,10 +140,18 @@ export default function HomePage() {
             <span className="bg-amber-500/10 text-amber-400 text-xs px-2.5 py-1 rounded-full font-mono font-medium border border-amber-500/20">
               40 / 40 Shield Checks Passing
             </span>
+            <button
+              type="button"
+              onClick={() => setIsSimulatorCollapsed(!isSimulatorCollapsed)}
+              className="bg-stone-800 hover:bg-stone-700 text-stone-300 px-3 py-1 rounded-xl text-xs font-medium border border-stone-700 transition ml-2"
+            >
+              {isSimulatorCollapsed ? 'Open Sandbox' : 'Hide Sandbox'}
+            </button>
           </div>
         </div>
 
-        <div className="p-6 sm:p-8 grid grid-cols-1 lg:grid-cols-12 gap-8">
+        {!isSimulatorCollapsed && (
+          <div className="p-6 sm:p-8 grid grid-cols-1 lg:grid-cols-12 gap-8">
           {/* Controls (5 cols) */}
           <div className="lg:col-span-5 space-y-6">
             {/* Quick Presets */}
@@ -326,7 +338,8 @@ export default function HomePage() {
             </div>
           </div>
         </div>
-      </section>
+      )}
+    </section>
 
       {/* Director Clarity & Executive Guidance Section */}
       <section className="bg-stone-50 rounded-3xl p-8 sm:p-10 border border-stone-200 space-y-6">
@@ -513,6 +526,23 @@ export default function HomePage() {
         onClose={() => setIsGlossaryOpen(false)}
         initialTermId={initialGlossaryTerm}
       />
+
+      {/* Minimal Trust Footer */}
+      <footer className="border-t border-stone-200/90 pt-8 pb-4 text-xs text-stone-500">
+        <div className="flex flex-col sm:flex-row items-center justify-between gap-4">
+          <div className="flex items-center space-x-2">
+            <span className="font-bold text-stone-800">TaxFlow UK</span>
+            <span>•</span>
+            <span>FRS 105 (Jan 2026 Taxonomy) &amp; HMRC CT600 v3.1 Compliant</span>
+          </div>
+          <div className="flex flex-wrap items-center gap-4 text-stone-600">
+            <Link href="/filings/drop-logicx/shield" className="hover:text-stone-900 transition">40-Point Shield</Link>
+            <Link href="/filings/drop-logicx/documents" className="hover:text-stone-900 transition">Statutory Document Studio</Link>
+            <Link href="/glossary" className="hover:text-stone-900 transition">Director's Compliance Guide</Link>
+            <Link href="/admin" className="hover:text-amber-700 font-medium transition">Admin Telemetry</Link>
+          </div>
+        </div>
+      </footer>
     </div>
   );
 }

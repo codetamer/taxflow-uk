@@ -63,6 +63,7 @@ export default function AdminCockpitPage() {
   const [submissions, setSubmissions] = useState<GatewaySubmission[]>([]);
   const [users, setUsers] = useState<UserSummary[]>([]);
   const [sandboxMode, setSandboxMode] = useState<boolean>(true);
+  const [sandboxNotice, setSandboxNotice] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState<boolean>(true);
   const [filterCrn, setFilterCrn] = useState<string>('');
   const [selectedXml, setSelectedXml] = useState<{ title: string; content: string } | null>(null);
@@ -108,6 +109,12 @@ export default function AdminCockpitPage() {
       if (res.ok) {
         const data = await res.json();
         setSandboxMode(data.sandboxMode);
+        setSandboxNotice(
+          data.sandboxMode
+            ? 'Switched to GovTalk Test Sandbox — Submissions routed to HMRC and Companies House test endpoints.'
+            : 'Switched to Live Production Gateway — Real statutory submissions enabled.'
+        );
+        setTimeout(() => setSandboxNotice(null), 4000);
       }
     } catch (err) {
       console.error('Error toggling sandbox:', err);
@@ -135,11 +142,10 @@ export default function AdminCockpitPage() {
   const filteredSubmissions = submissions.filter((sub) => {
     if (!filterCrn) return true;
     const term = filterCrn.toLowerCase();
-    return (
-      sub.crn.toLowerCase().includes(term) ||
-      sub.companyName.toLowerCase().includes(term) ||
-      sub.correlationId.toLowerCase().includes(term)
-    );
+    const crn = (sub.crn || '').toLowerCase();
+    const company = (sub.companyName || '').toLowerCase();
+    const corr = (sub.correlationId || '').toLowerCase();
+    return crn.includes(term) || company.includes(term) || corr.includes(term);
   });
 
   if (errorMessage) {
@@ -255,6 +261,22 @@ export default function AdminCockpitPage() {
         </div>
       </div>
 
+      {/* Sandbox Toggle Feedback Banner */}
+      {sandboxNotice && (
+        <div className="bg-emerald-50 border border-emerald-200 text-emerald-950 p-4 rounded-2xl flex items-center justify-between text-xs animate-in fade-in">
+          <div className="flex items-center space-x-2">
+            <CheckCircle2 className="w-4 h-4 text-emerald-600 shrink-0" />
+            <span className="font-semibold">{sandboxNotice}</span>
+          </div>
+          <button
+            onClick={() => setSandboxNotice(null)}
+            className="text-[11px] font-semibold text-emerald-800 hover:text-emerald-950 underline ml-4"
+          >
+            Dismiss
+          </button>
+        </div>
+      )}
+
       {/* 4 Sovereign Metrics Cards */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5">
         <div className="bg-white p-6 rounded-2xl border border-slate-200/90 shadow-sm space-y-2">
@@ -265,7 +287,9 @@ export default function AdminCockpitPage() {
             </div>
           </div>
           <div className="text-2xl font-black text-slate-950 font-mono">
-            £{stats ? ((stats.grossRevenuePence || 4900) / 100).toFixed(2) : '49.00'}
+            {new Intl.NumberFormat('en-GB', { style: 'currency', currency: 'GBP', minimumFractionDigits: 2 }).format(
+              stats ? (stats.grossRevenuePence || 4900) / 100 : 49.00
+            )}
           </div>
           <p className="text-xs text-slate-500 flex items-center space-x-1">
             <span className="text-emerald-700 font-semibold">£49.00 net</span>
@@ -408,8 +432,10 @@ export default function AdminCockpitPage() {
                       </span>
                     </td>
                     <td className="py-3.5 px-4">
-                      <p className="font-bold text-slate-900">{sub.companyName}</p>
-                      <p className="text-[10px] text-slate-500 font-mono">CRN: {sub.crn}</p>
+                      <p className="font-bold text-slate-900">{sub.companyName || 'DROPLOGICX LTD'}</p>
+                      <p className="text-[10px] text-slate-500 font-mono">
+                        {sub.crn ? `CRN: ${sub.crn}` : 'Unassigned / Sandbox Test'}
+                      </p>
                     </td>
                     <td className="py-3.5 px-4 font-mono text-[11px] text-slate-600">
                       {sub.correlationId}

@@ -64,7 +64,7 @@ export function TermExplainer({ termId, label, children, showIcon = true }: Term
       {isOpen && (
         <div
           ref={popoverRef}
-          className="absolute z-50 bottom-full mb-2 left-1/2 -translate-x-1/2 w-80 sm:w-96 bg-white rounded-2xl shadow-xl border border-stone-200 p-5 text-left text-stone-900 animate-in fade-in zoom-in-95 duration-150"
+          className="absolute z-50 top-full mt-2 left-1/2 -translate-x-1/2 w-80 sm:w-96 bg-white rounded-2xl shadow-2xl border border-stone-200 p-5 text-left text-stone-900 animate-in fade-in zoom-in-95 duration-150 max-h-[85vh] overflow-y-auto"
           role="dialog"
           aria-modal="true"
         >

@@ -104,6 +104,10 @@ function WizardContent() {
   const [isPayHmrcOpen, setIsPayHmrcOpen] = useState<boolean>(false);
   const [isShareSuccess, setIsShareSuccess] = useState<boolean>(false);
   const [isStatutoryGuidanceOpen, setIsStatutoryGuidanceOpen] = useState<boolean>(false);
+  const [isEditingRegistry, setIsEditingRegistry] = useState<boolean>(false);
+  const [hasCapitalAdditions, setHasCapitalAdditions] = useState<boolean>(true);
+  const [hasDirectorLoans, setHasDirectorLoans] = useState<boolean>(false);
+  const [filingScope, setFilingScope] = useState<'dual' | 'ch_only'>('dual');
   const [registeredDirectors, setRegisteredDirectors] = useState<string[]>([
     'Muhammad Saif Raza'
   ]);
@@ -1033,52 +1037,67 @@ function WizardContent() {
         </div>
       )}
 
-      {/* Stepper Navigation */}
-      <div className="bg-white rounded-2xl border border-stone-200/90 p-2.5 shadow-xs">
-        <div className="grid grid-cols-3 gap-2">
-          {steps.map((s) => {
-            const isActive = currentStep === s.num;
-            const isCompleted = currentStep > s.num;
+      {/* Interactive Stepper Navigation */}
+      <div className="bg-white rounded-2xl border border-slate-200/90 p-3 sm:px-6 shadow-xs">
+        <div className="flex flex-wrap items-center justify-between gap-4">
+          <div className="flex items-center gap-2 sm:gap-4 flex-wrap w-full sm:w-auto">
+            {steps.map((s, idx) => {
+              const isActive = currentStep === s.num;
+              const isCompleted = currentStep > s.num;
 
-            return (
-              <button
-                key={s.num}
-                type="button"
-                onClick={() => {
-                  if (s.num > 1 && !isStep1Valid) return;
-                  setCurrentStep(s.num);
-                }}
-                disabled={s.num > 1 && !isStep1Valid}
-                className={`flex items-center space-x-2.5 p-2.5 rounded-xl text-left transition-all ${
-                  isActive
-                    ? 'bg-[#0B1528] text-white shadow-xs'
-                    : isCompleted
-                    ? 'text-stone-800 hover:bg-stone-50'
-                    : s.num > 1 && !isStep1Valid
-                    ? 'text-stone-300 opacity-50 cursor-not-allowed'
-                    : 'text-stone-400 hover:bg-stone-50'
-                }`}
-              >
-                <span
-                  className={`w-6 h-6 rounded-full flex items-center justify-center text-xs font-bold shrink-0 ${
-                    isActive
-                      ? 'bg-gradient-to-r from-amber-500 to-orange-500 text-stone-950'
-                      : isCompleted
-                      ? 'bg-emerald-100 text-emerald-900'
-                      : 'bg-stone-100 text-stone-500'
-                  }`}
-                >
-                  {isCompleted ? '✓' : s.num}
-                </span>
-                <div className="truncate">
-                  <div className="text-xs font-bold truncate">{s.title}</div>
-                  <div className={`text-[10px] truncate hidden sm:block ${isActive ? 'text-stone-300' : 'text-stone-400'}`}>
-                    {s.desc}
-                  </div>
+              return (
+                <div key={s.num} className="flex items-center gap-2 sm:gap-4">
+                  <button
+                    type="button"
+                    onClick={() => {
+                      if (s.num > 1 && !isStep1Valid) return;
+                      setCurrentStep(s.num);
+                    }}
+                    disabled={s.num > 1 && !isStep1Valid}
+                    className={`flex items-center gap-2.5 px-3 py-2 rounded-xl text-left transition-all ${
+                      isActive
+                        ? 'bg-indigo-50 border border-indigo-200 text-indigo-950 font-bold'
+                        : isCompleted
+                        ? 'text-slate-800 hover:bg-slate-50'
+                        : s.num > 1 && !isStep1Valid
+                        ? 'text-slate-300 opacity-50 cursor-not-allowed'
+                        : 'text-slate-400 hover:bg-slate-50'
+                    }`}
+                  >
+                    <span
+                      className={`w-7 h-7 rounded-full flex items-center justify-center text-xs font-bold shrink-0 ${
+                        isActive
+                          ? 'bg-indigo-600 text-white'
+                          : isCompleted
+                          ? 'bg-emerald-600 text-white'
+                          : 'bg-slate-200 text-slate-700'
+                      }`}
+                    >
+                      {isCompleted ? '✓' : s.num}
+                    </span>
+                    <div>
+                      <div className="text-xs font-bold">{s.title}</div>
+                      <div className={`text-[11px] hidden sm:block ${isActive ? 'text-indigo-700' : 'text-slate-500'}`}>
+                        {s.desc}
+                      </div>
+                    </div>
+                  </button>
+                  {idx < steps.length - 1 && <span className="text-slate-300 hidden sm:inline">→</span>}
                 </div>
-              </button>
-            );
-          })}
+              );
+            })}
+          </div>
+
+          <div className="flex items-center gap-2">
+            <button
+              type="button"
+              onClick={() => setIsImportModalOpen(true)}
+              className="px-3 py-1.5 rounded-lg border border-slate-200 hover:bg-slate-50 text-xs font-medium text-slate-700 flex items-center gap-1.5 transition"
+            >
+              <UploadCloud className="w-3.5 h-3.5 text-indigo-600" />
+              <span>Import Statement (PDF/CSV)</span>
+            </button>
+          </div>
         </div>
       </div>
 
@@ -1236,139 +1255,132 @@ function WizardContent() {
                 )}
               </div>
 
-              {/* Verified Company Card */}
-              <div className="bg-slate-50 p-4 rounded-2xl border border-slate-200/80 flex items-start space-x-3.5">
-                <Building2 className="w-5 h-5 text-slate-700 shrink-0 mt-0.5" />
-                <div className="space-y-1 text-xs">
+              {/* Verified Registry Summary Card with Collapsible Edit Drawer */}
+              <div className="bg-white rounded-2xl border border-slate-200/90 p-5 shadow-xs space-y-4">
+                <div className="flex flex-wrap items-center justify-between gap-2">
                   <div className="flex items-center space-x-2">
-                    <span className="font-bold text-slate-900">{form.companyName}</span>
-                    <span className="text-[10px] font-mono bg-slate-200 text-slate-800 px-1.5 py-0.5 rounded font-semibold">
-                      CRN: {form.crn}
+                    <span className="w-2.5 h-2.5 rounded-full bg-emerald-500" />
+                    <span className="font-bold text-xs uppercase tracking-wider text-slate-700">
+                      Companies House Registry Profile
                     </span>
                   </div>
-                  <p className="text-slate-500 text-[11px] leading-relaxed">{form.registeredAddress}</p>
-                </div>
-              </div>
-
-              {/* Period Dates & Core Fields */}
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                <div>
-                  <label className="block text-xs font-bold text-slate-700 mb-1">
-                    <TermExplainer termId="ct600" label="HMRC Unique Taxpayer Reference (UTR)" />
-                  </label>
-                  <input
-                    type="text"
-                    maxLength={10}
-                    value={form.utr}
-                    onChange={(e) => setForm({ ...form, utr: e.target.value.replace(/\D/g, '') })}
-                    className={`w-full px-3.5 py-2.5 border rounded-xl text-sm font-mono tracking-wider focus:outline-none focus:ring-2 ${
-                      !isUtrValid && form.utr ? 'border-red-300 bg-red-50/20' : 'border-slate-300 focus:ring-slate-900'
-                    }`}
-                  />
-                  <p className="text-[11px] text-slate-400 mt-1">Official 10-digit number issued on HMRC CT41G notice</p>
-                </div>
-
-                <div>
-                  <div className="flex justify-between items-center mb-1">
-                    <label className="block text-xs font-bold text-slate-700">
-                      Signatory Director Name (CA 2006 s414)
-                    </label>
-                    {registeredDirectors.length > 0 && (
-                      <span className="text-[10px] text-emerald-700 font-semibold bg-emerald-50 px-1.5 py-0.5 rounded border border-emerald-200">
-                        Registry Verified
-                      </span>
-                    )}
-                  </div>
-                  {registeredDirectors.length > 1 ? (
-                    <select
-                      value={form.directorName}
-                      onChange={(e) => setForm({ ...form, directorName: e.target.value })}
-                      className="w-full px-3.5 py-2.5 border border-slate-300 rounded-xl text-sm font-semibold focus:outline-none focus:ring-2 focus:ring-slate-900 bg-white"
+                  <div className="flex items-center space-x-2">
+                    <button
+                      type="button"
+                      onClick={() => fetchPriorYearAccounts()}
+                      disabled={isFetchingPriorYear}
+                      className="px-2.5 py-1 rounded-lg bg-indigo-50 hover:bg-indigo-100 text-indigo-700 text-xs font-semibold transition"
                     >
-                      {registeredDirectors.map((d) => (
-                        <option key={d} value={d}>
-                          {d}
-                        </option>
-                      ))}
-                    </select>
-                  ) : (
-                    <input
-                      type="text"
-                      value={form.directorName}
-                      onChange={(e) => setForm({ ...form, directorName: e.target.value })}
-                      className="w-full px-3.5 py-2.5 border border-slate-300 rounded-xl text-sm font-semibold focus:outline-none focus:ring-2 focus:ring-slate-900"
-                      placeholder="e.g. Muhammad Saif Raza"
-                    />
-                  )}
-                  <p className="text-[11px] text-slate-400 mt-1">Appointed officer authorizing submission</p>
+                      {isFetchingPriorYear ? 'Syncing...' : '↻ Sync Prior Year iXBRL'}
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => setIsEditingRegistry(!isEditingRegistry)}
+                      className="px-2.5 py-1 rounded-lg border border-slate-200 hover:bg-slate-50 text-slate-700 text-xs font-medium transition"
+                    >
+                      {isEditingRegistry ? 'Close Edit Drawer' : 'Edit Dates / Officers'}
+                    </button>
+                  </div>
                 </div>
 
-                <div>
-                  <label className="block text-xs font-bold text-slate-700 mb-1">Accounting Period Start</label>
-                  <input
-                    type="date"
-                    value={form.periodStart}
-                    onChange={(e) => setForm({ ...form, periodStart: e.target.value })}
-                    className="w-full px-3.5 py-2.5 border border-slate-300 rounded-xl text-sm font-semibold focus:outline-none focus:ring-2 focus:ring-slate-900"
-                  />
-                  <p className="text-[11px] text-slate-400 mt-1">Commencement date of financial year</p>
+                {/* Compact Read-Only Summary Grid */}
+                <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 p-3.5 rounded-xl bg-slate-50 border border-slate-200/80 text-xs">
+                  <div>
+                    <span className="text-slate-400 block text-[10px] uppercase font-bold">Entity Name</span>
+                    <strong className="text-slate-900 font-semibold">{form.companyName}</strong>
+                  </div>
+                  <div>
+                    <span className="text-slate-400 block text-[10px] uppercase font-bold">Company Number</span>
+                    <strong className="text-slate-900 font-mono">{form.crn}</strong>
+                  </div>
+                  <div>
+                    <span className="text-slate-400 block text-[10px] uppercase font-bold">Signatory Director</span>
+                    <strong className="text-slate-900">{form.directorName}</strong>
+                  </div>
+                  <div>
+                    <span className="text-slate-400 block text-[10px] uppercase font-bold">Accounting Period</span>
+                    <strong className="text-slate-900 font-mono">{form.periodStart} to {form.periodEnd}</strong>
+                  </div>
                 </div>
 
-                <div>
-                  <label className="block text-xs font-bold text-slate-700 mb-1">Accounting Period End</label>
-                  <input
-                    type="date"
-                    value={form.periodEnd}
-                    onChange={(e) => setForm({ ...form, periodEnd: e.target.value })}
-                    className={`w-full px-3.5 py-2.5 border rounded-xl text-sm font-semibold focus:outline-none focus:ring-2 ${
-                      !isPeriodValid && form.periodEnd ? 'border-red-300 bg-red-50/20' : 'border-slate-300 focus:ring-slate-900'
-                    }`}
-                  />
-                  {!isPeriodValid && periodDayCount > 366 && (
-                    <p className="text-[11px] text-red-600 mt-1">
-                      Limit exceeded: CT600 accounting period cannot exceed 12 months ({periodDayCount} days). Split under CTA 2009 s10.
-                    </p>
-                  )}
-                  {isPeriodValid && (
-                    <p className="text-[11px] text-slate-400 mt-1">
-                      Period duration: {periodDayCount} days (Valid statutory period)
-                    </p>
-                  )}
-                </div>
-
-                {!isDormant && (
-                  <>
+                {/* Collapsible Edit Drawer */}
+                {isEditingRegistry && (
+                  <div className="pt-3 border-t border-slate-100 grid grid-cols-1 sm:grid-cols-2 gap-4 text-xs animate-in fade-in-50 duration-150">
                     <div>
-                      <label className="block text-xs font-bold text-slate-700 mb-1">
-                        <TermExplainer termId="associated-companies" label="Associated Companies (N)" />
-                      </label>
+                      <label className="block font-medium text-slate-700 mb-1">Signatory Director Name (CA 2006 s414)</label>
+                      <input
+                        type="text"
+                        value={form.directorName}
+                        onChange={(e) => setForm({ ...form, directorName: e.target.value })}
+                        className="w-full px-3 py-2 border border-slate-300 rounded-xl text-xs font-semibold focus:outline-none focus:ring-2 focus:ring-slate-900"
+                      />
+                    </div>
+                    <div>
+                      <label className="block font-medium text-slate-700 mb-1">Average Number of Employees (CA 2006 s411)</label>
                       <input
                         type="number"
                         min="0"
-                        max="50"
-                        value={form.associatedCompanies}
-                        onChange={(e) => setForm({ ...form, associatedCompanies: Math.max(0, parseInt(e.target.value) || 0) })}
-                        className="w-full px-3.5 py-2.5 border border-slate-300 rounded-xl text-sm font-semibold focus:outline-none focus:ring-2 focus:ring-slate-900"
-                      />
-                      <p className="text-[11px] text-slate-400 mt-1">Other active companies you control (divides limits by N+1)</p>
-                    </div>
-
-                    <div>
-                      <label className="block text-xs font-bold text-slate-700 mb-1">
-                        Average Number of Employees (CA 2006 s411)
-                      </label>
-                      <input
-                        type="number"
-                        min="1"
                         max="10"
                         value={form.averageEmployees}
-                        onChange={(e) => setForm({ ...form, averageEmployees: Math.max(1, parseInt(e.target.value) || 1) })}
-                        className="w-full px-3.5 py-2.5 border border-slate-300 rounded-xl text-sm font-semibold focus:outline-none focus:ring-2 focus:ring-slate-900"
+                        onChange={(e) => setForm({ ...form, averageEmployees: Math.max(0, parseInt(e.target.value) || 0) })}
+                        className="w-full px-3 py-2 border border-slate-300 rounded-xl text-xs font-semibold font-mono focus:outline-none focus:ring-2 focus:ring-slate-900"
                       />
-                      <p className="text-[11px] text-slate-400 mt-1">Mandatory note in FRS 105 accounts (default 1 for single-director)</p>
                     </div>
-                  </>
+                    <div>
+                      <label className="block font-medium text-slate-700 mb-1">Period Start Date</label>
+                      <input
+                        type="date"
+                        value={form.periodStart}
+                        onChange={(e) => setForm({ ...form, periodStart: e.target.value })}
+                        className="w-full px-3 py-2 border border-slate-300 rounded-xl text-xs font-semibold focus:outline-none focus:ring-2 focus:ring-slate-900"
+                      />
+                    </div>
+                    <div>
+                      <label className="block font-medium text-slate-700 mb-1">Period End Date (365 Days)</label>
+                      <input
+                        type="date"
+                        value={form.periodEnd}
+                        onChange={(e) => setForm({ ...form, periodEnd: e.target.value })}
+                        className="w-full px-3 py-2 border border-slate-300 rounded-xl text-xs font-semibold focus:outline-none focus:ring-2 focus:ring-slate-900"
+                      />
+                    </div>
+                  </div>
                 )}
+
+                {/* Primary Required Inputs: 10-Digit UTR & Associated Companies */}
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 pt-1">
+                  <div>
+                    <label className="block text-xs font-bold text-slate-700 mb-1">
+                      <TermExplainer termId="ct600" label="HMRC Unique Taxpayer Reference (UTR)" />
+                    </label>
+                    <input
+                      type="text"
+                      maxLength={10}
+                      value={form.utr}
+                      onChange={(e) => setForm({ ...form, utr: e.target.value.replace(/\D/g, '') })}
+                      placeholder="10-digit UTR"
+                      className={`w-full px-3.5 py-2.5 border rounded-xl text-sm font-mono tracking-wider focus:outline-none focus:ring-2 ${
+                        !isUtrValid && form.utr ? 'border-red-300 bg-red-50/20' : 'border-slate-300 focus:ring-slate-900'
+                      }`}
+                    />
+                    <p className="text-[11px] text-slate-400 mt-1">Official 10-digit number issued on HMRC CT41G notice</p>
+                  </div>
+
+                  <div>
+                    <label className="block text-xs font-bold text-slate-700 mb-1">
+                      <TermExplainer termId="associated-companies" label="Associated Companies (N)" />
+                    </label>
+                    <input
+                      type="number"
+                      min="0"
+                      max="50"
+                      value={form.associatedCompanies}
+                      onChange={(e) => setForm({ ...form, associatedCompanies: Math.max(0, parseInt(e.target.value) || 0) })}
+                      className="w-full px-3.5 py-2.5 border border-slate-300 rounded-xl text-sm font-semibold focus:outline-none focus:ring-2 focus:ring-slate-900"
+                    />
+                    <p className="text-[11px] text-slate-400 mt-1">Other active companies you control (divides tax limits by N+1)</p>
+                  </div>
+                </div>
               </div>
 
               {/* Prior Year Accounts Auto-Sync Card */}
@@ -2130,105 +2142,83 @@ function WizardContent() {
                 </div>
               )}
 
-              {/* Submissions Section (Mode-Aware) */}
-              <div className="space-y-3">
-                <h3 className="text-xs font-bold text-slate-900 uppercase tracking-wider">Gateway Submissions</h3>
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                  {/* Companies House Submission */}
-                  <div className={`p-5 rounded-2xl space-y-3 flex flex-col justify-between ${
-                    filingMode === 'ct600_only'
-                      ? 'bg-slate-100 text-slate-600 border border-slate-200'
-                      : 'bg-[#0B1528] text-white'
-                  }`}>
-                    <div>
-                      <div className="flex items-center justify-between">
-                        <span className={`text-[10px] font-bold px-2 py-0.5 rounded-full ${
-                          filingMode === 'ct600_only'
-                            ? 'bg-slate-200 text-slate-700'
-                            : 'text-emerald-400 bg-emerald-950/80 border border-emerald-800'
-                        }`}>
-                          {filingMode === 'ct600_only' ? 'Filed Externally' : 'Free Statutory Filing'}
-                        </span>
-                        <span className="text-[10px] text-stone-400">9-Month Deadline</span>
-                      </div>
-                      <h4 className={`font-bold text-sm mt-2 ${filingMode === 'ct600_only' ? 'text-slate-900' : 'text-white'}`}>
-                        Companies House Accounts
-                      </h4>
-                      <p className={`text-[11px] mt-1 ${filingMode === 'ct600_only' ? 'text-slate-500' : 'text-stone-300'}`}>
-                        {filingMode === 'ct600_only'
-                          ? 'Statutory accounts already filed or managed separately at Companies House.'
-                          : 'Electronic submission of statutory micro-entity/dormant accounts directly to Companies House.'}
-                      </p>
-                    </div>
-
-                    {filingMode === 'ct600_only' ? (
-                      <div className="text-[11px] text-slate-500 font-semibold py-2">
-                        ✓ Omitted from this filing flow
-                      </div>
-                    ) : (
-                      <button
-                        type="button"
-                        disabled={!canTransmit}
-                        onClick={() => alert('TaxFlow UK: Test mode active. Ready to transmit Accounts directly to Companies House gateway.')}
-                        className={`w-full py-2.5 rounded-xl text-xs font-bold transition flex items-center justify-center space-x-1.5 ${
-                          canTransmit
-                            ? 'bg-white hover:bg-stone-100 text-stone-950 cursor-pointer shadow-sm'
-                            : 'bg-stone-800 text-stone-500 cursor-not-allowed border border-stone-700'
-                        }`}
-                      >
-                        <Lock className="w-3.5 h-3.5" />
-                        <span>Submit Accounts to Companies House</span>
-                      </button>
-                    )}
+              {/* UNIFIED DUAL GATEWAY SUBMISSION CARD (Upgrade Fix: Replaces confusing split buttons) */}
+              <div className="bg-slate-900 text-white rounded-3xl p-6 sm:p-8 shadow-xl space-y-6">
+                <div className="flex flex-col sm:flex-row sm:items-start justify-between gap-4">
+                  <div className="space-y-1">
+                    <span className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-[10px] font-semibold uppercase tracking-wider bg-indigo-500/20 text-indigo-300 border border-indigo-400/30">
+                      Simultaneous Dual-Gateway Dispatch
+                    </span>
+                    <h3 className="text-xl font-bold tracking-tight">Approve &amp; Transmit Statutory Returns</h3>
+                    <p className="text-xs text-slate-300 max-w-xl leading-relaxed">
+                      Dispatches your iXBRL filleted accounts to Companies House (9-month deadline) and your CT600 return + computations to HMRC GovTalk (12-month deadline) in one atomic transaction.
+                    </p>
                   </div>
-
-                  {/* HMRC CT600 Submission */}
-                  <div className={`p-5 rounded-2xl space-y-3 flex flex-col justify-between ${
-                    filingMode === 'accounts_only'
-                      ? 'bg-slate-100 text-slate-600 border border-slate-200'
-                      : 'bg-[#0B1528] text-white'
-                  }`}>
-                    <div>
-                      <div className="flex items-center justify-between">
-                        <span className={`text-[10px] font-bold px-2 py-0.5 rounded-full ${
-                          filingMode === 'accounts_only'
-                            ? 'bg-slate-200 text-slate-700'
-                            : 'text-amber-400 bg-amber-950/80 border border-amber-800'
-                        }`}>
-                          {filingMode === 'accounts_only' ? 'Excluded' : isDormant ? 'Nil Return' : '£49.00 Flat Fee'}
-                        </span>
-                        <span className="text-[10px] text-stone-400">12-Month Deadline</span>
-                      </div>
-                      <h4 className={`font-bold text-sm mt-2 ${filingMode === 'accounts_only' ? 'text-slate-900' : 'text-white'}`}>
-                        HMRC CT600 &amp; Computations
-                      </h4>
-                      <p className={`text-[11px] mt-1 ${filingMode === 'accounts_only' ? 'text-slate-500' : 'text-stone-300'}`}>
-                        {filingMode === 'accounts_only'
-                          ? 'CT600 return excluded. Submitting accounts only to Companies House.'
-                          : 'Digital dispatch with certified C14N IRmark and full capital allowances schedules.'}
-                      </p>
-                    </div>
-
-                    {filingMode === 'accounts_only' ? (
-                      <div className="text-[11px] text-slate-500 font-semibold py-2">
-                        ✓ Omitted from this filing flow
-                      </div>
-                    ) : (
-                      <button
-                        type="button"
-                        disabled={!canTransmit}
-                        onClick={() => alert('TaxFlow UK: Test mode active. Ready to submit CT600 and Tax Computations to HMRC with certified digital IRmark.')}
-                        className={`w-full py-2.5 rounded-xl text-xs font-bold transition flex items-center justify-center space-x-1.5 ${
-                          canTransmit
-                            ? 'bg-gradient-to-r from-amber-500 to-orange-500 hover:from-amber-600 hover:to-orange-600 text-stone-950 cursor-pointer shadow-sm'
-                            : 'bg-stone-800 text-stone-500 cursor-not-allowed border border-stone-700'
-                        }`}
-                      >
-                        <Lock className="w-3.5 h-3.5" />
-                        <span>{isDormant ? 'Submit Nil CT600 to HMRC (Free)' : 'Submit CT600 to HMRC (£49.00)'}</span>
-                      </button>
-                    )}
+                  <div className="text-left sm:text-right shrink-0">
+                    <span className="text-xs text-slate-400 block font-medium">One-Off Filing Fee</span>
+                    <span className="text-3xl font-extrabold font-mono text-white">
+                      {filingScope === 'dual' ? (isDormant ? '£0.00' : '£49.00') : '£0.00'}
+                    </span>
+                    <span className="text-[11px] text-emerald-400 block font-medium">No recurring subscription</span>
                   </div>
+                </div>
+
+                {/* Optional Secondary Mode Radio */}
+                <div className="p-4 rounded-2xl bg-slate-800/90 border border-slate-700/80 flex flex-col sm:flex-row sm:items-center justify-between gap-3 text-xs">
+                  <label className="flex items-center gap-2.5 cursor-pointer">
+                    <input
+                      type="radio"
+                      name="filing_scope"
+                      value="dual"
+                      checked={filingScope === 'dual'}
+                      onChange={() => setFilingScope('dual')}
+                      className="text-indigo-500 focus:ring-indigo-500"
+                    />
+                    <span>
+                      <strong className="text-white">Full Dual Filing (Recommended):</strong> Companies House FRS 105 + HMRC CT600 ({isDormant ? '£0.00' : '£49.00'})
+                    </span>
+                  </label>
+                  <label className="flex items-center gap-2.5 cursor-pointer text-slate-300">
+                    <input
+                      type="radio"
+                      name="filing_scope"
+                      value="ch_only"
+                      checked={filingScope === 'ch_only'}
+                      onChange={() => setFilingScope('ch_only')}
+                      className="text-indigo-500 focus:ring-indigo-500"
+                    />
+                    <span>Companies House Accounts Only (£0.00 Free)</span>
+                  </label>
+                </div>
+
+                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pt-1">
+                  <button
+                    type="button"
+                    onClick={() => setCurrentStep(2)}
+                    className="px-4 py-2.5 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-200 text-xs font-semibold transition"
+                  >
+                    ← Back to Figures
+                  </button>
+                  <button
+                    type="button"
+                    disabled={!canTransmit}
+                    onClick={() => alert(`TaxFlow UK: Validated & ready to transmit ${filingScope === 'dual' ? 'dual Companies House & HMRC CT600 returns' : 'Companies House accounts'}!`)}
+                    className={`px-6 py-3.5 rounded-2xl font-bold text-sm shadow-lg transition flex items-center justify-center gap-2 ${
+                      canTransmit
+                        ? 'bg-gradient-to-r from-amber-500 to-orange-500 hover:from-amber-400 hover:to-orange-400 text-stone-950 cursor-pointer'
+                        : 'bg-stone-800 text-stone-500 cursor-not-allowed border border-stone-700'
+                    }`}
+                  >
+                    <Lock className="w-4 h-4" />
+                    <span>
+                      {filingScope === 'dual'
+                        ? isDormant
+                          ? 'Approve & Submit Dual Filing (Free)'
+                          : 'Approve & Submit Dual Filing (£49.00)'
+                        : 'Approve & Submit Companies House Accounts (Free)'}
+                    </span>
+                    <ArrowRight className="w-4 h-4" />
+                  </button>
                 </div>
               </div>
             </div>
@@ -2519,26 +2509,28 @@ function WizardContent() {
             )}
           </div>
 
-          {/* Free Watermarked Drafts Pill Card */}
-          <div className="bg-slate-50/70 rounded-2xl border border-slate-200/90 p-4 space-y-2.5">
-            <span className="text-xs font-bold text-slate-900">Instant Free Previews</span>
-            <div className="grid grid-cols-2 gap-2">
-              <a
-                href={`/api/documents/accounts-pdf?draft=true&filingId=${filingId}`}
-                target="_blank"
-                className="bg-white hover:bg-slate-100 text-slate-800 border border-slate-200 text-center py-2 px-2.5 rounded-xl text-[11px] font-semibold transition truncate block"
-              >
-                Accounts PDF
-              </a>
-              <a
-                href={`/api/documents/ct600-pdf?draft=true&filingId=${filingId}`}
-                target="_blank"
-                className="bg-white hover:bg-slate-100 text-slate-800 border border-slate-200 text-center py-2 px-2.5 rounded-xl text-[11px] font-semibold transition truncate block"
-              >
-                CT600 PDF
-              </a>
+          {/* Free Watermarked Drafts Pill Card (Hidden on Step 3 to eliminate duplicate buttons) */}
+          {currentStep !== 3 && (
+            <div className="bg-slate-50/70 rounded-2xl border border-slate-200/90 p-4 space-y-2.5">
+              <span className="text-xs font-bold text-slate-900">Instant Free Previews</span>
+              <div className="grid grid-cols-2 gap-2">
+                <a
+                  href={`/api/documents/accounts-pdf?draft=true&filingId=${filingId}`}
+                  target="_blank"
+                  className="bg-white hover:bg-slate-100 text-slate-800 border border-slate-200 text-center py-2 px-2.5 rounded-xl text-[11px] font-semibold transition truncate block"
+                >
+                  Accounts PDF
+                </a>
+                <a
+                  href={`/api/documents/ct600-pdf?draft=true&filingId=${filingId}`}
+                  target="_blank"
+                  className="bg-white hover:bg-slate-100 text-slate-800 border border-slate-200 text-center py-2 px-2.5 rounded-xl text-[11px] font-semibold transition truncate block"
+                >
+                  CT600 PDF
+                </a>
+              </div>
             </div>
-          </div>
+          )}
         </div>
       </div>
 

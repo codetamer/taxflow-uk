@@ -17,6 +17,7 @@ import {
   Sparkles,
   ChevronDown,
   ChevronUp,
+  ChevronRight,
   FileText,
   Lock,
   Unlock,
@@ -186,6 +187,8 @@ export default function ShieldDashboardPage() {
   const [searchQuery, setSearchQuery] = useState<string>('');
   const [isGlossaryOpen, setIsGlossaryOpen] = useState<boolean>(false);
   const [initialGlossaryTerm, setInitialGlossaryTerm] = useState<string>('');
+  const [collapsedCategories, setCollapsedCategories] = useState<Set<string>>(new Set());
+  const [isSimDrawerOpen, setIsSimDrawerOpen] = useState<boolean>(false);
 
   useEffect(() => {
     // 1. Immediately hydrate from shared in-browser filing state (FE-01)
@@ -499,6 +502,37 @@ export default function ShieldDashboardPage() {
     return `/filings/${filingId}/wizard?step=1`;
   };
 
+  // Auto-collapse passing categories by default so users focus only on active blockers
+  useEffect(() => {
+    const passing = new Set<string>();
+    groupedCategories.forEach(([catName, rules]) => {
+      const allPass = rules.every((r) => r.status === 'PASS');
+      if (allPass) passing.add(catName);
+    });
+    setCollapsedCategories(passing);
+  }, [report, groupedCategories]);
+
+  const toggleCategory = (catName: string) => {
+    setCollapsedCategories((prev) => {
+      const next = new Set(prev);
+      if (next.has(catName)) {
+        next.delete(catName);
+      } else {
+        next.add(catName);
+      }
+      return next;
+    });
+  };
+
+  const toggleAllCategories = () => {
+    if (collapsedCategories.size > 0) {
+      setCollapsedCategories(new Set());
+    } else {
+      const all = new Set(groupedCategories.map(([catName]) => catName));
+      setCollapsedCategories(all);
+    }
+  };
+
   return (
     <div className="space-y-8 max-w-6xl mx-auto py-2">
       {/* Cockpit Status Banner */}
@@ -583,97 +617,108 @@ export default function ShieldDashboardPage() {
         </button>
       </div>
 
-      {/* Interactive Simulation Sandbox */}
-      <div className="bg-white p-6 rounded-3xl border border-stone-200/90 shadow-xs space-y-4">
-        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
-          <div className="flex items-center space-x-2">
-            <Sparkles className="w-4 h-4 text-amber-600" />
-            <h2 className="text-xs font-semibold text-stone-900 uppercase tracking-wider">
-              Interactive Error Defense Simulator
-            </h2>
+      {/* Interactive Simulation Sandbox (Collapsible Drawer) */}
+      <div className="bg-slate-900 text-white p-5 sm:p-6 rounded-3xl border border-slate-800 shadow-sm space-y-3">
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+          <div className="flex items-center space-x-2.5">
+            <Sparkles className="w-4 h-4 text-indigo-400" />
+            <div>
+              <h2 className="text-xs font-bold uppercase tracking-wider text-indigo-200">
+                Error Defense Simulator (Demo / Reviewer Testing)
+              </h2>
+              <p className="text-[11px] text-slate-400">
+                Inject intentional statutory faults to verify the Shield's real-time interception.
+              </p>
+            </div>
           </div>
-          <span className="text-xs text-stone-500">
-            Click below to simulate real director mistakes and watch the shield intercept them in real time
-          </span>
+          <button
+            type="button"
+            onClick={() => setIsSimDrawerOpen(!isSimDrawerOpen)}
+            className="px-3 py-1.5 rounded-xl bg-slate-800 hover:bg-slate-700 text-indigo-300 hover:text-white text-xs font-semibold border border-slate-700 transition self-start sm:self-auto"
+          >
+            {isSimDrawerOpen ? 'Hide Simulation Chips' : '⚡ Open Fault Injector'}
+          </button>
         </div>
 
-        <div className="flex flex-wrap gap-2">
-          {userFilingData?.formData && (
+        {isSimDrawerOpen && (
+          <div className="flex flex-wrap gap-2 pt-3 border-t border-slate-800/80 animate-in fade-in-50 duration-150">
+            {userFilingData?.formData && (
+              <button
+                onClick={() => setActiveScenario('user_filing')}
+                className={`px-3 py-1.5 rounded-xl text-xs font-semibold transition flex items-center space-x-1.5 ${
+                  activeScenario === 'user_filing'
+                    ? 'bg-emerald-600 text-white shadow-xs'
+                    : 'bg-emerald-950/60 hover:bg-emerald-900/60 text-emerald-300 border border-emerald-800'
+                }`}
+              >
+                <ShieldCheck className="w-3.5 h-3.5" />
+                <span>
+                  My Live Filing ({userFilingData.formData.companyName || 'DROPLOGICX LTD'})
+                </span>
+              </button>
+            )}
+
             <button
-              onClick={() => setActiveScenario('user_filing')}
-              className={`px-3.5 py-2 rounded-xl text-xs font-semibold transition flex items-center space-x-1.5 ${
-                activeScenario === 'user_filing'
-                  ? 'bg-emerald-700 text-white shadow-xs'
-                  : 'bg-emerald-50 hover:bg-emerald-100 text-emerald-900 border border-emerald-200'
+              onClick={() => setActiveScenario('clean')}
+              className={`px-3 py-1.5 rounded-xl text-xs font-semibold transition flex items-center space-x-1.5 ${
+                activeScenario === 'clean'
+                  ? 'bg-emerald-600 text-white shadow-xs'
+                  : 'bg-slate-800 hover:bg-slate-700 text-slate-300'
               }`}
             >
-              <ShieldCheck className="w-3.5 h-3.5" />
-              <span>
-                My Live Filing ({userFilingData.formData.companyName || 'DROPLOGICX LTD'})
-              </span>
+              <CheckCircle2 className="w-3.5 h-3.5 text-emerald-400" />
+              <span>Clean Benchmark (40/40)</span>
             </button>
-          )}
 
-          <button
-            onClick={() => setActiveScenario('clean')}
-            className={`px-3.5 py-2 rounded-xl text-xs font-semibold transition flex items-center space-x-1.5 ${
-              activeScenario === 'clean'
-                ? 'bg-[#1C1917] text-white shadow-xs'
-                : 'bg-stone-100 hover:bg-stone-200 text-stone-700'
-            }`}
-          >
-            <CheckCircle2 className="w-3.5 h-3.5 text-amber-400" />
-            <span>DropLogicX Clean Benchmark (40/40)</span>
-          </button>
+            <button
+              onClick={() => setActiveScenario('imbalance')}
+              className={`px-3 py-1.5 rounded-xl text-xs font-semibold transition flex items-center space-x-1.5 ${
+                activeScenario === 'imbalance'
+                  ? 'bg-red-600 text-white shadow-xs'
+                  : 'bg-slate-800 hover:bg-slate-700 text-slate-300'
+              }`}
+            >
+              <XCircle className="w-3.5 h-3.5" />
+              <span>1p Balance Sheet Imbalance</span>
+            </button>
 
-          <button
-            onClick={() => setActiveScenario('imbalance')}
-            className={`px-3.5 py-2 rounded-xl text-xs font-semibold transition flex items-center space-x-1.5 ${
-              activeScenario === 'imbalance'
-                ? 'bg-red-600 text-white shadow-xs'
-                : 'bg-slate-100 hover:bg-slate-200 text-slate-700'
-            }`}
-          >
-            <XCircle className="w-3.5 h-3.5" />
-            <span>1p Balance Sheet Imbalance</span>
-          </button>
+            <button
+              onClick={() => setActiveScenario('dividend')}
+              className={`px-3 py-1.5 rounded-xl text-xs font-semibold transition flex items-center space-x-1.5 ${
+                activeScenario === 'dividend'
+                  ? 'bg-red-600 text-white shadow-xs'
+                  : 'bg-slate-800 hover:bg-slate-700 text-slate-300'
+              }`}
+            >
+              <XCircle className="w-3.5 h-3.5" />
+              <span>Illegal Dividend Over Reserves</span>
+            </button>
 
-          <button
-            onClick={() => setActiveScenario('dividend')}
-            className={`px-3.5 py-2 rounded-xl text-xs font-semibold transition flex items-center space-x-1.5 ${
-              activeScenario === 'dividend'
-                ? 'bg-red-600 text-white shadow-xs'
-                : 'bg-slate-100 hover:bg-slate-200 text-slate-700'
-            }`}
-          >
-            <XCircle className="w-3.5 h-3.5" />
-            <span>Illegal Dividend Over Reserves</span>
-          </button>
+            <button
+              onClick={() => setActiveScenario('car_aia')}
+              className={`px-3 py-1.5 rounded-xl text-xs font-semibold transition flex items-center space-x-1.5 ${
+                activeScenario === 'car_aia'
+                  ? 'bg-red-600 text-white shadow-xs'
+                  : 'bg-slate-800 hover:bg-slate-700 text-slate-300'
+              }`}
+            >
+              <XCircle className="w-3.5 h-3.5" />
+              <span>Car Claiming 100% AIA</span>
+            </button>
 
-          <button
-            onClick={() => setActiveScenario('car_aia')}
-            className={`px-3.5 py-2 rounded-xl text-xs font-semibold transition flex items-center space-x-1.5 ${
-              activeScenario === 'car_aia'
-                ? 'bg-red-600 text-white shadow-xs'
-                : 'bg-slate-100 hover:bg-slate-200 text-slate-700'
-            }`}
-          >
-            <XCircle className="w-3.5 h-3.5" />
-            <span>Car Claiming 100% AIA</span>
-          </button>
-
-          <button
-            onClick={() => setActiveScenario('credentials')}
-            className={`px-3.5 py-2 rounded-xl text-xs font-semibold transition flex items-center space-x-1.5 ${
-              activeScenario === 'credentials'
-                ? 'bg-red-600 text-white shadow-xs'
-                : 'bg-slate-100 hover:bg-slate-200 text-slate-700'
-            }`}
-          >
-            <XCircle className="w-3.5 h-3.5" />
-            <span>Missing Gateway Auth Credentials</span>
-          </button>
-        </div>
+            <button
+              onClick={() => setActiveScenario('credentials')}
+              className={`px-3 py-1.5 rounded-xl text-xs font-semibold transition flex items-center space-x-1.5 ${
+                activeScenario === 'credentials'
+                  ? 'bg-red-600 text-white shadow-xs'
+                  : 'bg-slate-800 hover:bg-slate-700 text-slate-300'
+              }`}
+            >
+              <XCircle className="w-3.5 h-3.5" />
+              <span>Missing Gateway Auth Credentials</span>
+            </button>
+          </div>
+        )}
       </div>
 
       {/* Summary Scorecard */}
@@ -799,15 +844,24 @@ export default function ShieldDashboardPage() {
             </button>
           </div>
 
-          <div className="relative w-full sm:w-72">
-            <Search className="w-3.5 h-3.5 text-slate-400 absolute left-3 top-1/2 -translate-y-1/2" />
-            <input
-              type="text"
-              placeholder="Search checks by name or code (e.g. BFS-01)..."
-              value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
-              className="w-full bg-white border border-slate-200 rounded-xl pl-9 pr-3 py-2 text-xs text-slate-900 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-slate-900 shadow-2xs"
-            />
+          <div className="flex items-center space-x-3 w-full sm:w-auto justify-between sm:justify-end">
+            <button
+              type="button"
+              onClick={toggleAllCategories}
+              className="text-xs font-semibold text-indigo-600 hover:text-indigo-800 transition whitespace-nowrap"
+            >
+              {collapsedCategories.size > 0 ? 'Expand All Categories' : 'Collapse Passing Categories'}
+            </button>
+            <div className="relative w-full sm:w-72">
+              <Search className="w-3.5 h-3.5 text-slate-400 absolute left-3 top-1/2 -translate-y-1/2" />
+              <input
+                type="text"
+                placeholder="Search checks by name or code (e.g. BFS-01)..."
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                className="w-full bg-white border border-slate-200 rounded-xl pl-9 pr-3 py-2 text-xs text-slate-900 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-slate-900 shadow-2xs"
+              />
+            </div>
           </div>
         </div>
 
@@ -851,19 +905,31 @@ export default function ShieldDashboardPage() {
           const categoryPassCount = rules.filter((r) => r.status === 'PASS').length;
           const isCategoryAllPass = categoryPassCount === rules.length;
           const explanation = categoryExplanations[categoryName];
+          const isCollapsed = collapsedCategories.has(categoryName);
 
           return (
-            <div key={categoryName} className="bg-white rounded-3xl border border-slate-200 shadow-xs overflow-hidden">
-              {/* Category Header */}
-              <div className="bg-slate-50/90 px-6 py-5 border-b border-slate-200 space-y-3">
-                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
-                  <div className="space-y-1">
+            <div key={categoryName} className="bg-white rounded-3xl border border-slate-200 shadow-xs overflow-hidden transition-all">
+              {/* Category Header (Click to toggle accordion) */}
+              <div 
+                onClick={() => toggleCategory(categoryName)}
+                className="bg-slate-50/90 px-6 py-4 border-b border-slate-200 cursor-pointer hover:bg-slate-100/80 transition flex items-center justify-between gap-4 select-none"
+              >
+                <div className="flex items-center space-x-3.5">
+                  <span className={`p-1.5 rounded-lg border transition ${
+                    isCollapsed ? 'bg-slate-100 text-slate-500 border-slate-200' : 'bg-emerald-100 text-emerald-800 border-emerald-200'
+                  }`}>
+                    {isCollapsed ? <ChevronRight className="w-4 h-4" /> : <ChevronDown className="w-4 h-4" />}
+                  </span>
+                  <div>
                     <div className="flex items-center space-x-2">
                       <h3 className="text-sm font-bold text-slate-950">{categoryName}</h3>
                       {explanation?.glossaryTerm && (
                         <button
                           type="button"
-                          onClick={() => openGlossary(explanation.glossaryTerm!)}
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            openGlossary(explanation.glossaryTerm!);
+                          }}
                           className="text-[10px] text-emerald-800 bg-emerald-50 border border-emerald-200 px-2 py-0.5 rounded-full font-semibold hover:bg-emerald-100 transition"
                         >
                           Audit Guide
@@ -871,145 +937,157 @@ export default function ShieldDashboardPage() {
                       )}
                     </div>
                     {explanation && (
-                      <p className="text-xs text-slate-600 max-w-3xl leading-relaxed">
+                      <p className="text-xs text-slate-600 max-w-3xl leading-relaxed mt-0.5 line-clamp-1">
                         {explanation.summary}
                       </p>
                     )}
                   </div>
-                  <span className={`text-xs font-mono font-bold px-3 py-1 rounded-full border self-start sm:self-auto ${
+                </div>
+
+                <div className="flex items-center space-x-3 shrink-0">
+                  <span className={`text-xs font-mono font-bold px-3 py-1 rounded-full border ${
                     isCategoryAllPass
                       ? 'bg-emerald-50 text-emerald-800 border-emerald-200'
                       : 'bg-red-50 text-red-800 border-red-200'
                   }`}>
-                    {categoryPassCount} / {rules.length} Verified
+                    {isCategoryAllPass ? `✓ ${categoryPassCount} / ${rules.length} Verified` : `⚠ ${categoryPassCount} / ${rules.length} Action Needed`}
+                  </span>
+                  <span className="text-xs text-slate-400 font-medium hidden sm:inline">
+                    {isCollapsed ? 'Expand' : 'Collapse'}
                   </span>
                 </div>
-
-                {/* Legal & Rule Background Detail Box */}
-                {explanation && (
-                  <div className="grid grid-cols-1 md:grid-cols-3 gap-3 pt-2 text-[11px] border-t border-slate-200/60">
-                    <div className="bg-white p-2.5 rounded-xl border border-slate-200/80 space-y-0.5">
-                      <span className="font-bold text-slate-800 uppercase tracking-wider text-[10px] block">
-                        Official Legal Rule
-                      </span>
-                      <p className="text-slate-600 font-mono text-[10px]">{explanation.statutoryRef}</p>
-                    </div>
-                    <div className="bg-white p-2.5 rounded-xl border border-slate-200/80 space-y-0.5">
-                      <span className="font-bold text-red-800 uppercase tracking-wider text-[10px] block">
-                        Consequence of Non-Compliance
-                      </span>
-                      <p className="text-slate-600 leading-tight">{explanation.consequence}</p>
-                    </div>
-                    <div className="bg-white p-2.5 rounded-xl border border-slate-200/80 space-y-0.5">
-                      <span className="font-bold text-emerald-800 uppercase tracking-wider text-[10px] block">
-                        TaxFlow Pre-Flight Guarantee
-                      </span>
-                      <p className="text-slate-600 leading-tight">{explanation.remedy}</p>
-                    </div>
-                  </div>
-                )}
               </div>
 
-              {/* Rules List */}
-              <div className="divide-y divide-slate-100">
-                {rules.map((rule) => {
-                  const isPass = rule.status === 'PASS';
-                  const isFatal = rule.severity === 'FATAL';
-                  const isExpanded = expandedRuleIds.has(rule.id);
-
-                  return (
-                    <div key={rule.id} className="p-5 hover:bg-slate-50/50 transition space-y-3">
-                      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-                        <div className="flex items-start space-x-3.5">
-                          <span className={`w-5 h-5 rounded-full mt-0.5 flex items-center justify-center shrink-0 ${
-                            isPass ? 'text-emerald-600' : isFatal ? 'text-red-600' : 'text-amber-600'
-                          }`}>
-                            {isPass ? (
-                              <CheckCircle2 className="w-5 h-5" />
-                            ) : isFatal ? (
-                              <XCircle className="w-5 h-5" />
-                            ) : (
-                              <AlertTriangle className="w-5 h-5" />
-                            )}
+              {!isCollapsed && (
+                <>
+                  {/* Legal & Rule Background Detail Box */}
+                  {explanation && (
+                    <div className="bg-slate-50/50 px-6 py-3 border-b border-slate-200/60">
+                      <div className="grid grid-cols-1 md:grid-cols-3 gap-3 text-[11px]">
+                        <div className="bg-white p-2.5 rounded-xl border border-slate-200/80 space-y-0.5">
+                          <span className="font-bold text-slate-800 uppercase tracking-wider text-[10px] block">
+                            Official Legal Rule
                           </span>
-                          <div className="space-y-1">
-                            <div className="flex items-center space-x-2">
-                              <span className="font-mono text-xs font-bold text-slate-500 bg-slate-100 px-1.5 py-0.5 rounded">
-                                {rule.id}
-                              </span>
-                              <span className="text-sm font-semibold text-slate-950">{rule.name}</span>
-                            </div>
-                            <p className="text-xs text-slate-600 leading-relaxed max-w-3xl">{rule.message}</p>
-                          </div>
+                          <p className="text-slate-600 font-mono text-[10px]">{explanation.statutoryRef}</p>
                         </div>
-
-                        <div className="flex items-center space-x-2 self-end sm:self-auto shrink-0">
-                          {!isPass && (
-                            <Link
-                              href={getWizardFixLink(rule.category)}
-                              className="text-[11px] font-bold text-slate-900 hover:text-white bg-slate-100 hover:bg-slate-900 border border-slate-200 px-2.5 py-1 rounded-lg transition flex items-center space-x-1"
-                            >
-                              <span>Fix</span>
-                              <ArrowRight className="w-3 h-3 text-amber-500" />
-                            </Link>
-                          )}
-                          <button
-                            type="button"
-                            onClick={() => toggleRuleExpand(rule.id)}
-                            className="text-[11px] font-semibold text-slate-600 hover:text-slate-900 bg-slate-100 hover:bg-slate-200 px-2.5 py-1 rounded-lg transition flex items-center space-x-1"
-                          >
-                            <span>{isExpanded ? 'Less' : 'Rules & Details'}</span>
-                            {isExpanded ? <ChevronUp className="w-3 h-3" /> : <ChevronDown className="w-3 h-3" />}
-                          </button>
-                          <span className={`text-[11px] font-bold px-2.5 py-1 rounded-full ${
-                            isPass
-                              ? 'bg-emerald-50 text-emerald-800'
-                              : isFatal
-                              ? 'bg-red-50 text-red-800'
-                              : 'bg-amber-50 text-amber-800'
-                          }`}>
-                            {isPass ? 'VERIFIED' : isFatal ? 'FATAL ERROR' : 'WARNING'}
+                        <div className="bg-white p-2.5 rounded-xl border border-slate-200/80 space-y-0.5">
+                          <span className="font-bold text-red-800 uppercase tracking-wider text-[10px] block">
+                            Consequence of Non-Compliance
                           </span>
+                          <p className="text-slate-600 leading-tight">{explanation.consequence}</p>
+                        </div>
+                        <div className="bg-white p-2.5 rounded-xl border border-slate-200/80 space-y-0.5">
+                          <span className="font-bold text-emerald-800 uppercase tracking-wider text-[10px] block">
+                            TaxFlow Pre-Flight Guarantee
+                          </span>
+                          <p className="text-slate-600 leading-tight">{explanation.remedy}</p>
                         </div>
                       </div>
+                    </div>
+                  )}
 
-                      {/* Expandable Rule Rationale Drawer */}
-                      {isExpanded && (
-                        <div className="bg-slate-50 rounded-2xl p-4 border border-slate-200 space-y-2.5 text-xs animate-in fade-in-50">
-                          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                            <div className="space-y-1">
-                              <span className="text-[10px] font-bold uppercase tracking-wider text-slate-400">
-                                Legal Basis & Official Rule
+                  {/* Rules List */}
+                  <div className="divide-y divide-slate-100">
+                    {rules.map((rule) => {
+                      const isPass = rule.status === 'PASS';
+                      const isFatal = rule.severity === 'FATAL';
+                      const isExpanded = expandedRuleIds.has(rule.id);
+
+                      return (
+                        <div key={rule.id} className="p-5 hover:bg-slate-50/50 transition space-y-3">
+                          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+                            <div className="flex items-start space-x-3.5">
+                              <span className={`w-5 h-5 rounded-full mt-0.5 flex items-center justify-center shrink-0 ${
+                                isPass ? 'text-emerald-600' : isFatal ? 'text-red-600' : 'text-amber-600'
+                              }`}>
+                                {isPass ? (
+                                  <CheckCircle2 className="w-5 h-5" />
+                                ) : isFatal ? (
+                                  <XCircle className="w-5 h-5" />
+                                ) : (
+                                  <AlertTriangle className="w-5 h-5" />
+                                )}
                               </span>
-                              <p className="font-mono text-slate-800 font-semibold text-[11px]">
-                                {explanation?.statutoryRef || 'Companies Act 2006 & CTA 2010'}
-                              </p>
-                              <p className="text-slate-500 text-[11px]">
-                                {explanation?.why || 'Required for official submission parity.'}
-                              </p>
+                              <div className="space-y-1">
+                                <div className="flex items-center space-x-2">
+                                  <span className="font-mono text-xs font-bold text-slate-500 bg-slate-100 px-1.5 py-0.5 rounded">
+                                    {rule.id}
+                                  </span>
+                                  <span className="text-sm font-semibold text-slate-950">{rule.name}</span>
+                                </div>
+                                <p className="text-xs text-slate-600 leading-relaxed max-w-3xl">{rule.message}</p>
+                              </div>
                             </div>
-                            <div className="space-y-1">
-                              <span className="text-[10px] font-bold uppercase tracking-wider text-slate-400">
-                                Automated Defense Mechanics
+
+                            <div className="flex items-center space-x-2 self-end sm:self-auto shrink-0">
+                              {!isPass && (
+                                <Link
+                                  href={getWizardFixLink(rule.category)}
+                                  className="text-[11px] font-bold text-slate-900 hover:text-white bg-slate-100 hover:bg-slate-900 border border-slate-200 px-2.5 py-1 rounded-lg transition flex items-center space-x-1"
+                                >
+                                  <span>Fix</span>
+                                  <ArrowRight className="w-3 h-3 text-amber-500" />
+                                </Link>
+                              )}
+                              <button
+                                type="button"
+                                onClick={() => toggleRuleExpand(rule.id)}
+                                className="text-[11px] font-semibold text-slate-600 hover:text-slate-900 bg-slate-100 hover:bg-slate-200 px-2.5 py-1 rounded-lg transition flex items-center space-x-1"
+                              >
+                                <span>{isExpanded ? 'Less' : 'Rules & Details'}</span>
+                                {isExpanded ? <ChevronUp className="w-3 h-3" /> : <ChevronDown className="w-3 h-3" />}
+                              </button>
+                              <span className={`text-[11px] font-bold px-2.5 py-1 rounded-full ${
+                                isPass
+                                  ? 'bg-emerald-50 text-emerald-800'
+                                  : isFatal
+                                  ? 'bg-red-50 text-red-800'
+                                  : 'bg-amber-50 text-amber-800'
+                              }`}>
+                                {isPass ? 'VERIFIED' : isFatal ? 'FATAL ERROR' : 'WARNING'}
                               </span>
-                              <p className="text-slate-700 text-[11px] leading-relaxed">
-                                {explanation?.remedy || 'Automatically verified against GovTalk XML schema specifications.'}
-                              </p>
                             </div>
                           </div>
 
-                          {rule.remediation && !isPass && (
-                            <div className="bg-white p-3 rounded-xl border border-red-200 space-y-1 mt-2">
-                              <span className="font-bold text-red-900 block text-[11px]">How to Remediate:</span>
-                              <span className="text-slate-700 text-[11px] leading-relaxed">{rule.remediation}</span>
+                          {/* Expandable Rule Rationale Drawer */}
+                          {isExpanded && (
+                            <div className="bg-slate-50 rounded-2xl p-4 border border-slate-200 space-y-2.5 text-xs animate-in fade-in-50">
+                              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                                <div className="space-y-1">
+                                  <span className="text-[10px] font-bold uppercase tracking-wider text-slate-400">
+                                    Legal Basis & Official Rule
+                                  </span>
+                                  <p className="font-mono text-slate-800 font-semibold text-[11px]">
+                                    {explanation?.statutoryRef || 'Companies Act 2006 & CTA 2010'}
+                                  </p>
+                                  <p className="text-slate-500 text-[11px]">
+                                    {explanation?.why || 'Required for official submission parity.'}
+                                  </p>
+                                </div>
+                                <div className="space-y-1">
+                                  <span className="text-[10px] font-bold uppercase tracking-wider text-slate-400">
+                                    Automated Defense Mechanics
+                                  </span>
+                                  <p className="text-slate-700 text-[11px] leading-relaxed">
+                                    {explanation?.remedy || 'Automatically verified against GovTalk XML schema specifications.'}
+                                  </p>
+                                </div>
+                              </div>
+
+                              {rule.remediation && !isPass && (
+                                <div className="bg-white p-3 rounded-xl border border-red-200 space-y-1 mt-2">
+                                  <span className="font-bold text-red-900 block text-[11px]">How to Remediate:</span>
+                                  <span className="text-slate-700 text-[11px] leading-relaxed">{rule.remediation}</span>
+                                </div>
+                              )}
                             </div>
                           )}
                         </div>
-                      )}
-                    </div>
-                  );
-                })}
-              </div>
+                      );
+                    })}
+                  </div>
+                </>
+              )}
             </div>
           );
         })}

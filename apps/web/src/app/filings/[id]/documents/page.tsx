@@ -350,7 +350,7 @@ export default function DocumentsPage() {
   };
 
   return (
-    <div className="space-y-8 max-w-5xl mx-auto py-2">
+    <div className="space-y-6 max-w-5xl mx-auto py-2 pb-28">
       {/* Top Breadcrumb & Title */}
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
         <div>
@@ -370,7 +370,7 @@ export default function DocumentsPage() {
         </div>
 
         {/* Draft/Clean Preview Mode Toggle */}
-        <div className="flex items-center space-x-2 self-start md:self-auto bg-stone-100 p-1 rounded-2xl">
+        <div className="flex items-center space-x-1.5 self-start md:self-auto bg-stone-100 p-1 rounded-2xl border border-stone-200/80">
           <button
             onClick={() => setIsWatermarked(true)}
             className={`px-3 py-1.5 rounded-xl text-xs font-semibold transition ${
@@ -382,13 +382,31 @@ export default function DocumentsPage() {
           <button
             onClick={() => setIsWatermarked(false)}
             className={`px-3 py-1.5 rounded-xl text-xs font-semibold transition ${
-              !isWatermarked ? 'bg-white text-amber-900 shadow-xs' : 'text-stone-600 hover:text-stone-950'
+              !isWatermarked ? 'bg-amber-500 text-stone-950 font-bold shadow-xs' : 'text-stone-600 hover:text-stone-950'
             }`}
           >
             Clean Final Mode
           </button>
         </div>
       </div>
+
+      {/* Clean Mode Banner Notification */}
+      {!isWatermarked && (
+        <div className="bg-amber-50 border border-amber-200 rounded-2xl p-4 flex items-center justify-between text-xs text-amber-900 animate-in fade-in">
+          <div className="flex items-center space-x-2.5">
+            <div className="w-2.5 h-2.5 rounded-full bg-amber-500 animate-pulse shrink-0" />
+            <span>
+              <strong>Clean Final Mode Active:</strong> Official statutory documents rendered without draft watermarks. Ready for board execution and gateway filing.
+            </span>
+          </div>
+          <button
+            onClick={() => setIsWatermarked(true)}
+            className="text-[11px] font-semibold text-amber-800 hover:text-amber-950 underline shrink-0 ml-4"
+          >
+            Restore Draft Watermark
+          </button>
+        </div>
+      )}
 
       {/* Guidance Overview Banner */}
       <PlainEnglishBanner
@@ -400,90 +418,92 @@ export default function DocumentsPage() {
           'iXBRL XHTML: The digitally certified XML standard with machine-readable taxonomy tags required by both gateways.'
         ]}
         onOpenGlossary={() => openGlossary('frs-105')}
-        defaultOpen={true}
+        defaultOpen={false}
       />
 
-      {/* Trust & Download Bar */}
-      <div className="bg-[#1C1917] text-white rounded-3xl p-5 sm:p-6 border border-stone-800 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
-        <div className="space-y-1">
-          <div className="flex items-center space-x-1.5 text-amber-400 text-xs font-semibold">
-            <ShieldCheck className="w-4 h-4 text-emerald-400" />
-            <span>Pre-Submission Gateway Verification</span>
+      {/* Unified Document Deck & Download Bar */}
+      <div className="bg-white rounded-3xl p-4 sm:p-5 border border-slate-200 shadow-xs space-y-4">
+        <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-4">
+          {/* Document Select Tabs */}
+          <div className="flex flex-wrap gap-1 bg-slate-100/80 p-1.5 rounded-2xl">
+            <button
+              onClick={() => setActiveTab('accounts')}
+              className={`px-3.5 py-2 rounded-xl font-semibold text-xs transition flex items-center space-x-2 ${
+                activeTab === 'accounts'
+                  ? 'bg-white text-slate-950 shadow-xs'
+                  : 'text-slate-600 hover:text-slate-950'
+              }`}
+            >
+              <Building2 className="w-3.5 h-3.5" />
+              <span>{isDormant ? 'Dormant Accounts (AA02)' : 'Full Accounts (FRS 105)'}</span>
+            </button>
+
+            <button
+              onClick={() => setActiveTab('ct600')}
+              className={`px-3.5 py-2 rounded-xl font-semibold text-xs transition flex items-center space-x-2 ${
+                activeTab === 'ct600'
+                  ? 'bg-white text-slate-950 shadow-xs'
+                  : 'text-slate-600 hover:text-slate-950'
+              }`}
+            >
+              <Scale className="w-3.5 h-3.5" />
+              <span>HMRC CT600 Return</span>
+            </button>
+
+            <button
+              onClick={() => setActiveTab('ixbrl')}
+              className={`px-3.5 py-2 rounded-xl font-semibold text-xs transition flex items-center space-x-2 ${
+                activeTab === 'ixbrl'
+                  ? 'bg-white text-slate-950 shadow-xs'
+                  : 'text-slate-600 hover:text-slate-950'
+              }`}
+            >
+              <Code2 className="w-3.5 h-3.5" />
+              <span>FRS 105 iXBRL XHTML</span>
+            </button>
+
+            <button
+              onClick={() => setActiveTab('signing')}
+              className={`px-3.5 py-2 rounded-xl font-semibold text-xs transition flex items-center space-x-2 ${
+                activeTab === 'signing'
+                  ? 'bg-white text-emerald-800 shadow-xs'
+                  : 'text-slate-600 hover:text-slate-950'
+              }`}
+            >
+              <Award className="w-3.5 h-3.5" />
+              <span>Board Sign-off</span>
+            </button>
           </div>
-          <p className="text-xs text-stone-300">
-            All filings verified across 40 statutory compliance checks before submission. Free draft downloads. Pay £49 only upon final dispatch.
-          </p>
+
+          {/* Action CTAs */}
+          <div className="flex items-center space-x-2 self-start lg:self-auto shrink-0">
+            <a
+              href={`/api/documents/accounts-pdf?draft=${isWatermarked}&filingId=${filingId}`}
+              target="_blank"
+              className="inline-flex items-center space-x-1.5 bg-emerald-700 hover:bg-emerald-800 text-white font-bold px-3.5 py-2 rounded-xl text-xs shadow-xs transition"
+            >
+              <Download className="w-3.5 h-3.5 text-emerald-200" />
+              <span>{isDormant ? 'Accounts AA02 PDF' : 'Accounts PDF'}</span>
+            </a>
+            <a
+              href={`/api/documents/ct600-pdf?draft=${isWatermarked}&filingId=${filingId}`}
+              target="_blank"
+              className="inline-flex items-center space-x-1.5 bg-slate-900 text-white hover:bg-slate-800 px-3.5 py-2 rounded-xl text-xs font-semibold shadow-xs transition"
+            >
+              <Download className="w-3.5 h-3.5 text-slate-400" />
+              <span>CT600 PDF</span>
+            </a>
+          </div>
         </div>
 
-        <div className="flex flex-wrap items-center gap-2.5">
-          <a
-            href={`/api/documents/accounts-pdf?draft=${isWatermarked}&filingId=${filingId}`}
-            target="_blank"
-            className="inline-flex items-center space-x-1.5 bg-gradient-to-r from-amber-500 to-orange-500 hover:from-amber-600 hover:to-orange-600 text-stone-950 font-bold px-4 py-2 rounded-xl text-xs shadow-xs transition"
-          >
-            <Download className="w-3.5 h-3.5 text-stone-900" />
-            <span>{isDormant ? 'Download AA02 PDF' : 'Download Accounts PDF'}</span>
-          </a>
-          <a
-            href={`/api/documents/ct600-pdf?draft=${isWatermarked}&filingId=${filingId}`}
-            target="_blank"
-            className="inline-flex items-center space-x-1.5 bg-stone-800 text-stone-200 hover:bg-stone-700 px-4 py-2 rounded-xl text-xs font-semibold transition"
-          >
-            <Download className="w-3.5 h-3.5 text-stone-400" />
-            <span>Download CT600 PDF</span>
-          </a>
+        {/* Status ticker */}
+        <div className="pt-2 border-t border-slate-100 flex items-center justify-between text-[11px] text-slate-500">
+          <div className="flex items-center space-x-1.5">
+            <ShieldCheck className="w-3.5 h-3.5 text-emerald-600" />
+            <span>40 Pre-Flight Checks Passed. Statutory PDF engine compliant with Companies House & HMRC CT600 v3.</span>
+          </div>
+          <span className="font-mono text-slate-400 hidden sm:inline">CRN: {crn}</span>
         </div>
-      </div>
-
-      {/* Tabs */}
-      <div className="flex flex-wrap gap-1 bg-slate-100/80 p-1.5 rounded-2xl w-fit">
-        <button
-          onClick={() => setActiveTab('accounts')}
-          className={`px-4 py-2 rounded-xl font-semibold text-xs transition flex items-center space-x-2 ${
-            activeTab === 'accounts'
-              ? 'bg-white text-slate-950 shadow-xs'
-              : 'text-slate-600 hover:text-slate-950'
-          }`}
-        >
-          <Building2 className="w-3.5 h-3.5" />
-          <span>{isDormant ? 'Dormant Accounts (AA02)' : 'Full Accounts (FRS 105)'}</span>
-        </button>
-
-        <button
-          onClick={() => setActiveTab('ct600')}
-          className={`px-4 py-2 rounded-xl font-semibold text-xs transition flex items-center space-x-2 ${
-            activeTab === 'ct600'
-              ? 'bg-white text-slate-950 shadow-xs'
-              : 'text-slate-600 hover:text-slate-950'
-          }`}
-        >
-          <Scale className="w-3.5 h-3.5" />
-          <span>HMRC CT600 Return</span>
-        </button>
-
-        <button
-          onClick={() => setActiveTab('ixbrl')}
-          className={`px-4 py-2 rounded-xl font-semibold text-xs transition flex items-center space-x-2 ${
-            activeTab === 'ixbrl'
-              ? 'bg-white text-slate-950 shadow-xs'
-              : 'text-slate-600 hover:text-slate-950'
-          }`}
-        >
-          <Code2 className="w-3.5 h-3.5" />
-          <span>FRS 105 iXBRL XHTML</span>
-        </button>
-
-        <button
-          onClick={() => setActiveTab('signing')}
-          className={`px-4 py-2 rounded-xl font-semibold text-xs transition flex items-center space-x-2 ${
-            activeTab === 'signing'
-              ? 'bg-white text-emerald-800 shadow-xs'
-              : 'text-slate-600 hover:text-slate-950'
-          }`}
-        >
-          <Award className="w-3.5 h-3.5 text-emerald-600" />
-          <span>Director Approval Certificate</span>
-        </button>
       </div>
 
       {/* Tab 1: Full Accounts Preview */}

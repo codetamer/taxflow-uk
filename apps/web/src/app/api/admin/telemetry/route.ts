@@ -25,6 +25,9 @@ const MOCK_GATEWAY_SUBMISSIONS = [
     latencyMs: 1420,
     submittedAt: '2026-10-15T10:48:00.000Z',
     completedAt: '2026-10-15T10:48:01.420Z',
+    companyName: 'DROPLOGICX LTD',
+    crn: '15152081',
+    irmark: 'E8g0182Nsd9120=',
     rawRequestXml: '<GovTalkMessage xmlns="http://www.govtalk.gov.uk/CM/envelope"><Header><MessageDetails><Class>HMRC-CT600</Class></MessageDetails></Header></GovTalkMessage>',
     rawResponseXml: '<GovTalkMessage><Body><SuccessResponse><IRmarkReceived>E8g0182Nsd9120=</IRmarkReceived></SuccessResponse></Body></GovTalkMessage>'
   },
@@ -37,8 +40,26 @@ const MOCK_GATEWAY_SUBMISSIONS = [
     latencyMs: 890,
     submittedAt: '2026-10-15T10:47:30.000Z',
     completedAt: '2026-10-15T10:47:30.890Z',
+    companyName: 'DROPLOGICX LTD',
+    crn: '15152081',
+    irmark: 'CH91024881029=',
     rawRequestXml: '<GovTalkMessage><Header><MessageDetails><Class>FormAccounts</Class></MessageDetails></Header></GovTalkMessage>',
     rawResponseXml: '<GovTalkMessage><Body><ResponseDetails><Status>ACCEPTED</Status><TransactionID>09812481</TransactionID></ResponseDetails></Body></GovTalkMessage>'
+  },
+  {
+    id: 'sub_003',
+    filingId: 'fil_c882d91bc81001',
+    gatewayType: 'HMRC_CT600',
+    correlationId: 'HMRC-CT600-2026-5541B9',
+    status: 'ACCEPTED',
+    latencyMs: 1350,
+    submittedAt: '2026-10-14T14:22:00.000Z',
+    completedAt: '2026-10-14T14:22:01.350Z',
+    companyName: 'COVENTRY CLOUD TECH LTD',
+    crn: '12345678',
+    irmark: 'G4a9918Klc4419=',
+    rawRequestXml: '<GovTalkMessage xmlns="http://www.govtalk.gov.uk/CM/envelope"><Header><MessageDetails><Class>HMRC-CT600</Class></MessageDetails></Header></GovTalkMessage>',
+    rawResponseXml: '<GovTalkMessage><Body><SuccessResponse><IRmarkReceived>G4a9918Klc4419=</IRmarkReceived></SuccessResponse></Body></GovTalkMessage>'
   }
 ];
 

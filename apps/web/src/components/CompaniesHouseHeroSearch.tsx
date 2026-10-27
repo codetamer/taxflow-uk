@@ -15,7 +15,7 @@ import {
   ShieldCheck
 } from 'lucide-react';
 
-interface SearchResultItem {
+export interface SearchResultItem {
   company_number: string;
   title: string;
   company_status: string;
@@ -24,7 +24,11 @@ interface SearchResultItem {
   date_of_creation?: string;
 }
 
-export function CompaniesHouseHeroSearch() {
+interface CompaniesHouseHeroSearchProps {
+  onSelectChange?: (company: SearchResultItem | null) => void;
+}
+
+export function CompaniesHouseHeroSearch({ onSelectChange }: CompaniesHouseHeroSearchProps) {
   const router = useRouter();
   const [query, setQuery] = useState('');
   const [results, setResults] = useState<SearchResultItem[]>([]);
@@ -36,15 +40,24 @@ export function CompaniesHouseHeroSearch() {
   const containerRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLInputElement>(null);
 
-  // Close dropdown on click outside
+  // Close dropdown on click outside or Escape
   useEffect(() => {
     function handleClickOutside(event: MouseEvent) {
       if (containerRef.current && !containerRef.current.contains(event.target as Node)) {
         setIsOpen(false);
       }
     }
+    function handleKeyDown(event: KeyboardEvent) {
+      if (event.key === 'Escape') {
+        setIsOpen(false);
+      }
+    }
     document.addEventListener('mousedown', handleClickOutside);
-    return () => document.removeEventListener('mousedown', handleClickOutside);
+    document.addEventListener('keydown', handleKeyDown);
+    return () => {
+      document.removeEventListener('mousedown', handleClickOutside);
+      document.removeEventListener('keydown', handleKeyDown);
+    };
   }, []);
 
   // Debounced search query
@@ -83,6 +96,7 @@ export function CompaniesHouseHeroSearch() {
     setSelectedCompany(company);
     setIsOpen(false);
     setQuery(company.title);
+    onSelectChange?.(company);
   };
 
   const handleClear = () => {
@@ -90,6 +104,7 @@ export function CompaniesHouseHeroSearch() {
     setQuery('');
     setResults([]);
     setIsOpen(false);
+    onSelectChange?.(null);
     if (inputRef.current) inputRef.current.focus();
   };
 

@@ -140,12 +140,12 @@ export function DirectorLoansSchedule({
                       />
                     )}
                   </td>
-                  <td className="py-2.5 px-3">
+                  <td className="py-2.5 px-3 whitespace-nowrap">
                     <input
                       type="date"
                       value={line.advanceDate}
                       onChange={(e) => handleUpdateLoan(line.id, { advanceDate: e.target.value })}
-                      className="bg-slate-50 border border-slate-200 rounded-lg px-2 py-1 text-xs focus:ring-1 focus:ring-slate-900 focus:bg-white font-mono"
+                      className="w-full min-w-[135px] bg-slate-50 border border-slate-200 rounded-lg px-2 py-1 text-xs focus:ring-1 focus:ring-slate-900 focus:bg-white font-mono"
                     />
                   </td>
                   <td className="py-2.5 px-3">
@@ -168,12 +168,12 @@ export function DirectorLoansSchedule({
                       className="w-24 bg-slate-50 border border-slate-200 rounded-lg px-2 py-1 text-xs font-mono tabular-nums text-right focus:ring-1 focus:ring-slate-900 focus:bg-white"
                     />
                   </td>
-                  <td className="py-2.5 px-3">
+                  <td className="py-2.5 px-3 whitespace-nowrap">
                     <input
                       type="date"
                       value={line.repaidDate || ''}
                       onChange={(e) => handleUpdateLoan(line.id, { repaidDate: e.target.value })}
-                      className="bg-slate-50 border border-slate-200 rounded-lg px-2 py-1 text-xs focus:ring-1 focus:ring-slate-900 focus:bg-white font-mono"
+                      className="w-full min-w-[135px] bg-slate-50 border border-slate-200 rounded-lg px-2 py-1 text-xs focus:ring-1 focus:ring-slate-900 focus:bg-white font-mono"
                     />
                   </td>
                   <td className="py-2.5 px-3 font-mono text-[11px] text-slate-600">
