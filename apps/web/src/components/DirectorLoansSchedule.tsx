@@ -10,6 +10,7 @@ export interface DirectorLoanItem {
   advanceAmount: number;
   repaidAmount: number;
   repaidDate?: string;
+  interestRate?: string;
 }
 
 interface DirectorLoansScheduleProps {
@@ -34,7 +35,8 @@ export function DirectorLoansSchedule({
       advanceDate: periodEnd ? `${periodEnd.slice(0, 4)}-05-01` : '2026-05-01',
       advanceAmount: 10000,
       repaidAmount: 0,
-      repaidDate: ''
+      repaidDate: '',
+      interestRate: '0.0% (Interest-Free)'
     };
     onChange([...loans, newLoan]);
   };
@@ -102,16 +104,17 @@ export function DirectorLoansSchedule({
         </div>
       ) : (
         <div className="overflow-x-auto border border-slate-200 rounded-xl bg-white shadow-sm">
-          <table className="min-w-[760px] w-full text-left text-xs">
+          <table className="min-w-[850px] w-full text-left text-xs">
             <thead>
               <tr className="bg-slate-50/80 border-b border-slate-200 text-[11px] text-slate-500 font-semibold">
-                <th className="py-2.5 px-3 w-[190px] min-w-[170px]">Director Name</th>
-                <th className="py-2.5 px-3 w-[140px] min-w-[130px]">Advance Date</th>
-                <th className="py-2.5 px-3 w-[110px] min-w-[100px]">Advance (£)</th>
-                <th className="py-2.5 px-3 w-[110px] min-w-[100px]">Repaid (£)</th>
-                <th className="py-2.5 px-3 w-[140px] min-w-[130px]">Repaid Date</th>
-                <th className="py-2.5 px-3 w-[70px] min-w-[65px]">Rate</th>
-                <th className="py-2.5 px-3 w-[110px] min-w-[100px] text-right">Tax Due (£)</th>
+                <th className="py-2.5 px-3 w-[180px] min-w-[160px]">Director Name</th>
+                <th className="py-2.5 px-3 w-[130px] min-w-[120px]">Advance Date</th>
+                <th className="py-2.5 px-3 w-[100px] min-w-[90px]">Advance (£)</th>
+                <th className="py-2.5 px-3 w-[100px] min-w-[90px]">Repaid (£)</th>
+                <th className="py-2.5 px-3 w-[130px] min-w-[120px]">Repaid Date</th>
+                <th className="py-2.5 px-3 w-[110px] min-w-[100px]">Interest Rate</th>
+                <th className="py-2.5 px-3 w-[65px] min-w-[60px]">s455 Rate</th>
+                <th className="py-2.5 px-3 w-[100px] min-w-[90px] text-right">Tax Due (£)</th>
                 <th className="py-2.5 px-2 text-center w-10"></th>
               </tr>
             </thead>
@@ -174,6 +177,15 @@ export function DirectorLoansSchedule({
                       value={line.repaidDate || ''}
                       onChange={(e) => handleUpdateLoan(line.id, { repaidDate: e.target.value })}
                       className="w-full min-w-[135px] bg-slate-50 border border-slate-200 rounded-lg px-2 py-1 text-xs focus:ring-1 focus:ring-slate-900 focus:bg-white font-mono"
+                    />
+                  </td>
+                  <td className="py-2.5 px-3">
+                    <input
+                      type="text"
+                      value={line.interestRate || '0.0%'}
+                      onChange={(e) => handleUpdateLoan(line.id, { interestRate: e.target.value })}
+                      placeholder="0.0%"
+                      className="w-20 bg-slate-50 border border-slate-200 rounded-lg px-2 py-1 text-xs font-mono text-slate-700 focus:ring-1 focus:ring-slate-900 focus:bg-white"
                     />
                   </td>
                   <td className="py-2.5 px-3 font-mono text-[11px] text-slate-600">

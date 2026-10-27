@@ -21,4 +21,5 @@ data/
 .vercel
 .env*.local
 .agents/
+*.pdf
 

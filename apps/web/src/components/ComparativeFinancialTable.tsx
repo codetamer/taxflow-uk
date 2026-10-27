@@ -14,6 +14,10 @@ export interface FinancialLineItem {
   onChangePrior?: (val: number) => void;
   isHeader?: boolean;
   isTotal?: boolean;
+  isLocked?: boolean;
+  isSubItem?: boolean;
+  overrideBadge?: string;
+  allowNegative?: boolean;
 }
 
 interface ComparativeFinancialTableProps {
@@ -105,9 +109,18 @@ export function ComparativeFinancialTable({
                     key={item.id} 
                     className={`transition hover:bg-slate-50/60 ${item.isTotal ? 'bg-slate-50/80 font-semibold' : ''}`}
                   >
-                    <td className="py-2 px-4">
+                    <td className={`py-2 px-4 ${item.isSubItem ? 'pl-8' : ''}`}>
                       <div className="flex items-center justify-between gap-2">
-                        <span className="text-slate-900">{item.label}</span>
+                        <div className="flex items-center space-x-2">
+                          <span className={`text-slate-900 ${item.isTotal ? 'font-bold' : item.isSubItem ? 'text-slate-700' : ''}`}>
+                            {item.label}
+                          </span>
+                          {item.overrideBadge && (
+                            <span className="text-[10px] font-semibold text-amber-800 bg-amber-50 border border-amber-200 px-1.5 py-0.5 rounded">
+                              {item.overrideBadge}
+                            </span>
+                          )}
+                        </div>
                         {item.boxLabel && (
                           <span className="text-[10px] font-mono text-slate-500 bg-slate-100 border border-slate-200/80 px-1.5 py-0.5 rounded font-normal">
                             {item.boxLabel}
@@ -118,16 +131,21 @@ export function ComparativeFinancialTable({
 
                     {/* Current Year Input */}
                     <td className="py-2 px-3 text-right">
-                      {item.isTotal ? (
-                        <span className={`font-mono tabular-nums font-bold ${item.currentValue < 0 ? 'text-amber-800' : 'text-slate-900'}`}>
-                          {formatAccounting(item.currentValue)}
+                      {item.isTotal || item.isLocked ? (
+                        <span className={`font-mono tabular-nums font-bold inline-flex items-center space-x-1.5 ${item.currentValue < 0 ? 'text-amber-800' : 'text-slate-900'}`}>
+                          <span>{formatAccounting(item.currentValue)}</span>
+                          {item.isLocked && (
+                            <span className="text-[10px] font-normal text-slate-400 bg-slate-100 border border-slate-200 px-1 rounded">
+                              Locked
+                            </span>
+                          )}
                         </span>
                       ) : (
                         <div className="relative inline-block w-28">
                           <span className="absolute left-2.5 top-1/2 -translate-y-1/2 text-slate-400 text-xs">£</span>
                           <input
                             type="number"
-                            min="0"
+                            min={item.allowNegative ? undefined : "0"}
                             value={item.currentValue === 0 ? '' : item.currentValue}
                             onChange={(e) => item.onChangeCurrent(parseFloat(e.target.value) || 0)}
                             placeholder="0"

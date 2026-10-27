@@ -342,6 +342,12 @@ export async function generateAccountsPdf(
   const netAssets = totalAssetsLessLiabilities - (data.creditorsDueAfterOneYearPence || 0);
   const pyNetAssets = pyTotalAssetsLessLiabilities;
 
+  const currentPlReserve = data.profitAndLossAccountReservePence ?? (netAssets - data.calledUpShareCapitalPence);
+  const currentShareholdersFunds = data.calledUpShareCapitalPence + currentPlReserve;
+  const pyShareCapital = py?.calledUpShareCapitalPence ?? 10000;
+  const pyPlReserve = py?.profitAndLossAccountReservePence ?? (pyNetAssets - pyShareCapital);
+  const pyShareholdersFunds = pyShareCapital + pyPlReserve;
+
   const bsColumns: TableColumn[] = [
     { header: 'Balance Sheet Line Item', width: 285, align: 'left' },
     { header: 'Notes', width: 40, align: 'center' },
@@ -417,23 +423,23 @@ export async function generateAccountsPdf(
         'Capital and reserves: Called up share capital',
         '',
         formatPounds(data.calledUpShareCapitalPence),
-        formatPounds(py?.calledUpShareCapitalPence ?? 10000)
+        formatPounds(pyShareCapital)
       ]
     },
     {
       cells: [
         'Capital and reserves: Profit and loss account reserve',
         '',
-        formatPounds(data.profitAndLossAccountReservePence),
-        formatPounds(py?.profitAndLossAccountReservePence ?? 3103900)
+        formatPounds(currentPlReserve),
+        formatPounds(pyPlReserve)
       ]
     },
     {
       cells: [
         'Total shareholders’ funds',
         '',
-        formatPounds(data.shareholderFundsPence),
-        formatPounds(py?.shareholderFundsPence ?? 3113900)
+        formatPounds(currentShareholdersFunds),
+        formatPounds(pyShareholdersFunds)
       ],
       isTotal: true,
       bold: true

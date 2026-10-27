@@ -271,7 +271,8 @@ export default function DocumentsPage() {
   const creditors = isDormant ? 0 : (f.creditorsUnderOneYear ?? 25000);
   const netCurrentAssets = debtors + cashAtBank - creditors;
   const netAssets = fixedAssets + netCurrentAssets;
-  const retainedEarnings = isDormant ? 0 : (f.openingRetainedEarnings ? f.openingRetainedEarnings + netProfit - (f.dividendsPaid || 0) : netAssets - shareCapital);
+  const retainedEarnings = isDormant ? 0 : netAssets - shareCapital;
+  const shareholdersFunds = isDormant ? shareCapital : netAssets;
 
   // Prior-Year Benchmarks for Comparative Reporting (FE-03)
   const py = {
