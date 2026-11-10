@@ -53,32 +53,32 @@ export function TermExplainer({ termId, label, children, showIcon = true }: Term
           e.stopPropagation();
           setIsOpen(!isOpen);
         }}
-        className="inline-flex items-center space-x-1 text-stone-800 hover:text-amber-700 underline decoration-stone-300 underline-offset-2 decoration-dotted font-medium transition cursor-help focus:outline-none focus:ring-1 focus:ring-amber-500 rounded"
+        className="inline-flex items-center space-x-1 text-slate-700 hover:text-emerald-700 underline decoration-slate-300 underline-offset-2 decoration-dotted font-medium transition cursor-help focus:outline-none focus:ring-1 focus:ring-emerald-500 rounded"
         title={`Click for helpful guidance on ${termData.term}`}
         aria-label={`Guidance on ${termData.term}`}
       >
         <span>{displayText}</span>
-        {showIcon && <HelpCircle className="w-3.5 h-3.5 text-stone-400 hover:text-amber-600 shrink-0" />}
+        {showIcon && <HelpCircle className="w-3.5 h-3.5 text-slate-400 hover:text-emerald-600 shrink-0" />}
       </button>
 
       {isOpen && (
         <div
           ref={popoverRef}
-          className="absolute z-50 top-full mt-2 left-1/2 -translate-x-1/2 w-80 sm:w-96 bg-white rounded-2xl shadow-2xl border border-stone-200 p-5 text-left text-stone-900 animate-in fade-in zoom-in-95 duration-150 max-h-[85vh] overflow-y-auto"
+          className="absolute z-50 top-full mt-2 left-1/2 -translate-x-1/2 w-80 sm:w-96 bg-white rounded-2xl shadow-2xl border border-slate-200 p-5 text-left text-slate-900 animate-in fade-in zoom-in-95 duration-150 max-h-[85vh] overflow-y-auto"
           role="dialog"
           aria-modal="true"
         >
           {/* Header */}
-          <div className="flex items-start justify-between pb-2 border-b border-stone-100 gap-2">
+          <div className="flex items-start justify-between pb-2 border-b border-slate-100 gap-2">
             <div>
-              <span className="text-[10px] font-bold uppercase tracking-wider text-amber-800 bg-amber-50 px-2 py-0.5 rounded-full border border-amber-200">
+              <span className="text-[10px] font-bold uppercase tracking-wider text-slate-700 bg-slate-100 px-2 py-0.5 rounded-full border border-slate-200">
                 {termData.category}
               </span>
-              <h4 className="text-sm font-bold text-stone-950 mt-1">{termData.term}</h4>
+              <h4 className="text-sm font-bold text-slate-950 mt-1">{termData.term}</h4>
             </div>
             <button
               onClick={() => setIsOpen(false)}
-              className="text-stone-400 hover:text-stone-700 p-1 rounded-lg hover:bg-stone-100 transition"
+              className="text-slate-400 hover:text-slate-700 p-1 rounded-lg hover:bg-slate-100 transition"
               aria-label="Close guidance"
             >
               <X className="w-4 h-4" />
@@ -87,29 +87,29 @@ export function TermExplainer({ termId, label, children, showIcon = true }: Term
 
           {/* Body */}
           <div className="space-y-3 pt-3 text-xs">
-            <p className="font-semibold text-stone-800 leading-snug">
+            <p className="font-semibold text-slate-800 leading-snug">
               {termData.shortSummary}
             </p>
 
-            <div className="bg-stone-50 p-3 rounded-xl border border-stone-100 space-y-1 text-stone-600 leading-relaxed">
-              <span className="font-bold text-stone-900 block">Practical Guidance:</span>
+            <div className="bg-slate-50 p-3 rounded-xl border border-slate-100 space-y-1 text-slate-600 leading-relaxed">
+              <span className="font-bold text-slate-900 block">Practical Guidance:</span>
               <p className="whitespace-pre-line">{termData.plainEnglish}</p>
             </div>
 
             {termData.example && (
-              <div className="bg-amber-50/70 p-3 rounded-xl border border-amber-200/80 space-y-1 text-stone-900 leading-relaxed">
-                <span className="font-bold block text-amber-950">Real-World Scenario:</span>
+              <div className="bg-emerald-50/60 p-3 rounded-xl border border-emerald-200/80 space-y-1 text-emerald-950 leading-relaxed">
+                <span className="font-bold block text-emerald-900">Real-World Scenario:</span>
                 <p>{termData.example}</p>
               </div>
             )}
 
-            <div className="space-y-1 text-stone-600 leading-relaxed">
-              <span className="font-bold text-stone-900 block">Why This Matters:</span>
+            <div className="space-y-1 text-slate-600 leading-relaxed">
+              <span className="font-bold text-slate-900 block">Why This Matters:</span>
               <p>{termData.whyItMatters}</p>
             </div>
 
             {termData.statutoryRef && (
-              <div className="pt-2 border-t border-stone-100 text-[10px] text-stone-400 font-mono">
+              <div className="pt-2 border-t border-slate-100 text-[10px] text-slate-400 font-mono">
                 Official Reference: {termData.statutoryRef}
               </div>
             )}

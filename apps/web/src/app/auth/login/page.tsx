@@ -3,14 +3,14 @@
 import { useState, Suspense } from 'react';
 import Link from 'next/link';
 import { useRouter, useSearchParams } from 'next/navigation';
-import { Lock, Mail, ArrowRight, ShieldCheck, AlertCircle, Building2, Sparkles, CheckCircle2 } from 'lucide-react';
+import { Lock, Mail, ArrowRight, ShieldCheck, AlertCircle, Building2, Sparkles } from 'lucide-react';
 import { TaxFlowLogo } from '@/components/TaxFlowLogo';
 
 export default function LoginPage() {
   return (
     <Suspense fallback={
       <div className="min-h-[70vh] flex items-center justify-center">
-        <div className="w-8 h-8 rounded-full border-2 border-amber-500 border-t-transparent animate-spin" />
+        <div className="w-8 h-8 rounded-full border-2 border-emerald-600 border-t-transparent animate-spin" />
       </div>
     }>
       <LoginForm />
@@ -65,10 +65,10 @@ function LoginForm() {
         {/* Header Monogram & Title */}
         <div className="flex flex-col items-center text-center space-y-3">
           <TaxFlowLogo variant="icon-only" theme="light" size={48} />
-          <h1 className="text-2xl font-bold tracking-tight text-stone-950">
+          <h1 className="text-2xl font-bold tracking-tight text-slate-950">
             Sign In to Compliance Studio
           </h1>
-          <p className="text-xs text-stone-500">
+          <p className="text-xs text-slate-500">
             Access your annual FRS 105 accounts and HMRC CT600 filings
           </p>
         </div>
@@ -83,17 +83,17 @@ function LoginForm() {
 
         {/* Reviewer Quick Access Banner */}
         {process.env.NEXT_PUBLIC_REVIEWER_MODE !== 'false' && (
-          <div className="bg-amber-50 border border-amber-200 rounded-3xl p-5 text-center space-y-3">
-            <div className="flex items-center justify-center space-x-2 text-xs font-bold text-amber-900">
-              <Sparkles className="w-4 h-4 text-amber-600" />
+          <div className="bg-slate-50 border border-slate-200 rounded-3xl p-5 text-center space-y-3 shadow-2xs">
+            <div className="flex items-center justify-center space-x-2 text-xs font-bold text-slate-900">
+              <Sparkles className="w-4 h-4 text-emerald-600" />
               <span>Reviewer Mode Active</span>
             </div>
-            <p className="text-xs text-stone-600">
+            <p className="text-xs text-slate-600">
               Authentication is bypassed for inspection. You can enter the dashboard and all filings directly.
             </p>
             <Link
               href="/dashboard"
-              className="inline-flex items-center justify-center space-x-2 w-full bg-gradient-to-r from-amber-500 to-orange-500 hover:from-amber-400 hover:to-orange-400 text-stone-950 font-bold py-2.5 rounded-xl text-xs transition shadow-xs"
+              className="inline-flex items-center justify-center space-x-2 w-full bg-emerald-600 hover:bg-emerald-700 text-white font-bold py-2.5 rounded-xl text-xs transition shadow-xs"
             >
               <span>Enter Studio Without Sign In →</span>
             </Link>
@@ -141,7 +141,7 @@ function LoginForm() {
             <button
               type="submit"
               disabled={isLoading}
-              className="w-full inline-flex items-center justify-center space-x-2 bg-gradient-to-r from-amber-500 to-orange-500 hover:from-amber-400 hover:to-orange-400 text-stone-950 font-bold py-3 rounded-xl text-xs transition shadow-xs disabled:opacity-50"
+              className="w-full inline-flex items-center justify-center space-x-2 bg-emerald-600 hover:bg-emerald-700 text-white font-bold py-3 rounded-xl text-xs transition shadow-xs disabled:opacity-50"
             >
               <span>{isLoading ? 'Authenticating...' : 'Sign In to Dashboard'}</span>
               <ArrowRight className="w-3.5 h-3.5" />
@@ -149,21 +149,21 @@ function LoginForm() {
           </form>
 
           {/* Quick Demo Logins Pill */}
-          <div className="pt-4 border-t border-stone-100 space-y-2">
-            <span className="text-[11px] font-bold text-stone-500 uppercase tracking-wider block text-center">
+          <div className="pt-4 border-t border-slate-100 space-y-2">
+            <span className="text-[11px] font-bold text-slate-500 uppercase tracking-wider block text-center">
               One-Click Demo Credentials
             </span>
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
               <button
                 type="button"
                 onClick={() => handleQuickLogin('saif@droplogicx.com', 'Password123!')}
-                className="bg-stone-50 hover:bg-stone-100 text-stone-800 border border-stone-200 text-left p-2.5 rounded-xl text-[11px] font-medium transition"
+                className="bg-slate-50 hover:bg-slate-100 text-slate-800 border border-slate-200 text-left p-2.5 rounded-xl text-[11px] font-medium transition"
               >
-                <div className="font-bold text-stone-900 flex items-center space-x-1">
-                  <Building2 className="w-3 h-3 text-amber-600" />
+                <div className="font-bold text-slate-900 flex items-center space-x-1">
+                  <Building2 className="w-3 h-3 text-emerald-600" />
                   <span>Director Demo</span>
                 </div>
-                <div className="text-[10px] text-stone-500 truncate">saif@droplogicx.com</div>
+                <div className="text-[10px] text-slate-500 truncate">saif@droplogicx.com</div>
               </button>
 
               <button
@@ -172,7 +172,7 @@ function LoginForm() {
                 className="bg-slate-50 hover:bg-slate-100 text-slate-800 border border-slate-200 text-left p-2.5 rounded-xl text-[11px] font-medium transition"
               >
                 <div className="font-bold text-slate-900 flex items-center space-x-1">
-                  <ShieldCheck className="w-3 h-3 text-amber-600" />
+                  <ShieldCheck className="w-3 h-3 text-emerald-600" />
                   <span>Admin Demo</span>
                 </div>
                 <div className="text-[10px] text-slate-500 truncate">admin@taxflow.co.uk</div>

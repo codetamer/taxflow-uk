@@ -137,9 +137,9 @@ export function CompaniesHouseHeroSearch({ onSelectChange }: CompaniesHouseHeroS
     <div ref={containerRef} className="w-full max-w-2xl mx-auto text-left relative z-30">
       {/* Search Input Box */}
       <div className="relative group">
-        <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none text-stone-400 group-focus-within:text-amber-500 transition-colors">
+        <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none text-slate-400 group-focus-within:text-emerald-600 transition-colors">
           {isLoading ? (
-            <Loader2 className="w-5 h-5 animate-spin text-amber-600" />
+            <Loader2 className="w-5 h-5 animate-spin text-emerald-600" />
           ) : (
             <Search className="w-5 h-5" />
           )}
@@ -158,7 +158,7 @@ export function CompaniesHouseHeroSearch({ onSelectChange }: CompaniesHouseHeroS
           }}
           onKeyDown={handleKeyDown}
           placeholder="Search Companies House by name or CRN (e.g. Droplogicx or 15152081)..."
-          className="w-full pl-11 pr-24 py-4 rounded-2xl bg-white border-2 border-stone-200/90 shadow-lg text-stone-900 placeholder:text-stone-400 font-medium text-sm sm:text-base focus:outline-none focus:border-amber-500 focus:ring-4 focus:ring-amber-500/10 transition"
+          className="w-full pl-11 pr-24 py-4 rounded-2xl bg-white border-2 border-slate-200/90 shadow-lg text-slate-900 placeholder:text-slate-400 font-medium text-sm sm:text-base focus:outline-none focus:border-emerald-600 focus:ring-4 focus:ring-emerald-500/10 transition"
         />
 
         <div className="absolute inset-y-0 right-0 pr-3 flex items-center space-x-1.5">
@@ -166,13 +166,13 @@ export function CompaniesHouseHeroSearch({ onSelectChange }: CompaniesHouseHeroS
             <button
               onClick={handleClear}
               type="button"
-              className="p-1 rounded-lg text-stone-400 hover:text-stone-600 hover:bg-stone-100 transition"
+              className="p-1 rounded-lg text-slate-400 hover:text-slate-600 hover:bg-slate-100 transition"
               title="Clear search"
             >
               <X className="w-4 h-4" />
             </button>
           )}
-          <span className="hidden sm:inline-flex items-center px-2 py-0.5 rounded text-[10px] font-mono font-semibold bg-stone-100 text-stone-500 border border-stone-200">
+          <span className="hidden sm:inline-flex items-center px-2 py-0.5 rounded text-[10px] font-mono font-semibold bg-slate-100 text-slate-500 border border-slate-200">
             CH API
           </span>
         </div>
@@ -180,19 +180,19 @@ export function CompaniesHouseHeroSearch({ onSelectChange }: CompaniesHouseHeroS
 
       {/* Quick Search Chips */}
       {!selectedCompany && query.length === 0 && (
-        <div className="flex flex-wrap items-center gap-2 mt-2.5 px-1 text-xs text-stone-500">
-          <span className="font-medium text-stone-400">Quick lookup:</span>
+        <div className="flex flex-wrap items-center gap-2 mt-2.5 px-1 text-xs text-slate-500">
+          <span className="font-medium text-slate-400">Quick lookup:</span>
           <button
             type="button"
             onClick={() => setQuery('DROPLOGICX LTD')}
-            className="px-2.5 py-1 rounded-full bg-stone-100/90 hover:bg-amber-50 hover:text-amber-800 hover:border-amber-200 border border-stone-200 text-stone-700 transition"
+            className="px-2.5 py-1 rounded-full bg-slate-100/90 hover:bg-emerald-50 hover:text-emerald-800 hover:border-emerald-200 border border-slate-200 text-slate-700 transition"
           >
             DROPLOGICX LTD (15152081)
           </button>
           <button
             type="button"
             onClick={() => setQuery('COVENTRY CLOUD TECH LTD')}
-            className="px-2.5 py-1 rounded-full bg-stone-100/90 hover:bg-amber-50 hover:text-amber-800 hover:border-amber-200 border border-stone-200 text-stone-700 transition"
+            className="px-2.5 py-1 rounded-full bg-slate-100/90 hover:bg-emerald-50 hover:text-emerald-800 hover:border-emerald-200 border border-slate-200 text-slate-700 transition"
           >
             COVENTRY CLOUD TECH LTD (12345678)
           </button>
@@ -201,8 +201,8 @@ export function CompaniesHouseHeroSearch({ onSelectChange }: CompaniesHouseHeroS
 
       {/* Autocomplete Dropdown */}
       {isOpen && results.length > 0 && !selectedCompany && (
-        <div className="absolute top-full mt-2 w-full bg-white rounded-2xl border border-stone-200 shadow-2xl overflow-hidden divide-y divide-stone-100 animate-in fade-in-50 zoom-in-95 duration-150 z-50">
-          <div className="bg-stone-50 px-4 py-2 text-[11px] font-semibold text-stone-500 uppercase tracking-wider flex items-center justify-between">
+        <div className="absolute top-full mt-2 w-full bg-white rounded-2xl border border-slate-200 shadow-2xl overflow-hidden divide-y divide-slate-100 animate-in fade-in-50 zoom-in-95 duration-150 z-50">
+          <div className="bg-slate-50 px-4 py-2 text-[11px] font-semibold text-slate-500 uppercase tracking-wider flex items-center justify-between">
             <span>Companies House Live Registry Matches</span>
             <span>{results.length} results</span>
           </div>
@@ -215,7 +215,7 @@ export function CompaniesHouseHeroSearch({ onSelectChange }: CompaniesHouseHeroS
                 onClick={() => handleSelect(item)}
                 onMouseEnter={() => setSelectedIndex(idx)}
                 className={`w-full text-left px-4 py-3 flex items-start justify-between gap-3 transition ${
-                  selectedIndex === idx ? 'bg-amber-50/70' : 'hover:bg-stone-50'
+                  selectedIndex === idx ? 'bg-slate-100/80' : 'hover:bg-slate-50'
                 }`}
               >
                 <div className="space-y-1">
@@ -253,24 +253,24 @@ export function CompaniesHouseHeroSearch({ onSelectChange }: CompaniesHouseHeroS
 
       {/* Selected Company Entity Card */}
       {selectedCompany && (
-        <div className="mt-4 bg-gradient-to-b from-white to-stone-50/70 rounded-2xl border-2 border-amber-500/50 shadow-xl p-5 space-y-4 animate-in fade-in-50 duration-200">
+        <div className="mt-4 bg-white rounded-2xl border-2 border-emerald-500/40 shadow-xl p-5 space-y-4 animate-in fade-in-50 duration-200">
           <div className="flex items-start justify-between gap-4">
             <div className="space-y-1">
               <div className="flex items-center space-x-2">
-                <span className="inline-flex items-center space-x-1 bg-amber-100 text-amber-900 px-2 py-0.5 rounded-full text-xs font-bold border border-amber-200">
-                  <CheckCircle2 className="w-3.5 h-3.5 text-amber-600" />
+                <span className="inline-flex items-center space-x-1 bg-emerald-100 text-emerald-900 px-2 py-0.5 rounded-full text-xs font-bold border border-emerald-200">
+                  <CheckCircle2 className="w-3.5 h-3.5 text-emerald-600" />
                   <span>Verified Legal Entity</span>
                 </span>
-                <span className="bg-stone-100 text-stone-700 text-xs px-2 py-0.5 rounded font-mono font-semibold">
+                <span className="bg-slate-100 text-slate-700 text-xs px-2 py-0.5 rounded font-mono font-semibold">
                   CRN: {selectedCompany.company_number}
                 </span>
               </div>
-              <h3 className="text-xl font-bold text-stone-950 tracking-tight">
+              <h3 className="text-xl font-bold text-slate-950 tracking-tight">
                 {selectedCompany.title}
               </h3>
               {selectedCompany.address_snippet && (
-                <div className="flex items-center space-x-1.5 text-xs text-stone-600">
-                  <MapPin className="w-3.5 h-3.5 text-stone-400 shrink-0" />
+                <div className="flex items-center space-x-1.5 text-xs text-slate-600">
+                  <MapPin className="w-3.5 h-3.5 text-slate-400 shrink-0" />
                   <span>{selectedCompany.address_snippet}</span>
                 </div>
               )}
@@ -279,25 +279,25 @@ export function CompaniesHouseHeroSearch({ onSelectChange }: CompaniesHouseHeroS
             <button
               onClick={handleClear}
               type="button"
-              className="text-xs text-stone-400 hover:text-stone-600 underline font-medium"
+              className="text-xs text-slate-400 hover:text-slate-600 underline font-medium"
             >
               Change
             </button>
           </div>
 
-          <div className="bg-amber-500/10 border border-amber-500/20 rounded-xl p-3 flex items-center justify-between text-xs text-stone-900">
+          <div className="bg-slate-50 border border-slate-200/80 rounded-xl p-3 flex items-center justify-between text-xs text-slate-800">
             <div className="flex items-center space-x-2">
-              <ShieldCheck className="w-4 h-4 text-amber-600 shrink-0" />
+              <ShieldCheck className="w-4 h-4 text-emerald-600 shrink-0" />
               <span><strong>Eligible for FRS 105 Micro-Entity Standard:</strong> Simplified 2-page balance sheet with 0p rejection defense.</span>
             </div>
-            <span className="font-mono font-bold text-amber-700">£49 Net</span>
+            <span className="font-mono font-bold text-emerald-700">£49 Net</span>
           </div>
 
           <div className="flex flex-col sm:flex-row items-center gap-3 pt-1">
             <button
               type="button"
               onClick={handleStartFiling}
-              className="w-full sm:w-auto flex-1 inline-flex items-center justify-center space-x-2 bg-gradient-to-r from-amber-500 to-orange-500 hover:from-amber-400 hover:to-orange-400 text-stone-950 font-bold px-6 py-3.5 rounded-xl transition shadow-md"
+              className="w-full sm:w-auto flex-1 inline-flex items-center justify-center space-x-2 bg-emerald-600 hover:bg-emerald-500 text-white font-bold px-6 py-3.5 rounded-xl transition shadow-md"
             >
               <span>Start Micro-Entity Filing for {selectedCompany.title}</span>
               <ArrowRight className="w-4 h-4" />
@@ -306,7 +306,7 @@ export function CompaniesHouseHeroSearch({ onSelectChange }: CompaniesHouseHeroS
             <button
               type="button"
               onClick={() => router.push(`/auth/signup?crn=${selectedCompany.company_number}`)}
-              className="w-full sm:w-auto inline-flex items-center justify-center space-x-2 bg-white hover:bg-slate-100 text-slate-800 border border-slate-300 font-semibold px-4 py-3.5 rounded-xl text-xs transition"
+              className="w-full sm:w-auto inline-flex items-center justify-center space-x-2 bg-white hover:bg-slate-50 text-slate-700 border border-slate-200 font-semibold px-4 py-3.5 rounded-xl text-xs transition shadow-2xs"
             >
               <span>Create Director Account First</span>
             </button>

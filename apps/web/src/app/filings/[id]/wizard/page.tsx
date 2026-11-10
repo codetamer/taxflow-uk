@@ -75,7 +75,7 @@ export default function WizardPage() {
     <Suspense
       fallback={
         <div className="flex items-center justify-center min-h-[400px]">
-          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-stone-900" />
+          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-slate-900" />
         </div>
       }
     >
@@ -1235,17 +1235,17 @@ function WizardContent() {
             </div>
           )}
           {isAutosaving && (
-            <div className="flex items-center space-x-1.5 text-[11px] font-medium text-stone-500 bg-stone-100 px-2.5 py-1 rounded-lg">
-              <RefreshCw className="w-3 h-3 animate-spin text-stone-400" />
+            <div className="flex items-center space-x-1.5 text-[11px] font-medium text-slate-500 bg-slate-100 border border-slate-200 px-2.5 py-1 rounded-lg">
+              <RefreshCw className="w-3 h-3 animate-spin text-slate-400" />
               <span>Saving...</span>
             </div>
           )}
           <button
             type="button"
             onClick={() => setIsGlossaryOpen(true)}
-            className="inline-flex items-center space-x-1.5 text-xs font-semibold text-amber-900 bg-amber-50 hover:bg-amber-100 border border-amber-200 px-3 py-1.5 rounded-xl transition"
+            className="inline-flex items-center space-x-1.5 text-xs font-semibold text-slate-700 bg-white hover:bg-slate-50 border border-slate-200 px-3 py-1.5 rounded-xl transition shadow-2xs"
           >
-            <BookOpen className="w-3.5 h-3.5 text-amber-700" />
+            <BookOpen className="w-3.5 h-3.5 text-slate-500" />
             <span>Tax Guide</span>
           </button>
         </div>
@@ -1253,7 +1253,7 @@ function WizardContent() {
 
       {/* Custom Dates Notice if active */}
       {isCustomDates && (
-        <div className="p-4 bg-amber-50 border border-amber-200 rounded-2xl flex items-start space-x-3 text-amber-950 text-xs">
+        <div className="p-4 bg-amber-50/70 border border-amber-200 rounded-2xl flex items-start space-x-3 text-amber-950 text-xs">
           <Info className="w-5 h-5 text-amber-600 shrink-0 mt-0.5" />
           <div className="space-y-0.5">
             <p className="font-bold">Custom Accounting Period Active</p>
@@ -1281,30 +1281,30 @@ function WizardContent() {
                       setCurrentStep(s.num);
                     }}
                     disabled={s.num > 1 && !isStep1Valid}
-                    className={`flex items-center gap-2.5 px-3 py-2 rounded-xl text-left transition-all ${
+                    className={`flex items-center gap-2.5 px-3.5 py-2 rounded-xl text-left transition-all ${
                       isActive
-                        ? 'bg-indigo-50 border border-indigo-200 text-indigo-950 font-bold'
+                        ? 'bg-slate-900 text-white font-bold shadow-xs'
                         : isCompleted
-                        ? 'text-slate-800 hover:bg-slate-50'
+                        ? 'text-slate-800 hover:bg-slate-100/60'
                         : s.num > 1 && !isStep1Valid
                         ? 'text-slate-300 opacity-50 cursor-not-allowed'
-                        : 'text-slate-400 hover:bg-slate-50'
+                        : 'text-slate-500 hover:bg-slate-100/60'
                     }`}
                   >
                     <span
                       className={`w-7 h-7 rounded-full flex items-center justify-center text-xs font-bold shrink-0 ${
                         isActive
-                          ? 'bg-indigo-600 text-white'
+                          ? 'bg-emerald-500 text-slate-950 font-black'
                           : isCompleted
                           ? 'bg-emerald-600 text-white'
-                          : 'bg-slate-200 text-slate-700'
+                          : 'bg-slate-100 text-slate-600 border border-slate-200'
                       }`}
                     >
                       {isCompleted ? '✓' : s.num}
                     </span>
                     <div>
-                      <div className="text-xs font-bold">{s.title}</div>
-                      <div className={`text-[11px] hidden sm:block ${isActive ? 'text-indigo-700' : 'text-slate-500'}`}>
+                      <div className={`text-xs font-bold ${isActive ? 'text-white' : 'text-slate-900'}`}>{s.title}</div>
+                      <div className={`text-[11px] hidden sm:block ${isActive ? 'text-slate-300' : 'text-slate-500'}`}>
                         {s.desc}
                       </div>
                     </div>
@@ -1319,9 +1319,9 @@ function WizardContent() {
             <button
               type="button"
               onClick={() => setIsImportModalOpen(true)}
-              className="px-3 py-1.5 rounded-lg border border-slate-200 hover:bg-slate-50 text-xs font-medium text-slate-700 flex items-center gap-1.5 transition"
+              className="px-3 py-1.5 rounded-lg border border-slate-200 hover:bg-slate-50 text-xs font-medium text-slate-700 flex items-center gap-1.5 transition shadow-2xs"
             >
-              <UploadCloud className="w-3.5 h-3.5 text-indigo-600" />
+              <UploadCloud className="w-3.5 h-3.5 text-slate-600" />
               <span>Import Statement (PDF/CSV)</span>
             </button>
           </div>
@@ -1361,16 +1361,18 @@ function WizardContent() {
                     onClick={() => handleRequestArchetype('TRADING')}
                     className={`p-4 rounded-2xl border-2 transition cursor-pointer flex flex-col justify-between space-y-2 ${
                       form.companyType === 'TRADING'
-                        ? 'border-slate-900 bg-slate-50/70 shadow-xs ring-1 ring-slate-900'
+                        ? 'border-slate-900 bg-slate-50/80 shadow-xs ring-1 ring-slate-900'
                         : 'border-slate-200 hover:border-slate-300 bg-white'
                     }`}
                   >
                     <div className="flex items-center justify-between">
                       <div className="flex items-center space-x-2">
-                        <Briefcase className={`w-4 h-4 ${form.companyType === 'TRADING' ? 'text-amber-600' : 'text-slate-400'}`} />
+                        <Briefcase className={`w-4 h-4 ${form.companyType === 'TRADING' ? 'text-emerald-600' : 'text-slate-400'}`} />
                         <span className="font-bold text-xs text-slate-900">Trading Company</span>
                       </div>
-                      <span className="text-[10px] font-semibold px-2 py-0.5 rounded-full bg-slate-200/80 text-slate-700">
+                      <span className={`text-[10px] font-semibold px-2 py-0.5 rounded-full ${
+                        form.companyType === 'TRADING' ? 'bg-slate-900 text-white' : 'bg-slate-100 text-slate-600'
+                      }`}>
                         FRS 105
                       </span>
                     </div>
@@ -1384,16 +1386,18 @@ function WizardContent() {
                     onClick={() => handleRequestArchetype('PROPERTY')}
                     className={`p-4 rounded-2xl border-2 transition cursor-pointer flex flex-col justify-between space-y-2 ${
                       form.companyType === 'PROPERTY'
-                        ? 'border-indigo-600 bg-indigo-50/50 shadow-xs ring-1 ring-indigo-600'
+                        ? 'border-slate-900 bg-slate-50/80 shadow-xs ring-1 ring-slate-900'
                         : 'border-slate-200 hover:border-slate-300 bg-white'
                     }`}
                   >
                     <div className="flex items-center justify-between">
                       <div className="flex items-center space-x-2">
-                        <Home className={`w-4 h-4 ${form.companyType === 'PROPERTY' ? 'text-indigo-600' : 'text-slate-400'}`} />
-                        <span className="font-bold text-xs text-indigo-950">Property Company (SPV)</span>
+                        <Home className={`w-4 h-4 ${form.companyType === 'PROPERTY' ? 'text-emerald-600' : 'text-slate-400'}`} />
+                        <span className="font-bold text-xs text-slate-900">Property Company (SPV)</span>
                       </div>
-                      <span className="text-[10px] font-semibold px-2 py-0.5 rounded-full bg-indigo-100 text-indigo-800">
+                      <span className={`text-[10px] font-semibold px-2 py-0.5 rounded-full ${
+                        form.companyType === 'PROPERTY' ? 'bg-slate-900 text-white' : 'bg-slate-100 text-slate-600'
+                      }`}>
                         Schedule A
                       </span>
                     </div>
@@ -1407,16 +1411,18 @@ function WizardContent() {
                     onClick={() => handleRequestArchetype('DORMANT')}
                     className={`p-4 rounded-2xl border-2 transition cursor-pointer flex flex-col justify-between space-y-2 ${
                       form.companyType === 'DORMANT'
-                        ? 'border-emerald-600 bg-emerald-50/50 shadow-xs ring-1 ring-emerald-600'
+                        ? 'border-slate-900 bg-slate-50/80 shadow-xs ring-1 ring-slate-900'
                         : 'border-slate-200 hover:border-slate-300 bg-white'
                     }`}
                   >
                     <div className="flex items-center justify-between">
                       <div className="flex items-center space-x-2">
                         <PauseCircle className={`w-4 h-4 ${form.companyType === 'DORMANT' ? 'text-emerald-600' : 'text-slate-400'}`} />
-                        <span className="font-bold text-xs text-emerald-950">Dormant Company</span>
+                        <span className="font-bold text-xs text-slate-900">Dormant Company</span>
                       </div>
-                      <span className="text-[10px] font-semibold px-2 py-0.5 rounded-full bg-emerald-100 text-emerald-800">
+                      <span className={`text-[10px] font-semibold px-2 py-0.5 rounded-full ${
+                        form.companyType === 'DORMANT' ? 'bg-slate-900 text-white' : 'bg-slate-100 text-slate-600'
+                      }`}>
                         CA 2006 s480
                       </span>
                     </div>
@@ -1430,16 +1436,18 @@ function WizardContent() {
                     onClick={() => handleRequestArchetype('MIXED')}
                     className={`p-4 rounded-2xl border-2 transition cursor-pointer flex flex-col justify-between space-y-2 ${
                       form.companyType === 'MIXED'
-                        ? 'border-purple-600 bg-purple-50/50 shadow-xs ring-1 ring-purple-600'
+                        ? 'border-slate-900 bg-slate-50/80 shadow-xs ring-1 ring-slate-900'
                         : 'border-slate-200 hover:border-slate-300 bg-white'
                     }`}
                   >
                     <div className="flex items-center justify-between">
                       <div className="flex items-center space-x-2">
-                        <Layers className={`w-4 h-4 ${form.companyType === 'MIXED' ? 'text-purple-600' : 'text-slate-400'}`} />
-                        <span className="font-bold text-xs text-purple-950">Mixed Income (Advanced)</span>
+                        <Layers className={`w-4 h-4 ${form.companyType === 'MIXED' ? 'text-emerald-600' : 'text-slate-400'}`} />
+                        <span className="font-bold text-xs text-slate-900">Mixed Income (Advanced)</span>
                       </div>
-                      <span className="text-[10px] font-semibold px-2 py-0.5 rounded-full bg-purple-100 text-purple-800">
+                      <span className={`text-[10px] font-semibold px-2 py-0.5 rounded-full ${
+                        form.companyType === 'MIXED' ? 'bg-slate-900 text-white' : 'bg-slate-100 text-slate-600'
+                      }`}>
                         Multi-Stream
                       </span>
                     </div>
@@ -1496,7 +1504,7 @@ function WizardContent() {
                       type="button"
                       onClick={() => fetchPriorYearAccounts()}
                       disabled={isFetchingPriorYear}
-                      className="px-2.5 py-1 rounded-lg bg-indigo-50 hover:bg-indigo-100 text-indigo-700 text-xs font-semibold transition"
+                      className="px-2.5 py-1 rounded-lg bg-slate-100 hover:bg-slate-200 text-slate-800 border border-slate-200 text-xs font-semibold transition"
                     >
                       {isFetchingPriorYear ? 'Syncing...' : '↻ Sync Prior Year iXBRL'}
                     </button>
@@ -1611,10 +1619,10 @@ function WizardContent() {
               </div>
 
               {/* Prior Year Accounts Auto-Sync Card */}
-              <div className="bg-gradient-to-br from-indigo-50/70 via-white to-purple-50/50 p-5 rounded-2xl border border-indigo-100 shadow-2xs space-y-3">
+              <div className="bg-slate-50 border border-slate-200/90 p-5 rounded-2xl shadow-2xs space-y-3">
                 <div className="flex items-start justify-between">
                   <div className="flex items-center space-x-2.5">
-                    <div className="w-8 h-8 rounded-xl bg-indigo-600/10 flex items-center justify-center text-indigo-700">
+                    <div className="w-8 h-8 rounded-xl bg-emerald-500/10 flex items-center justify-center text-emerald-700">
                       <Sparkles className="w-4 h-4" />
                     </div>
                     <div>
@@ -1630,7 +1638,7 @@ function WizardContent() {
                     type="button"
                     onClick={() => fetchPriorYearAccounts()}
                     disabled={isFetchingPriorYear || !form.crn}
-                    className="inline-flex items-center space-x-1 px-2.5 py-1 text-[11px] font-semibold text-indigo-700 bg-white hover:bg-indigo-50 border border-indigo-200 rounded-lg transition disabled:opacity-50"
+                    className="inline-flex items-center space-x-1 px-2.5 py-1 text-[11px] font-semibold text-slate-700 bg-white hover:bg-slate-100 border border-slate-200 rounded-lg transition disabled:opacity-50 shadow-2xs"
                   >
                     <RefreshCw className={`w-3 h-3 ${isFetchingPriorYear ? 'animate-spin' : ''}`} />
                     <span>{isFetchingPriorYear ? 'Retrieving...' : 'Sync Now'}</span>
@@ -1638,8 +1646,8 @@ function WizardContent() {
                 </div>
 
                 {priorYearData && priorYearData.figures && (
-                  <div className="bg-white/80 p-3 rounded-xl border border-indigo-50 text-[11px] space-y-1.5">
-                    <div className="flex items-center justify-between text-indigo-950 font-semibold">
+                  <div className="bg-white p-3 rounded-xl border border-slate-200 text-[11px] space-y-1.5">
+                    <div className="flex items-center justify-between text-slate-900 font-semibold">
                       <span>Period ended {priorYearData.periodEnd} ({priorYearData.source || 'Companies House'})</span>
                       <span className="text-[10px] bg-emerald-100 text-emerald-800 px-2 py-0.5 rounded-full font-bold">
                         Verified iXBRL
@@ -1740,9 +1748,9 @@ function WizardContent() {
                   <button
                     type="button"
                     onClick={() => setIsImportModalOpen(true)}
-                    className="inline-flex items-center space-x-1.5 px-4 py-2 rounded-xl text-xs font-bold bg-[#0B1528] text-white hover:bg-slate-800 transition shadow-xs shrink-0"
+                    className="inline-flex items-center space-x-1.5 px-4 py-2 rounded-xl text-xs font-bold bg-slate-900 text-white hover:bg-slate-800 transition shadow-xs shrink-0"
                   >
-                    <UploadCloud className="w-4 h-4 text-amber-400" />
+                    <UploadCloud className="w-4 h-4 text-emerald-400" />
                     <span>Import Bank CSV / Statement</span>
                   </button>
                 )}
@@ -1777,7 +1785,7 @@ function WizardContent() {
                     className="w-full p-5 sm:p-6 text-left flex items-center justify-between hover:bg-slate-50/50 transition border-b border-slate-100"
                   >
                     <div className="flex items-center space-x-3">
-                      <span className="w-8 h-8 rounded-xl bg-amber-50 text-amber-900 flex items-center justify-center font-bold text-xs">
+                      <span className="w-8 h-8 rounded-xl bg-slate-100 text-slate-800 flex items-center justify-center font-bold text-xs">
                         P&amp;L
                       </span>
                       <div>
@@ -1824,13 +1832,13 @@ function WizardContent() {
                     className="w-full p-5 sm:p-6 text-left flex items-center justify-between hover:bg-slate-50/50 transition border-b border-slate-100"
                   >
                     <div className="flex items-center space-x-3">
-                      <span className="w-8 h-8 rounded-xl bg-indigo-50 text-indigo-900 flex items-center justify-center font-bold text-xs">
+                      <span className="w-8 h-8 rounded-xl bg-slate-100 text-slate-800 flex items-center justify-center font-bold text-xs">
                         SPV
                       </span>
                       <div>
                         <h3 className="text-base font-bold text-slate-950 flex items-center space-x-2">
                           <span>Property Rental Schedule A (CTA 2009 Part 4 &amp; 5)</span>
-                          <span className="text-[10px] font-mono text-indigo-700 bg-indigo-50 border border-indigo-200 px-2 py-0.5 rounded-full font-semibold">
+                          <span className="text-[10px] font-mono text-slate-700 bg-slate-100 border border-slate-200 px-2 py-0.5 rounded-full font-semibold">
                             Buy-to-Let SPV
                           </span>
                         </h3>
@@ -1840,7 +1848,7 @@ function WizardContent() {
                       </div>
                     </div>
                     <div className="flex items-center space-x-3">
-                      <span className="text-xs font-mono font-bold text-indigo-950">
+                      <span className="text-xs font-mono font-bold text-slate-900">
                         Box 190: {formatAccounting(propertyNetTaxableProfit)}
                       </span>
                       {expandedPanels.propertySchedule ? <ChevronUp className="w-4 h-4 text-slate-400" /> : <ChevronDown className="w-4 h-4 text-slate-400" />}
@@ -1953,18 +1961,18 @@ function WizardContent() {
 
                     {/* A7: Director Loans Debtors Schedule Integration Prompt */}
                     {totalOutstandingLoans > 0 && (
-                      <div className="bg-indigo-50/80 border border-indigo-200 rounded-2xl p-4 flex flex-col sm:flex-row sm:items-center justify-between gap-3 text-xs">
-                        <div className="space-y-1 text-indigo-950">
+                      <div className="bg-slate-50 border border-slate-200/90 rounded-2xl p-4 flex flex-col sm:flex-row sm:items-center justify-between gap-3 text-xs">
+                        <div className="space-y-1 text-slate-900">
                           <div className="flex items-center space-x-2">
-                            <span className="font-bold flex items-center gap-1.5 text-indigo-900">
-                              <Scale className="w-4 h-4 text-indigo-700" />
+                            <span className="font-bold flex items-center gap-1.5 text-slate-900">
+                              <Scale className="w-4 h-4 text-emerald-700" />
                               Director Loan Schedule Debtors Integration
                             </span>
-                            <span className="px-2 py-0.5 rounded-full bg-indigo-100 text-indigo-800 font-mono text-[10px] font-bold">
+                            <span className="px-2 py-0.5 rounded-full bg-slate-200 text-slate-800 font-mono text-[10px] font-bold">
                               £{totalOutstandingLoans.toLocaleString()} Outstanding
                             </span>
                           </div>
-                          <p className="text-[11px] text-indigo-800 leading-relaxed">
+                          <p className="text-[11px] text-slate-600 leading-relaxed">
                             Under UK GAAP, overdrawn director loan balances are classified as Debtors. Is your £{totalOutstandingLoans.toLocaleString()} loan balance already included in the Debtors figure above?
                           </p>
                         </div>
@@ -1974,7 +1982,7 @@ function WizardContent() {
                             onClick={() => setForm((prev) => ({ ...prev, isLoanIncludedInDebtors: true }))}
                             className={`px-3 py-1.5 rounded-xl text-xs font-semibold transition border ${
                               form.isLoanIncludedInDebtors
-                                ? 'bg-indigo-600 text-white border-indigo-600 shadow-2xs'
+                                ? 'bg-slate-900 text-white border-slate-900 shadow-2xs'
                                 : 'bg-white text-slate-700 border-slate-200 hover:bg-slate-50'
                             }`}
                           >
@@ -1985,7 +1993,7 @@ function WizardContent() {
                             onClick={() => setForm((prev) => ({ ...prev, isLoanIncludedInDebtors: false }))}
                             className={`px-3 py-1.5 rounded-xl text-xs font-semibold transition border ${
                               !form.isLoanIncludedInDebtors
-                                ? 'bg-indigo-600 text-white border-indigo-600 shadow-2xs'
+                                ? 'bg-slate-900 text-white border-slate-900 shadow-2xs'
                                 : 'bg-white text-slate-700 border-slate-200 hover:bg-slate-50'
                             }`}
                           >
@@ -2236,7 +2244,7 @@ function WizardContent() {
                     className="w-full p-5 sm:p-6 text-left flex items-center justify-between hover:bg-slate-50/50 transition border-b border-slate-100"
                   >
                     <div className="flex items-center space-x-3">
-                      <span className="w-8 h-8 rounded-xl bg-purple-50 text-purple-900 flex items-center justify-center font-bold text-xs">
+                      <span className="w-8 h-8 rounded-xl bg-slate-100 text-slate-800 flex items-center justify-center font-bold text-xs">
                         AIA
                       </span>
                       <div>
@@ -2615,7 +2623,7 @@ function WizardContent() {
               <div className="bg-slate-900 text-white rounded-3xl p-6 sm:p-8 shadow-xl space-y-6">
                 <div className="flex flex-col sm:flex-row sm:items-start justify-between gap-4">
                   <div className="space-y-1">
-                    <span className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-[10px] font-semibold uppercase tracking-wider bg-indigo-500/20 text-indigo-300 border border-indigo-400/30">
+                    <span className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-[10px] font-semibold uppercase tracking-wider bg-emerald-500/20 text-emerald-300 border border-emerald-400/30">
                       Simultaneous Dual-Gateway Dispatch
                     </span>
                     <h3 className="text-xl font-bold tracking-tight">Approve &amp; Transmit Statutory Returns</h3>
@@ -2641,7 +2649,7 @@ function WizardContent() {
                       value="dual"
                       checked={filingScope === 'dual'}
                       onChange={() => setFilingScope('dual')}
-                      className="text-indigo-500 focus:ring-indigo-500"
+                      className="text-emerald-500 focus:ring-emerald-500"
                     />
                     <span>
                       <strong className="text-white">Full Dual Filing (Recommended):</strong> Companies House FRS 105 + HMRC CT600 ({isDormant ? '£0.00' : '£49.00'})
@@ -2654,7 +2662,7 @@ function WizardContent() {
                       value="ch_only"
                       checked={filingScope === 'ch_only'}
                       onChange={() => setFilingScope('ch_only')}
-                      className="text-indigo-500 focus:ring-indigo-500"
+                      className="text-emerald-500 focus:ring-emerald-500"
                     />
                     <span>Companies House Accounts Only (£0.00 Free)</span>
                   </label>
@@ -2674,8 +2682,8 @@ function WizardContent() {
                     onClick={() => alert(`TaxFlow UK: Validated & ready to transmit ${filingScope === 'dual' ? 'dual Companies House & HMRC CT600 returns' : 'Companies House accounts'}!`)}
                     className={`px-6 py-3.5 rounded-2xl font-bold text-sm shadow-lg transition flex items-center justify-center gap-2 ${
                       canTransmit
-                        ? 'bg-gradient-to-r from-amber-500 to-orange-500 hover:from-amber-400 hover:to-orange-400 text-stone-950 cursor-pointer'
-                        : 'bg-stone-800 text-stone-500 cursor-not-allowed border border-stone-700'
+                        ? 'bg-emerald-600 hover:bg-emerald-500 text-white cursor-pointer'
+                        : 'bg-slate-800 text-slate-500 cursor-not-allowed border border-slate-700'
                     }`}
                   >
                     <Lock className="w-4 h-4" />
@@ -2701,8 +2709,8 @@ function WizardContent() {
               disabled={currentStep === 1}
               className={`inline-flex items-center space-x-1.5 px-4 py-2.5 rounded-xl text-xs font-semibold transition ${
                 currentStep === 1
-                  ? 'opacity-40 cursor-not-allowed text-stone-400'
-                  : 'bg-white hover:bg-stone-50 text-stone-700 border border-stone-300'
+                  ? 'opacity-40 cursor-not-allowed text-slate-400 border border-slate-200'
+                  : 'bg-white hover:bg-slate-50 text-slate-700 border border-slate-200'
               }`}
             >
               <ArrowLeft className="w-3.5 h-3.5" />
@@ -2713,13 +2721,13 @@ function WizardContent() {
               <button
                 type="button"
                 onClick={handleSaveDraft}
-                className="inline-flex items-center space-x-1.5 px-3.5 py-2 rounded-xl text-xs font-semibold bg-white border border-stone-300 text-stone-700 hover:bg-stone-50 transition"
+                className="inline-flex items-center space-x-1.5 px-3.5 py-2 rounded-xl text-xs font-semibold bg-white border border-slate-200 text-slate-700 hover:bg-slate-50 transition shadow-2xs"
               >
-                <Save className="w-3.5 h-3.5 text-stone-500" />
+                <Save className="w-3.5 h-3.5 text-slate-500" />
                 <span>Save Draft</span>
               </button>
               {saveStatus && (
-                <span className="text-xs font-bold text-amber-600 animate-fade-in">
+                <span className="text-xs font-bold text-emerald-600 animate-fade-in">
                   {saveStatus}
                 </span>
               )}
@@ -2735,8 +2743,8 @@ function WizardContent() {
                 disabled={currentStep === 1 && !isStep1Valid}
                 className={`inline-flex items-center space-x-1.5 px-5 py-2.5 rounded-xl text-xs font-bold shadow-xs transition ${
                   currentStep === 1 && !isStep1Valid
-                    ? 'bg-stone-200 text-stone-400 cursor-not-allowed'
-                    : 'bg-gradient-to-r from-amber-500 to-orange-500 hover:from-amber-600 hover:to-orange-600 text-stone-950'
+                    ? 'bg-slate-200 text-slate-400 cursor-not-allowed'
+                    : 'bg-emerald-600 hover:bg-emerald-700 text-white'
                 }`}
               >
                 <span>Continue</span>
@@ -2745,7 +2753,7 @@ function WizardContent() {
             ) : (
               <Link
                 href={`/filings/${filingId}/documents`}
-                className="inline-flex items-center space-x-1.5 bg-gradient-to-r from-amber-500 to-orange-500 hover:from-amber-600 hover:to-orange-600 text-stone-950 px-5 py-2.5 rounded-xl text-xs font-bold shadow-xs transition"
+                className="inline-flex items-center space-x-1.5 bg-slate-900 hover:bg-slate-800 text-white px-5 py-2.5 rounded-xl text-xs font-bold shadow-xs transition"
               >
                 <span>View All Documents</span>
                 <ArrowRight className="w-3.5 h-3.5" />
@@ -2805,7 +2813,7 @@ function WizardContent() {
 
             <Link
               href={`/filings/${filingId}/shield`}
-              className="text-[11px] font-semibold text-indigo-600 hover:text-indigo-800 flex items-center justify-between pt-1"
+              className="text-[11px] font-semibold text-emerald-700 hover:text-emerald-800 flex items-center justify-between pt-1"
             >
               <span>Inspect all 40 compliance rules</span>
               <ArrowRight className="w-3 h-3" />
@@ -2859,7 +2867,7 @@ function WizardContent() {
                     </div>
                     <div className="flex justify-between text-slate-600 pt-0.5 border-t border-slate-100 font-medium">
                       <span>Box 190 (Property Profit):</span>
-                      <span className="font-semibold text-indigo-950 num-tabular">{formatAccounting(propertyNetTaxableProfit)}</span>
+                      <span className="font-semibold text-slate-900 num-tabular">{formatAccounting(propertyNetTaxableProfit)}</span>
                     </div>
                   </>
                 ) : (

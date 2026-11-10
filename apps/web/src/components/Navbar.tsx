@@ -56,14 +56,14 @@ export function Navbar() {
   return (
     <>
       {/* Top Ambient Review Mode Ribbon */}
-      <div className="bg-stone-950 text-stone-300 text-xs py-1.5 px-4 border-b border-stone-800 transition-all select-none">
+      <div className="bg-slate-950 text-slate-300 text-xs py-1.5 px-4 border-b border-slate-800 transition-all select-none">
         <div className="max-w-7xl mx-auto flex flex-wrap items-center justify-between gap-2">
           <div className="flex items-center gap-2">
-            <span className="inline-flex items-center gap-1.5 px-2 py-0.5 rounded-full text-[10px] font-semibold bg-indigo-500/20 text-indigo-300 border border-indigo-400/30">
-              <span className="w-1.5 h-1.5 rounded-full bg-indigo-400 animate-pulse" />
+            <span className="inline-flex items-center gap-1.5 px-2 py-0.5 rounded-full text-[10px] font-semibold bg-emerald-500/10 text-emerald-300 border border-emerald-500/30">
+              <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse" />
               Stateless Review Mode
             </span>
-            <span className="hidden sm:inline text-stone-400 text-[11px]">
+            <span className="hidden sm:inline text-slate-400 text-[11px]">
               All 6 routes, 3 wizard steps &amp; 40-point shield unlocked.
             </span>
           </div>
@@ -71,14 +71,14 @@ export function Navbar() {
             <button
               type="button"
               onClick={() => setQaBarOpen(!qaBarOpen)}
-              className="text-indigo-300 hover:text-white font-medium underline underline-offset-2 transition"
+              className="text-slate-300 hover:text-white font-medium underline underline-offset-2 transition"
             >
               {qaBarOpen ? 'Hide QA Jump Bar' : 'Toggle QA Jump Bar'}
             </button>
-            <span className="text-stone-700">|</span>
+            <span className="text-slate-700">|</span>
             <Link
               href="/admin"
-              className="inline-flex items-center gap-1 text-amber-300 hover:text-amber-200 font-medium transition"
+              className="inline-flex items-center gap-1 text-slate-300 hover:text-emerald-300 font-medium transition"
             >
               <span>⚡ Admin Telemetry</span>
             </Link>
@@ -88,25 +88,25 @@ export function Navbar() {
 
       {/* Collapsible QA Route Jumper Bar */}
       {qaBarOpen && (
-        <div className="bg-indigo-950 text-white border-b border-indigo-800 px-4 py-2 shadow-inner text-xs animate-in fade-in slide-in-from-top-1 duration-150">
+        <div className="bg-slate-900 text-white border-b border-slate-800 px-4 py-2 shadow-inner text-xs animate-in fade-in slide-in-from-top-1 duration-150">
           <div className="max-w-7xl mx-auto flex flex-wrap items-center justify-between gap-2">
             <div className="flex flex-wrap items-center gap-1.5">
-              <span className="text-indigo-300 font-semibold uppercase tracking-wider text-[10px] mr-1">QA Routes:</span>
-              <Link href="/dashboard" className="px-2 py-0.5 rounded bg-indigo-900 hover:bg-indigo-700 text-indigo-100 font-medium transition">1. Dashboard</Link>
-              <Link href="/filings/drop-logicx/wizard?step=1" className="px-2 py-0.5 rounded bg-indigo-900 hover:bg-indigo-700 text-indigo-100 font-medium transition">2. Wizard Step 1</Link>
-              <Link href="/filings/drop-logicx/wizard?step=2" className="px-2 py-0.5 rounded bg-indigo-900 hover:bg-indigo-700 text-indigo-100 font-medium transition">3. Wizard Step 2</Link>
-              <Link href="/filings/drop-logicx/wizard?step=3" className="px-2 py-0.5 rounded bg-indigo-900 hover:bg-indigo-700 text-indigo-100 font-medium transition">4. Wizard Step 3</Link>
-              <Link href="/filings/drop-logicx/documents" className="px-2 py-0.5 rounded bg-indigo-900 hover:bg-indigo-700 text-indigo-100 font-medium transition">5. Document Studio</Link>
-              <Link href="/filings/drop-logicx/shield" className="px-2 py-0.5 rounded bg-indigo-900 hover:bg-indigo-700 text-indigo-100 font-medium transition">6. Pre-Flight Shield (40)</Link>
-              <Link href="/glossary" className="px-2 py-0.5 rounded bg-indigo-900 hover:bg-indigo-700 text-indigo-100 font-medium transition">7. Tax Guide (24)</Link>
-              <Link href="/admin" className="px-2 py-0.5 rounded bg-amber-500/20 border border-amber-400/40 hover:bg-amber-500/30 text-amber-200 font-medium transition">8. Admin Telemetry</Link>
+              <span className="text-slate-400 font-semibold uppercase tracking-wider text-[10px] mr-1">QA Routes:</span>
+              <Link href="/dashboard" className="px-2 py-0.5 rounded bg-slate-800 hover:bg-slate-700 text-slate-200 border border-slate-700/60 font-medium transition">1. Dashboard</Link>
+              <Link href="/filings/drop-logicx/wizard?step=1" className="px-2 py-0.5 rounded bg-slate-800 hover:bg-slate-700 text-slate-200 border border-slate-700/60 font-medium transition">2. Wizard Step 1</Link>
+              <Link href="/filings/drop-logicx/wizard?step=2" className="px-2 py-0.5 rounded bg-slate-800 hover:bg-slate-700 text-slate-200 border border-slate-700/60 font-medium transition">3. Wizard Step 2</Link>
+              <Link href="/filings/drop-logicx/wizard?step=3" className="px-2 py-0.5 rounded bg-slate-800 hover:bg-slate-700 text-slate-200 border border-slate-700/60 font-medium transition">4. Wizard Step 3</Link>
+              <Link href="/filings/drop-logicx/documents" className="px-2 py-0.5 rounded bg-slate-800 hover:bg-slate-700 text-slate-200 border border-slate-700/60 font-medium transition">5. Document Studio</Link>
+              <Link href="/filings/drop-logicx/shield" className="px-2 py-0.5 rounded bg-slate-800 hover:bg-slate-700 text-slate-200 border border-slate-700/60 font-medium transition">6. Pre-Flight Shield (40)</Link>
+              <Link href="/glossary" className="px-2 py-0.5 rounded bg-slate-800 hover:bg-slate-700 text-slate-200 border border-slate-700/60 font-medium transition">7. Tax Guide (24)</Link>
+              <Link href="/admin" className="px-2 py-0.5 rounded bg-slate-800 hover:bg-slate-700 text-emerald-300 border border-emerald-500/30 font-medium transition">8. Admin Telemetry</Link>
             </div>
           </div>
         </div>
       )}
 
       {/* Main Clean Header */}
-      <header className="sticky top-0 z-50 bg-[#1C1917]/95 backdrop-blur-md text-white border-b border-stone-800/80 transition-all">
+      <header className="sticky top-0 z-50 bg-slate-900/95 backdrop-blur-md text-white border-b border-slate-800/80 transition-all">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between">
           {/* Left: Brand Monogram & Desktop Nav */}
           <div className="flex items-center space-x-6 lg:space-x-8">
@@ -124,14 +124,14 @@ export function Navbar() {
                     href={item.href}
                     className={`px-3 py-1.5 rounded-lg transition flex items-center space-x-1.5 ${
                       item.active
-                        ? 'text-white bg-stone-800/90 shadow-2xs font-bold'
-                        : 'text-stone-300 hover:text-white hover:bg-stone-800/60'
+                        ? 'text-white bg-slate-800 shadow-2xs font-bold'
+                        : 'text-slate-300 hover:text-white hover:bg-slate-800/60'
                     }`}
                   >
-                    <Icon className={`w-3.5 h-3.5 ${item.active ? 'text-amber-400' : 'text-stone-400'}`} />
+                    <Icon className={`w-3.5 h-3.5 ${item.active ? 'text-emerald-400' : 'text-slate-400'}`} />
                     <span>{item.label}</span>
                     {item.badge && (
-                      <span className="ml-1 bg-stone-700 text-stone-300 text-[10px] px-1.5 py-0.2 rounded-full font-mono font-medium">
+                      <span className="ml-1 bg-slate-800 text-slate-300 text-[10px] px-1.5 py-0.2 rounded-full font-mono font-medium">
                         {item.badge}
                       </span>
                     )}
@@ -160,7 +160,7 @@ export function Navbar() {
             <button
               type="button"
               onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
-              className="md:hidden p-2 rounded-xl text-stone-400 hover:text-white hover:bg-stone-800 transition"
+              className="md:hidden p-2 rounded-xl text-slate-400 hover:text-white hover:bg-slate-800 transition"
               aria-label="Toggle navigation menu"
             >
               {mobileMenuOpen ? <X className="w-5 h-5" /> : <Menu className="w-5 h-5" />}
@@ -170,7 +170,7 @@ export function Navbar() {
 
         {/* Mobile Drawer Menu */}
         {mobileMenuOpen && (
-          <div className="md:hidden bg-[#1C1917] border-b border-stone-800 px-4 pt-2 pb-6 space-y-4 animate-in fade-in slide-in-from-top-2 duration-150">
+          <div className="md:hidden bg-slate-900 border-b border-slate-800 px-4 pt-2 pb-6 space-y-4 animate-in fade-in slide-in-from-top-2 duration-150">
             <nav className="space-y-1">
               {navItems.map((item) => {
                 const Icon = item.icon;
@@ -180,16 +180,16 @@ export function Navbar() {
                     href={item.href}
                     className={`flex items-center justify-between px-3 py-2.5 rounded-xl text-sm font-semibold transition ${
                       item.active
-                        ? 'bg-stone-800 text-white font-bold'
-                        : 'text-stone-300 hover:bg-stone-800/60 hover:text-white'
+                        ? 'bg-slate-800 text-white font-bold'
+                        : 'text-slate-300 hover:bg-slate-800/60 hover:text-white'
                     }`}
                   >
                     <div className="flex items-center space-x-2.5">
-                      <Icon className={`w-4 h-4 ${item.active ? 'text-amber-400' : 'text-stone-400'}`} />
+                      <Icon className={`w-4 h-4 ${item.active ? 'text-emerald-400' : 'text-slate-400'}`} />
                       <span>{item.label}</span>
                     </div>
                     {item.badge && (
-                      <span className="bg-amber-500/20 text-amber-300 text-xs px-2 py-0.5 rounded-full font-mono font-medium">
+                      <span className="bg-emerald-500/20 text-emerald-300 text-xs px-2 py-0.5 rounded-full font-mono font-medium">
                         {item.badge}
                       </span>
                     )}
@@ -208,7 +208,7 @@ export function Navbar() {
               </Link>
             </nav>
 
-            <div className="pt-3 border-t border-stone-800">
+            <div className="pt-3 border-t border-slate-800">
               <HeaderAuthStatus />
             </div>
           </div>

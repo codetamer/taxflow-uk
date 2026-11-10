@@ -1,84 +1,79 @@
 'use client';
 
-import React, { useState, useMemo, useEffect } from 'react';
+import { useState, useMemo } from 'react';
 import {
+  X,
   BookOpen,
   Search,
-  X,
-  HelpCircle,
-  CheckCircle2,
   ChevronRight,
   ShieldCheck,
-  Scale
+  CheckCircle2,
+  HelpCircle
 } from 'lucide-react';
-import { TAX_GLOSSARY, searchGlossary, type GlossaryTerm } from './taxGlossary';
+import { TAX_GLOSSARY, GlossaryTerm } from '@/components/taxGlossary';
 
 interface GlossaryModalProps {
   isOpen: boolean;
   onClose: () => void;
-  initialTermId?: string;
+  initialTermId?: string | null;
 }
 
 export function GlossaryModal({ isOpen, onClose, initialTermId }: GlossaryModalProps) {
   const [searchQuery, setSearchQuery] = useState('');
-  const [selectedCategory, setSelectedCategory] = useState<string>('All');
-  const [expandedTermId, setExpandedTermId] = useState<string | null>(initialTermId || 'frs-105');
+  const [selectedCategory, setSelectedCategory] = useState<string>('ALL');
+  const [expandedTermId, setExpandedTermId] = useState<string | null>(initialTermId || null);
 
-  // Sync initialTermId if changed
-  useEffect(() => {
-    if (initialTermId) {
-      setExpandedTermId(initialTermId);
-    }
-  }, [initialTermId]);
-
-  // Close on Escape
-  useEffect(() => {
-    function handleKeyDown(e: KeyboardEvent) {
-      if (e.key === 'Escape') {
-        onClose();
-      }
-    }
-    if (isOpen) {
-      document.addEventListener('keydown', handleKeyDown);
-      document.body.style.overflow = 'hidden';
-    }
-    return () => {
-      document.removeEventListener('keydown', handleKeyDown);
-      document.body.style.overflow = 'unset';
-    };
-  }, [isOpen, onClose]);
-
-  const categories = ['All', 'Accounts', 'Corporation Tax', 'Director Compliance', 'Technical'];
+  const categories = useMemo(() => {
+    return ['ALL', 'Accounts', 'Corporation Tax', 'Director Compliance', 'Technical'];
+  }, []);
 
   const filteredTerms = useMemo(() => {
-    let results = searchGlossary(searchQuery);
-    if (selectedCategory !== 'All') {
-      results = results.filter((t) => t.category === selectedCategory);
+    let terms = TAX_GLOSSARY;
+
+    if (selectedCategory !== 'ALL') {
+      terms = terms.filter((t) => t.category === selectedCategory);
     }
-    return results;
+
+    if (searchQuery.trim()) {
+      const q = searchQuery.toLowerCase();
+      terms = terms.filter(
+        (t) =>
+          t.term.toLowerCase().includes(q) ||
+          t.shortSummary.toLowerCase().includes(q) ||
+          t.plainEnglish.toLowerCase().includes(q) ||
+          t.whyItMatters.toLowerCase().includes(q) ||
+          (t.statutoryRef && t.statutoryRef.toLowerCase().includes(q))
+      );
+    }
+
+    return terms;
   }, [searchQuery, selectedCategory]);
 
   if (!isOpen) return null;
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 sm:p-6 bg-slate-950/60 backdrop-blur-xs animate-in fade-in duration-150">
+    <div
+      className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/60 backdrop-blur-xs animate-in fade-in duration-200"
+      onClick={onClose}
+    >
       <div
         className="bg-white w-full max-w-4xl max-h-[90vh] rounded-3xl shadow-2xl border border-slate-200 flex flex-col overflow-hidden animate-in zoom-in-95 duration-150"
         role="dialog"
         aria-modal="true"
         aria-labelledby="glossary-title"
+        onClick={(e) => e.stopPropagation()}
       >
         {/* Header */}
-        <div className="bg-[#1C1917] text-white p-6 sm:px-8 flex items-center justify-between border-b border-stone-800">
+        <div className="bg-slate-900 text-white p-6 sm:px-8 flex items-center justify-between border-b border-slate-800">
           <div className="flex items-center space-x-3">
-            <div className="w-10 h-10 rounded-2xl bg-amber-500/20 text-amber-400 flex items-center justify-center font-bold">
+            <div className="w-10 h-10 rounded-2xl bg-emerald-500/20 text-emerald-400 flex items-center justify-center font-bold">
               <BookOpen className="w-5 h-5" />
             </div>
             <div>
               <h2 id="glossary-title" className="text-xl font-bold tracking-tight">
-                Director's Tax & Compliance Guide
+                Director's Tax &amp; Compliance Guide
               </h2>
-              <p className="text-xs text-stone-400 mt-0.5">
+              <p className="text-xs text-slate-400 mt-0.5">
                 Clear explanations, practical director tips, and real-world tax guidance.
               </p>
             </div>
@@ -86,7 +81,7 @@ export function GlossaryModal({ isOpen, onClose, initialTermId }: GlossaryModalP
 
           <button
             onClick={onClose}
-            className="text-stone-400 hover:text-white p-2 rounded-xl hover:bg-stone-800 transition"
+            className="text-slate-400 hover:text-white p-2 rounded-xl hover:bg-slate-800 transition"
             aria-label="Close glossary modal"
           >
             <X className="w-5 h-5" />
@@ -94,15 +89,15 @@ export function GlossaryModal({ isOpen, onClose, initialTermId }: GlossaryModalP
         </div>
 
         {/* Search & Categories Bar */}
-        <div className="p-4 sm:p-6 bg-stone-50 border-b border-stone-200 space-y-3">
+        <div className="p-4 sm:p-6 bg-slate-50 border-b border-slate-200 space-y-3">
           <div className="relative">
-            <Search className="w-4 h-4 text-stone-400 absolute left-3.5 top-1/2 -translate-y-1/2" />
+            <Search className="w-4 h-4 text-slate-400 absolute left-3.5 top-1/2 -translate-y-1/2" />
             <input
               type="text"
               placeholder="Search any tax term, box number, or concept (e.g. s455, balance sheet, AIA, FRS 105)..."
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
-              className="w-full bg-white border border-stone-200 rounded-xl pl-10 pr-4 py-2.5 text-xs sm:text-sm text-stone-900 placeholder-stone-400 focus:outline-none focus:ring-2 focus:ring-amber-500 shadow-xs"
+              className="w-full bg-white border border-slate-200 rounded-xl pl-10 pr-4 py-2.5 text-xs sm:text-sm text-slate-900 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-emerald-500 shadow-xs"
               autoFocus
             />
           </div>
@@ -154,17 +149,17 @@ export function GlossaryModal({ isOpen, onClose, initialTermId }: GlossaryModalP
                   >
                     <div className="space-y-1">
                       <div className="flex items-center space-x-2">
-                        <span className="text-[10px] font-bold uppercase tracking-wider text-amber-800 bg-amber-50 px-2 py-0.5 rounded-full border border-amber-200">
+                        <span className="text-[10px] font-bold uppercase tracking-wider text-slate-700 bg-slate-100 px-2 py-0.5 rounded-full border border-slate-200">
                           {item.category}
                         </span>
-                        <h3 className="text-sm sm:text-base font-bold text-stone-900 group-hover:text-amber-700 transition">
+                        <h3 className="text-sm sm:text-base font-bold text-slate-900 group-hover:text-emerald-700 transition">
                           {item.term}
                         </h3>
                       </div>
-                      <p className="text-xs text-stone-600 font-medium">{item.shortSummary}</p>
+                      <p className="text-xs text-slate-600 font-medium">{item.shortSummary}</p>
                     </div>
 
-                    <div className="text-stone-400 group-hover:text-stone-700 pt-1 shrink-0">
+                    <div className="text-slate-400 group-hover:text-slate-700 pt-1 shrink-0">
                       <ChevronRight
                         className={`w-4 h-4 transform transition-transform ${isExpanded ? 'rotate-90' : ''}`}
                       />
@@ -172,30 +167,30 @@ export function GlossaryModal({ isOpen, onClose, initialTermId }: GlossaryModalP
                   </button>
 
                   {isExpanded && (
-                    <div className="mt-4 pt-3 border-t border-stone-200 space-y-3 text-xs animate-in fade-in duration-150">
+                    <div className="mt-4 pt-3 border-t border-slate-200 space-y-3 text-xs animate-in fade-in duration-150">
                       <div className="space-y-1">
-                        <span className="font-bold text-stone-900 block text-xs">Practical Director Guidance:</span>
-                        <p className="text-stone-700 leading-relaxed whitespace-pre-line bg-white p-3.5 rounded-xl border border-stone-200">
+                        <span className="font-bold text-slate-900 block text-xs">Practical Director Guidance:</span>
+                        <p className="text-slate-700 leading-relaxed whitespace-pre-line bg-white p-3.5 rounded-xl border border-slate-200">
                           {item.plainEnglish}
                         </p>
                       </div>
 
                       {item.example && (
                         <div className="space-y-1">
-                          <span className="font-bold text-amber-950 block text-xs">Real-World Scenario:</span>
-                          <p className="text-stone-900 leading-relaxed bg-amber-50/70 p-3 rounded-xl border border-amber-200">
+                          <span className="font-bold text-slate-900 block text-xs">Real-World Scenario:</span>
+                          <p className="text-slate-700 leading-relaxed bg-emerald-50/50 p-3 rounded-xl border border-emerald-200/60">
                             {item.example}
                           </p>
                         </div>
                       )}
 
                       <div className="space-y-1">
-                        <span className="font-bold text-stone-900 block text-xs">Why Companies House / HMRC Care:</span>
-                        <p className="text-stone-600 leading-relaxed">{item.whyItMatters}</p>
+                        <span className="font-bold text-slate-900 block text-xs">Why Companies House / HMRC Care:</span>
+                        <p className="text-slate-600 leading-relaxed">{item.whyItMatters}</p>
                       </div>
 
                       {item.statutoryRef && (
-                        <div className="text-[11px] text-stone-400 font-mono pt-1">
+                        <div className="text-[11px] text-slate-400 font-mono pt-1">
                           Official Reference: {item.statutoryRef}
                         </div>
                       )}
@@ -224,4 +219,3 @@ export function GlossaryModal({ isOpen, onClose, initialTermId }: GlossaryModalP
     </div>
   );
 }
-

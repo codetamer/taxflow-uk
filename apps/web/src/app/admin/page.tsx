@@ -315,7 +315,7 @@ export default function AdminCockpitPage() {
         <div className="bg-white p-6 rounded-2xl border border-slate-200/90 shadow-sm space-y-2">
           <div className="flex items-center justify-between text-slate-500">
             <span className="text-xs font-semibold uppercase tracking-wider">Connected Companies</span>
-            <div className="w-8 h-8 rounded-lg bg-indigo-50 text-indigo-700 flex items-center justify-center">
+            <div className="w-8 h-8 rounded-lg bg-slate-100 text-slate-700 flex items-center justify-center">
               <Building2 className="w-4 h-4" />
             </div>
           </div>

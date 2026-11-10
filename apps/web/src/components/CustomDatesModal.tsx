@@ -44,16 +44,16 @@ export function CustomDatesModal({
         aria-labelledby="custom-dates-title"
       >
         {/* Header */}
-        <div className="bg-[#0B1528] text-white px-6 py-5 flex items-center justify-between">
+        <div className="bg-slate-900 text-white px-6 py-5 flex items-center justify-between border-b border-slate-800">
           <div className="flex items-center space-x-3">
-            <div className="p-2 rounded-xl bg-amber-500/20 text-amber-400 border border-amber-500/30">
+            <div className="p-2 rounded-xl bg-emerald-500/20 text-emerald-400 border border-emerald-500/30">
               <Calendar className="w-5 h-5" />
             </div>
             <div>
               <h3 id="custom-dates-title" className="text-base font-semibold tracking-tight text-white">
                 File with Custom Accounting Dates
               </h3>
-              <p className="text-xs text-slate-300">
+              <p className="text-xs text-slate-400">
                 Match HMRC CT603 Notice or Companies House ARD Changes
               </p>
             </div>
@@ -152,7 +152,7 @@ export function CustomDatesModal({
             </button>
             <button
               type="submit"
-              className="px-5 py-2 rounded-xl bg-[#0B1528] hover:bg-slate-800 text-white text-xs font-bold transition flex items-center space-x-1.5 shadow-xs"
+              className="px-5 py-2 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-bold transition flex items-center space-x-1.5 shadow-xs"
             >
               <span>Apply & Launch Filing</span>
               <ArrowRight className="w-3.5 h-3.5" />

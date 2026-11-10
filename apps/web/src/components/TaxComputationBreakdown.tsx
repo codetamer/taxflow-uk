@@ -197,10 +197,10 @@ export function TaxComputationBreakdown({
 
           {/* PROPERTY SPV / SCHEDULE A STREAM */}
           {(isProperty || isMixed) && (
-            <div className="border border-indigo-100 bg-indigo-50/30 rounded-xl p-3 space-y-2 mt-2">
-              <div className="flex items-center justify-between text-[11px] font-bold text-indigo-950 uppercase tracking-wide">
+            <div className="border border-slate-200 bg-slate-50/70 rounded-xl p-3 space-y-2 mt-2">
+              <div className="flex items-center justify-between text-[11px] font-bold text-slate-900 uppercase tracking-wide">
                 <span>Schedule A: UK Property Business Computations (CTA 2009 Part 4)</span>
-                <span className="text-[10px] bg-indigo-100 text-indigo-800 px-2 py-0.5 rounded-full font-mono">
+                <span className="text-[10px] bg-slate-200 text-slate-800 px-2 py-0.5 rounded-full font-mono">
                   SPV Schedule
                 </span>
               </div>
@@ -245,14 +245,14 @@ export function TaxComputationBreakdown({
               </div>
 
               {/* Net Property Profits Box 190 */}
-              <div className="flex items-center justify-between py-1.5 px-2.5 rounded-lg bg-white font-semibold border border-indigo-200">
+              <div className="flex items-center justify-between py-1.5 px-2.5 rounded-lg bg-white font-semibold border border-slate-200">
                 <div className="flex items-center gap-2">
-                  <span className="text-indigo-950 font-bold">Income from UK Property</span>
-                  <span className="text-[10px] font-mono text-indigo-700 bg-indigo-100 px-1.5 py-0.2 rounded">
+                  <span className="text-slate-950 font-bold">Income from UK Property</span>
+                  <span className="text-[10px] font-mono text-slate-700 bg-slate-100 px-1.5 py-0.2 rounded">
                     CT600 Box 190
                   </span>
                 </div>
-                <span className="font-mono tabular-nums font-bold text-indigo-950">
+                <span className="font-mono tabular-nums font-bold text-slate-950">
                   {formatAccounting(propertyNetProfit)}
                 </span>
               </div>

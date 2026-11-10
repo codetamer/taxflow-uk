@@ -360,27 +360,27 @@ export default function DocumentsPage() {
       {/* Top Breadcrumb & Title */}
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
         <div>
-          <div className="flex items-center space-x-2 text-xs text-stone-500 mb-1">
-            <Link href="/dashboard" className="hover:text-stone-900 transition">Dashboard</Link>
+          <div className="flex items-center space-x-2 text-xs text-slate-500 mb-1">
+            <Link href="/dashboard" className="hover:text-slate-900 transition">Dashboard</Link>
             <span>/</span>
-            <Link href={`/filings/${filingId}/wizard`} className="hover:text-stone-900 transition">Filing Studio</Link>
+            <Link href={`/filings/${filingId}/wizard`} className="hover:text-slate-900 transition">Filing Studio</Link>
             <span>/</span>
-            <span className="text-stone-900 font-semibold">Statutory Documents</span>
+            <span className="text-slate-900 font-semibold">Statutory Documents</span>
           </div>
-          <h1 className="text-2xl sm:text-3xl font-bold tracking-tight text-stone-950">
+          <h1 className="text-2xl sm:text-3xl font-bold tracking-tight text-slate-950">
             Statutory Document Center
           </h1>
-          <p className="text-xs text-stone-500 mt-1">
+          <p className="text-xs text-slate-500 mt-1">
             Official FRS 105 micro-entity accounts and HMRC CT600 Corporation Tax return schedules for {companyName}.
           </p>
         </div>
 
         {/* Draft/Clean Preview Mode Toggle */}
-        <div className="flex items-center space-x-1.5 self-start md:self-auto bg-stone-100 p-1 rounded-2xl border border-stone-200/80">
+        <div className="flex items-center space-x-1.5 self-start md:self-auto bg-slate-100 p-1 rounded-2xl border border-slate-200/80">
           <button
             onClick={() => setIsWatermarked(true)}
             className={`px-3 py-1.5 rounded-xl text-xs font-semibold transition ${
-              isWatermarked ? 'bg-white text-stone-950 shadow-xs' : 'text-stone-600 hover:text-stone-950'
+              isWatermarked ? 'bg-white text-slate-950 shadow-xs' : 'text-slate-600 hover:text-slate-950'
             }`}
           >
             Draft Preview (Free)
@@ -388,7 +388,7 @@ export default function DocumentsPage() {
           <button
             onClick={() => setIsWatermarked(false)}
             className={`px-3 py-1.5 rounded-xl text-xs font-semibold transition ${
-              !isWatermarked ? 'bg-amber-500 text-stone-950 font-bold shadow-xs' : 'text-stone-600 hover:text-stone-950'
+              !isWatermarked ? 'bg-slate-900 text-white font-bold shadow-xs' : 'text-slate-600 hover:text-slate-950'
             }`}
           >
             Clean Final Mode
@@ -676,7 +676,7 @@ export default function DocumentsPage() {
                 </h3>
                 <p className="text-[11px] font-sans text-slate-500">As at {formatDateBritish(periodEnd)}</p>
               </div>
-              <span className="text-[10px] font-semibold bg-indigo-50 text-indigo-700 border border-indigo-200 px-2.5 py-0.5 rounded-full">
+              <span className="text-[10px] font-semibold bg-slate-100 text-slate-700 border border-slate-200 px-2.5 py-0.5 rounded-full">
                 {isDormant ? 'CA 2006 s480 AA02' : 'FRS 105 Section 4'}
               </span>
             </div>

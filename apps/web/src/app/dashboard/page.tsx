@@ -229,11 +229,11 @@ export default function DashboardPage() {
       )}
 
       {/* Sovereign Executive Header with Multi-Company Switcher */}
-      <div className="bg-white rounded-3xl p-6 sm:p-8 border border-stone-200/90 shadow-xs flex flex-col lg:flex-row lg:items-center justify-between gap-6">
+      <div className="bg-white rounded-3xl p-6 sm:p-8 border border-slate-200/90 shadow-2xs flex flex-col lg:flex-row lg:items-center justify-between gap-6">
         <div className="space-y-3">
           <div className="flex items-start sm:items-center space-x-3">
-            <div className="w-12 h-12 rounded-2xl bg-[#1C1917] text-white flex items-center justify-center font-bold shadow-xs shrink-0">
-              <Building2 className="w-6 h-6 text-amber-500" />
+            <div className="w-12 h-12 rounded-2xl bg-slate-900 text-white flex items-center justify-center font-bold shadow-xs shrink-0">
+              <Building2 className="w-6 h-6 text-emerald-400" />
             </div>
 
             <div className="relative">
@@ -244,24 +244,24 @@ export default function DashboardPage() {
                   onClick={() => setIsCompanyDropdownOpen(!isCompanyDropdownOpen)}
                   className="group flex items-center space-x-2 text-left focus:outline-none"
                 >
-                  <h1 className="text-2xl font-bold tracking-tight text-stone-950 group-hover:text-amber-700 transition">
+                  <h1 className="text-2xl font-bold tracking-tight text-slate-900 group-hover:text-emerald-700 transition">
                     {activeCompany.name}
                   </h1>
-                  <ChevronDown className="w-5 h-5 text-stone-400 group-hover:text-stone-700 transition" />
+                  <ChevronDown className="w-5 h-5 text-slate-400 group-hover:text-slate-700 transition" />
                 </button>
-                <span className="bg-amber-50 text-amber-900 text-[11px] font-semibold px-2.5 py-0.5 rounded-full border border-amber-200">
+                <span className="bg-emerald-50 text-emerald-800 text-[11px] font-semibold px-2.5 py-0.5 rounded-full border border-emerald-200">
                   Active
                 </span>
               </div>
 
-              <p className="text-xs text-stone-500 font-mono mt-0.5">
-                CRN: <span className="font-semibold text-stone-800">{activeCompany.crn}</span> · UTR: <span className="font-semibold text-stone-800">{activeCompany.utr || '1234567890'}</span> · {filingMetrics.jurisdiction}
+              <p className="text-xs text-slate-500 font-mono mt-0.5">
+                CRN: <span className="font-semibold text-slate-800">{activeCompany.crn}</span> · UTR: <span className="font-semibold text-slate-800">{activeCompany.utr || '1234567890'}</span> · {filingMetrics.jurisdiction}
               </p>
 
               {/* Multi-Company Dropdown Menu */}
               {isCompanyDropdownOpen && (
-                <div className="absolute top-full left-0 mt-2 w-80 bg-white rounded-2xl border border-stone-200 shadow-2xl p-2 z-50 divide-y divide-stone-100 animate-in fade-in-50 zoom-in-95">
-                  <div className="px-3 py-2 text-[10px] uppercase font-mono font-bold text-stone-400 tracking-wider">
+                <div className="absolute top-full left-0 mt-2 w-80 bg-white rounded-2xl border border-slate-200 shadow-2xl p-2 z-50 divide-y divide-slate-100 animate-in fade-in-50 zoom-in-95">
+                  <div className="px-3 py-2 text-[10px] uppercase font-mono font-bold text-slate-400 tracking-wider">
                     Switch Connected Company ({companies.length})
                   </div>
                   <div className="py-1 space-y-1 max-h-60 overflow-y-auto">
@@ -275,16 +275,16 @@ export default function DashboardPage() {
                         }}
                         className={`w-full text-left px-3 py-2.5 rounded-xl text-xs transition flex items-center justify-between ${
                           c.crn === activeCompany.crn
-                            ? 'bg-amber-50 text-amber-950 font-bold border border-amber-200'
-                            : 'hover:bg-stone-50 text-stone-800'
+                            ? 'bg-emerald-50 text-emerald-950 font-bold border border-emerald-200'
+                            : 'hover:bg-slate-50 text-slate-800'
                         }`}
                       >
                         <div>
                           <p className="font-bold">{c.name}</p>
-                          <p className="text-[10px] text-stone-500 font-mono">CRN: {c.crn}</p>
+                          <p className="text-[10px] text-slate-500 font-mono">CRN: {c.crn}</p>
                         </div>
                         {c.crn === activeCompany.crn && (
-                          <CheckCircle2 className="w-4 h-4 text-amber-600 shrink-0" />
+                          <CheckCircle2 className="w-4 h-4 text-emerald-600 shrink-0" />
                         )}
                       </button>
                     ))}
@@ -296,7 +296,7 @@ export default function DashboardPage() {
                         setIsCompanyDropdownOpen(false);
                         setIsConnectModalOpen(true);
                       }}
-                      className="w-full text-left px-3 py-2 rounded-xl text-xs text-amber-800 hover:bg-amber-50 font-semibold flex items-center space-x-1.5 transition"
+                      className="w-full text-left px-3 py-2 rounded-xl text-xs text-emerald-700 hover:bg-emerald-50 font-semibold flex items-center space-x-1.5 transition"
                     >
                       <Plus className="w-3.5 h-3.5" />
                       <span>Connect another UK Company</span>
@@ -307,19 +307,19 @@ export default function DashboardPage() {
             </div>
           </div>
 
-          <div className="flex flex-wrap items-center gap-x-6 gap-y-2 text-xs text-stone-600 pt-1 border-t border-stone-100">
+          <div className="flex flex-wrap items-center gap-x-6 gap-y-2 text-xs text-slate-600 pt-1 border-t border-slate-100">
             <span className="flex items-center space-x-1.5">
-              <Calendar className="w-3.5 h-3.5 text-stone-400" />
+              <Calendar className="w-3.5 h-3.5 text-slate-400" />
               <span>Current Period: <strong>{filingMetrics.periodStart}</strong> to <strong>{filingMetrics.periodEnd}</strong></span>
             </span>
             <span className="flex items-center space-x-1.5">
-              <Scale className="w-3.5 h-3.5 text-stone-400" />
+              <Scale className="w-3.5 h-3.5 text-slate-400" />
               <span>
                 Standard: <TermExplainer termId="frs-105" label={filingMetrics.accountingStandard} />
               </span>
             </span>
             <span className="flex items-center space-x-1.5">
-              <span className="w-1.5 h-1.5 rounded-full bg-amber-500" />
+              <span className="w-1.5 h-1.5 rounded-full bg-emerald-500" />
               <span>Director: <strong>{userName}</strong></span>
             </span>
           </div>
@@ -331,37 +331,37 @@ export default function DashboardPage() {
           <div className="relative inline-flex items-center rounded-xl shadow-xs">
             <Link
               href={`/filings/${latestFiling?.id || 'drop-logicx'}/wizard?crn=${activeCompany.crn}&name=${encodeURIComponent(activeCompany.name)}&mode=dual`}
-              className="inline-flex items-center space-x-2 bg-gradient-to-r from-amber-500 to-orange-500 hover:from-amber-600 hover:to-orange-600 text-stone-950 font-bold px-4 py-2.5 rounded-l-xl text-sm transition"
+              className="inline-flex items-center space-x-2 bg-emerald-600 hover:bg-emerald-700 text-white font-semibold px-4 py-2.5 rounded-l-xl text-sm transition"
             >
               <span>{latestFiling ? 'Continue Filing' : 'Start Filing'}</span>
-              <ArrowRight className="w-4 h-4 text-stone-900" />
+              <ArrowRight className="w-4 h-4 text-emerald-100" />
             </Link>
             <button
               type="button"
               onClick={() => setIsFilingDropdownOpen(!isFilingDropdownOpen)}
-              className="bg-orange-500 hover:bg-orange-600 text-stone-950 px-2.5 py-2.5 rounded-r-xl border-l border-orange-400/50 transition flex items-center justify-center cursor-pointer"
+              className="bg-emerald-600 hover:bg-emerald-700 text-white px-2.5 py-2.5 rounded-r-xl border-l border-emerald-500/60 transition flex items-center justify-center cursor-pointer"
               aria-label="Filing workflow options"
             >
-              <ChevronDown className="w-4 h-4 text-stone-950" />
+              <ChevronDown className="w-4 h-4 text-white" />
             </button>
 
             {/* Split Dropdown Menu */}
             {isFilingDropdownOpen && (
-              <div className="absolute right-0 top-full mt-2 w-84 bg-white rounded-2xl border border-stone-200 shadow-2xl p-2 z-50 divide-y divide-stone-100 animate-in fade-in-50 zoom-in-95 text-stone-900">
-                <div className="px-3 py-2 text-[10px] uppercase font-mono font-bold text-stone-400 tracking-wider">
+              <div className="absolute right-0 top-full mt-2 w-84 bg-white rounded-2xl border border-slate-200 shadow-2xl p-2 z-50 divide-y divide-slate-100 animate-in fade-in-50 zoom-in-95 text-slate-900">
+                <div className="px-3 py-2 text-[10px] uppercase font-mono font-bold text-slate-400 tracking-wider">
                   Select Filing Mode
                 </div>
                 <div className="py-1 space-y-1">
                   <Link
                     href={`/filings/${latestFiling?.id || 'drop-logicx'}/wizard?crn=${activeCompany.crn}&name=${encodeURIComponent(activeCompany.name)}&mode=dual`}
                     onClick={() => setIsFilingDropdownOpen(false)}
-                    className="w-full text-left px-3 py-2 rounded-xl text-xs hover:bg-stone-50 transition block"
+                    className="w-full text-left px-3 py-2 rounded-xl text-xs hover:bg-slate-50 transition block"
                   >
                     <div className="flex items-center justify-between">
-                      <span className="font-bold text-stone-900">CT600 &amp; Accounts (Dual)</span>
-                      <span className="text-[10px] bg-emerald-100 text-emerald-800 font-bold px-2 py-0.5 rounded-full">Recommended</span>
+                      <span className="font-bold text-slate-900">CT600 &amp; Accounts (Dual)</span>
+                      <span className="text-[10px] bg-emerald-50 text-emerald-700 border border-emerald-200 font-bold px-2 py-0.5 rounded-full">Recommended</span>
                     </div>
-                    <p className="text-[11px] text-stone-500 mt-0.5">
+                    <p className="text-[11px] text-slate-500 mt-0.5">
                       Simultaneous joint filing for HMRC &amp; Companies House
                     </p>
                   </Link>
@@ -369,10 +369,10 @@ export default function DashboardPage() {
                   <Link
                     href={`/filings/${latestFiling?.id || 'drop-logicx'}/wizard?crn=${activeCompany.crn}&name=${encodeURIComponent(activeCompany.name)}&mode=ct600_only`}
                     onClick={() => setIsFilingDropdownOpen(false)}
-                    className="w-full text-left px-3 py-2 rounded-xl text-xs hover:bg-stone-50 transition block"
+                    className="w-full text-left px-3 py-2 rounded-xl text-xs hover:bg-slate-50 transition block"
                   >
-                    <span className="font-bold text-stone-900 block">Corporation Tax (CT600) Only</span>
-                    <p className="text-[11px] text-stone-500 mt-0.5">
+                    <span className="font-bold text-slate-900 block">Corporation Tax (CT600) Only</span>
+                    <p className="text-[11px] text-slate-500 mt-0.5">
                       When statutory accounts are already filed at Companies House
                     </p>
                   </Link>
@@ -380,10 +380,10 @@ export default function DashboardPage() {
                   <Link
                     href={`/filings/${latestFiling?.id || 'drop-logicx'}/wizard?crn=${activeCompany.crn}&name=${encodeURIComponent(activeCompany.name)}&mode=accounts_only`}
                     onClick={() => setIsFilingDropdownOpen(false)}
-                    className="w-full text-left px-3 py-2 rounded-xl text-xs hover:bg-stone-50 transition block"
+                    className="w-full text-left px-3 py-2 rounded-xl text-xs hover:bg-slate-50 transition block"
                   >
-                    <span className="font-bold text-stone-900 block">Accounts Only (Companies House iXBRL)</span>
-                    <p className="text-[11px] text-stone-500 mt-0.5">
+                    <span className="font-bold text-slate-900 block">Accounts Only (Companies House iXBRL)</span>
+                    <p className="text-[11px] text-slate-500 mt-0.5">
                       Micro-entity or dormant accounts without filing tax return
                     </p>
                   </Link>
@@ -396,9 +396,9 @@ export default function DashboardPage() {
                       setIsFilingDropdownOpen(false);
                       setIsCustomDatesOpen(true);
                     }}
-                    className="w-full text-left px-3 py-2 rounded-xl text-xs text-amber-800 hover:bg-amber-50 font-semibold flex items-center space-x-1.5 transition"
+                    className="w-full text-left px-3 py-2 rounded-xl text-xs text-slate-700 hover:bg-slate-50 font-semibold flex items-center space-x-1.5 transition"
                   >
-                    <Calendar className="w-3.5 h-3.5 text-amber-600" />
+                    <Calendar className="w-3.5 h-3.5 text-slate-500" />
                     <span>File with Custom Dates (CT603 Variance)...</span>
                   </button>
                 </div>
@@ -409,9 +409,9 @@ export default function DashboardPage() {
           <button
             type="button"
             onClick={() => setIsGlossaryOpen(true)}
-            className="inline-flex items-center space-x-1.5 bg-white hover:bg-stone-50 text-stone-800 border border-stone-300 px-4 py-2.5 rounded-xl text-sm font-semibold transition"
+            className="inline-flex items-center space-x-1.5 bg-white hover:bg-slate-50 text-slate-700 border border-slate-200 px-4 py-2.5 rounded-xl text-sm font-semibold transition shadow-2xs"
           >
-            <BookOpen className="w-4 h-4 text-amber-700" />
+            <BookOpen className="w-4 h-4 text-slate-500" />
             <span>Director Tax Guide</span>
           </button>
         </div>
@@ -433,8 +433,8 @@ export default function DashboardPage() {
       {/* Official Multi-Deadline Statutory Countdown & Timetable */}
       <div className="space-y-4">
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
-          <h2 className="text-xs font-semibold text-stone-500 uppercase tracking-wider flex items-center space-x-2">
-            <Clock className="w-4 h-4 text-stone-400" />
+          <h2 className="text-xs font-semibold text-slate-500 uppercase tracking-wider flex items-center space-x-2">
+            <Clock className="w-4 h-4 text-slate-400" />
             <span>Official Filing Deadlines & Timetable (Click any card to inspect filing record)</span>
           </h2>
           <span className="text-xs font-medium text-emerald-700 bg-emerald-50 px-2.5 py-0.5 rounded-full border border-emerald-200">
@@ -446,11 +446,11 @@ export default function DashboardPage() {
         <div className="bg-slate-900 text-white rounded-2xl p-4 sm:p-5 border border-slate-800 shadow-xs space-y-3">
           <div className="flex items-center justify-between text-xs">
             <span className="font-semibold text-slate-300">Statutory Progression (2025/26 Financial Year)</span>
-            <span className="text-[11px] text-amber-400 font-mono">Period Ended: 30 Sep 2026</span>
+            <span className="text-[11px] text-slate-400 font-mono">Period Ended: 30 Sep 2026</span>
           </div>
           <div className="relative pt-1 pb-1">
             <div className="h-1.5 bg-slate-800 rounded-full overflow-hidden">
-              <div className="h-full bg-gradient-to-r from-amber-500 via-emerald-500 to-sky-500 w-3/4 rounded-full" />
+              <div className="h-full bg-emerald-500 w-3/4 rounded-full" />
             </div>
             <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 pt-3 text-[11px]">
               <div>
@@ -461,17 +461,17 @@ export default function DashboardPage() {
               <div>
                 <p className="text-slate-400">2. Accounts Due</p>
                 <p className="font-bold text-white font-mono">30 Jun 2027</p>
-                <p className="text-[10px] text-amber-400">9 Months (s442)</p>
+                <p className="text-[10px] text-slate-400">9 Months (s442)</p>
               </div>
               <div>
                 <p className="text-slate-400">3. Tax Payment</p>
                 <p className="font-bold text-white font-mono">01 Jul 2027</p>
-                <p className="text-[10px] text-amber-400">9m + 1d (s59D)</p>
+                <p className="text-[10px] text-slate-400">9m + 1d (s59D)</p>
               </div>
               <div>
                 <p className="text-slate-400">4. CT600 Return</p>
                 <p className="font-bold text-white font-mono">30 Sep 2027</p>
-                <p className="text-[10px] text-sky-400">12 Months (Sched 18)</p>
+                <p className="text-[10px] text-slate-400">12 Months (Sched 18)</p>
               </div>
             </div>
           </div>
@@ -482,84 +482,84 @@ export default function DashboardPage() {
           <button
             type="button"
             onClick={() => openHistoryDrawer('DRAFT')}
-            className="text-left bg-white p-5 rounded-2xl border border-stone-200 hover:border-amber-400 hover:shadow-md transition shadow-xs flex flex-col justify-between space-y-3 group cursor-pointer"
+            className="text-left bg-white p-5 rounded-2xl border border-slate-200 hover:border-slate-300 hover:shadow-xs transition shadow-2xs flex flex-col justify-between space-y-3 group cursor-pointer"
           >
             <div className="space-y-1">
               <div className="flex items-center justify-between">
-                <p className="text-xs font-medium text-stone-500">Companies House Accounts</p>
-                <ChevronRight className="w-3.5 h-3.5 text-stone-300 group-hover:text-amber-600 transition" />
+                <p className="text-xs font-medium text-slate-500">Companies House Accounts</p>
+                <ChevronRight className="w-3.5 h-3.5 text-slate-300 group-hover:text-slate-600 transition" />
               </div>
-              <p className="text-lg font-bold text-stone-950 font-mono">{filingMetrics.accountsDueDate}</p>
-              <p className="text-[11px] text-stone-400">9 months from period end (s442)</p>
+              <p className="text-lg font-bold text-slate-950 font-mono">{filingMetrics.accountsDueDate}</p>
+              <p className="text-[11px] text-slate-400">9 months from period end (s442)</p>
             </div>
-            <div className="flex items-center justify-between pt-2 border-t border-stone-100">
+            <div className="flex items-center justify-between pt-2 border-t border-slate-100">
               <span className="px-2.5 py-0.5 bg-emerald-50 text-emerald-800 text-[11px] font-semibold rounded-full border border-emerald-200">
                 Draft Ready
               </span>
-              <p className="text-[10px] text-stone-400 group-hover:text-amber-700 font-semibold transition">View Details →</p>
+              <p className="text-[10px] text-slate-400 group-hover:text-emerald-700 font-semibold transition">View Details →</p>
             </div>
           </button>
 
           <button
             type="button"
             onClick={() => openHistoryDrawer('DRAFT')}
-            className="text-left bg-white p-5 rounded-2xl border border-stone-200 hover:border-amber-400 hover:shadow-md transition shadow-xs flex flex-col justify-between space-y-3 group cursor-pointer"
+            className="text-left bg-white p-5 rounded-2xl border border-slate-200 hover:border-slate-300 hover:shadow-xs transition shadow-2xs flex flex-col justify-between space-y-3 group cursor-pointer"
           >
             <div className="space-y-1">
               <div className="flex items-center justify-between">
-                <p className="text-xs font-medium text-stone-500">HMRC Tax Payment</p>
-                <ChevronRight className="w-3.5 h-3.5 text-stone-300 group-hover:text-amber-600 transition" />
+                <p className="text-xs font-medium text-slate-500">HMRC Tax Payment</p>
+                <ChevronRight className="w-3.5 h-3.5 text-slate-300 group-hover:text-slate-600 transition" />
               </div>
-              <p className="text-lg font-bold text-stone-950 font-mono">{filingMetrics.taxDueDate}</p>
-              <p className="text-[11px] text-stone-400">9 months + 1 day from end (s59D)</p>
+              <p className="text-lg font-bold text-slate-950 font-mono">{filingMetrics.taxDueDate}</p>
+              <p className="text-[11px] text-slate-400">9 months + 1 day from end (s59D)</p>
             </div>
-            <div className="flex items-center justify-between pt-2 border-t border-stone-100">
+            <div className="flex items-center justify-between pt-2 border-t border-slate-100">
               <span className="px-2.5 py-0.5 bg-emerald-50 text-emerald-800 text-[11px] font-semibold rounded-full border border-emerald-200 font-mono">
                 {filingMetrics.taxPayable}
               </span>
-              <p className="text-[10px] text-stone-400 group-hover:text-amber-700 font-semibold transition">19% Small Profits →</p>
+              <p className="text-[10px] text-slate-400 group-hover:text-emerald-700 font-semibold transition">19% Small Profits →</p>
             </div>
           </button>
 
           <button
             type="button"
             onClick={() => openHistoryDrawer('DRAFT')}
-            className="text-left bg-white p-5 rounded-2xl border border-stone-200 hover:border-amber-400 hover:shadow-md transition shadow-xs flex flex-col justify-between space-y-3 group cursor-pointer"
+            className="text-left bg-white p-5 rounded-2xl border border-slate-200 hover:border-slate-300 hover:shadow-xs transition shadow-2xs flex flex-col justify-between space-y-3 group cursor-pointer"
           >
             <div className="space-y-1">
               <div className="flex items-center justify-between">
-                <p className="text-xs font-medium text-stone-500">HMRC CT600 Return</p>
-                <ChevronRight className="w-3.5 h-3.5 text-stone-300 group-hover:text-amber-600 transition" />
+                <p className="text-xs font-medium text-slate-500">HMRC CT600 Return</p>
+                <ChevronRight className="w-3.5 h-3.5 text-slate-300 group-hover:text-slate-600 transition" />
               </div>
-              <p className="text-lg font-bold text-stone-950 font-mono">{filingMetrics.ct600DueDate}</p>
-              <p className="text-[11px] text-stone-400">12 months from period end</p>
+              <p className="text-lg font-bold text-slate-950 font-mono">{filingMetrics.ct600DueDate}</p>
+              <p className="text-[11px] text-slate-400">12 months from period end</p>
             </div>
-            <div className="flex items-center justify-between pt-2 border-t border-stone-100">
+            <div className="flex items-center justify-between pt-2 border-t border-slate-100">
               <span className="px-2.5 py-0.5 bg-emerald-50 text-emerald-800 text-[11px] font-semibold rounded-full border border-emerald-200">
                 Draft Ready
               </span>
-              <p className="text-[10px] text-stone-400 group-hover:text-amber-700 font-semibold transition">IRmark Ready →</p>
+              <p className="text-[10px] text-slate-400 group-hover:text-emerald-700 font-semibold transition">IRmark Ready →</p>
             </div>
           </button>
 
           <button
             type="button"
             onClick={() => openHistoryDrawer('UP_TO_DATE')}
-            className="text-left bg-white p-5 rounded-2xl border border-stone-200 hover:border-amber-400 hover:shadow-md transition shadow-xs flex flex-col justify-between space-y-3 group cursor-pointer"
+            className="text-left bg-white p-5 rounded-2xl border border-slate-200 hover:border-slate-300 hover:shadow-xs transition shadow-2xs flex flex-col justify-between space-y-3 group cursor-pointer"
           >
             <div className="space-y-1">
               <div className="flex items-center justify-between">
-                <p className="text-xs font-medium text-stone-500">Confirmation Statement (CS01)</p>
-                <ChevronRight className="w-3.5 h-3.5 text-stone-300 group-hover:text-amber-600 transition" />
+                <p className="text-xs font-medium text-slate-500">Confirmation Statement (CS01)</p>
+                <ChevronRight className="w-3.5 h-3.5 text-slate-300 group-hover:text-slate-600 transition" />
               </div>
-              <p className="text-lg font-bold text-stone-950 font-mono">15 Sep 2027</p>
-              <p className="text-[11px] text-stone-400">Identity check (separate from accounts)</p>
+              <p className="text-lg font-bold text-slate-950 font-mono">15 Sep 2027</p>
+              <p className="text-[11px] text-slate-400">Identity check (separate from accounts)</p>
             </div>
-            <div className="flex items-center justify-between pt-2 border-t border-stone-100">
-              <span className="px-2.5 py-0.5 bg-stone-100 text-stone-700 text-[11px] font-semibold rounded-full border border-stone-200">
+            <div className="flex items-center justify-between pt-2 border-t border-slate-100">
+              <span className="px-2.5 py-0.5 bg-slate-100 text-slate-700 text-[11px] font-semibold rounded-full border border-slate-200">
                 £34 Fee
               </span>
-              <p className="text-[10px] text-stone-400 group-hover:text-amber-700 font-semibold transition">Officers &amp; PSC →</p>
+              <p className="text-[10px] text-slate-400 group-hover:text-emerald-700 font-semibold transition">Officers &amp; PSC →</p>
             </div>
           </button>
         </div>
@@ -567,66 +567,66 @@ export default function DashboardPage() {
 
       {/* Accounting Baseline Numbers */}
       <div className="space-y-3">
-        <h2 className="text-xs font-semibold text-stone-500 uppercase tracking-wider flex items-center space-x-2">
-          <TrendingUp className="w-4 h-4 text-amber-600" />
+        <h2 className="text-xs font-semibold text-slate-500 uppercase tracking-wider flex items-center space-x-2">
+          <TrendingUp className="w-4 h-4 text-slate-500" />
           <span>Year-End Accounts & Tax Position (2025/26)</span>
         </h2>
 
         <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
-          <div className="bg-white p-5 rounded-2xl border border-stone-200 shadow-xs space-y-1">
-            <p className="text-xs font-medium text-stone-500">
+          <div className="bg-white p-5 rounded-2xl border border-slate-200 shadow-2xs space-y-1">
+            <p className="text-xs font-medium text-slate-500">
               <TermExplainer termId="ct600" label="Turnover (Box 145)" />
             </p>
-            <p className="text-2xl font-bold text-stone-950 font-mono">{filingMetrics.turnover}</p>
-            <p className="text-[11px] text-stone-500">100% Micro-entity trade</p>
+            <p className="text-2xl font-bold text-slate-950 font-mono">{filingMetrics.turnover}</p>
+            <p className="text-[11px] text-slate-500">100% Micro-entity trade</p>
           </div>
 
-          <div className="bg-white p-5 rounded-2xl border border-stone-200 shadow-xs space-y-1">
-            <p className="text-xs font-medium text-stone-500">
+          <div className="bg-white p-5 rounded-2xl border border-slate-200 shadow-2xs space-y-1">
+            <p className="text-xs font-medium text-slate-500">
               <TermExplainer termId="disallowable-expenses" label="Total Taxable Profits" />
             </p>
-            <p className="text-2xl font-bold text-stone-950 font-mono">{filingMetrics.taxableProfit}</p>
-            <p className="text-[11px] text-stone-500">Box 375 after AIA relief</p>
+            <p className="text-2xl font-bold text-slate-950 font-mono">{filingMetrics.taxableProfit}</p>
+            <p className="text-[11px] text-slate-500">Box 375 after AIA relief</p>
           </div>
 
-          <div className="bg-white p-5 rounded-2xl border border-stone-200 shadow-xs space-y-1">
-            <p className="text-xs font-medium text-stone-500">
+          <div className="bg-white p-5 rounded-2xl border border-slate-200 shadow-2xs space-y-1">
+            <p className="text-xs font-medium text-slate-500">
               <TermExplainer termId="ct600" label="Corporation Tax (19%)" />
             </p>
-            <p className="text-2xl font-bold text-amber-700 font-mono">{filingMetrics.taxPayable}</p>
-            <p className="text-[11px] text-stone-500">Small Profits Rate (A ≤ £50k)</p>
+            <p className="text-2xl font-bold text-slate-950 font-mono">{filingMetrics.taxPayable}</p>
+            <p className="text-[11px] text-emerald-700 font-medium">Small Profits Rate (19%)</p>
           </div>
 
-          <div className="bg-white p-5 rounded-2xl border border-stone-200 shadow-xs space-y-1">
-            <p className="text-xs font-medium text-stone-500">
+          <div className="bg-white p-5 rounded-2xl border border-slate-200 shadow-2xs space-y-1">
+            <p className="text-xs font-medium text-slate-500">
               <TermExplainer termId="distributable-reserves" label="Distributable Reserves" />
             </p>
-            <p className="text-2xl font-bold text-stone-950 font-mono">{filingMetrics.retainedEarnings}</p>
-            <p className="text-[11px] text-stone-500">Available for dividends</p>
+            <p className="text-2xl font-bold text-slate-950 font-mono">{filingMetrics.retainedEarnings}</p>
+            <p className="text-[11px] text-slate-500">Available for dividends</p>
           </div>
         </div>
       </div>
 
       {/* Pre-Flight Shield Radar Banner */}
-      <div className="bg-[#1C1917] text-white rounded-3xl p-6 sm:p-7 border border-stone-800 shadow-sm flex flex-col md:flex-row items-start md:items-center justify-between gap-6">
+      <div className="bg-slate-900 text-white rounded-3xl p-6 sm:p-7 border border-slate-800 shadow-sm flex flex-col md:flex-row items-start md:items-center justify-between gap-6">
         <div className="space-y-2">
           <div className="flex items-center space-x-2.5">
-            <span className="w-8 h-8 rounded-xl bg-amber-500/20 text-amber-400 flex items-center justify-center">
+            <span className="w-8 h-8 rounded-xl bg-emerald-500/10 text-emerald-400 border border-emerald-500/20 flex items-center justify-center">
               <ShieldCheck className="w-5 h-5" />
             </span>
             <h3 className="text-lg font-bold">40-Point Pre-Flight Rejection Shield</h3>
-            <span className="bg-emerald-400/10 text-emerald-400 text-xs px-2.5 py-0.5 rounded-full font-mono font-bold border border-emerald-400/20">
+            <span className="bg-emerald-400/10 text-emerald-300 text-xs px-2.5 py-0.5 rounded-full font-mono font-bold border border-emerald-400/20">
               PASSED 40 / 40
             </span>
           </div>
-          <p className="text-xs sm:text-sm text-stone-300 max-w-2xl leading-relaxed">
+          <p className="text-xs sm:text-sm text-slate-300 max-w-2xl leading-relaxed">
             Every balance sheet equation balances to 0p. Companies Act 2006 s477 audit exemption is declared. Director loan schedule complies with CTA 2010 s455. Zero gateway errors.
           </p>
         </div>
 
         <Link
           href={`/filings/${latestFiling?.id || 'drop-logicx'}/shield?crn=${activeCompany.crn}`}
-          className="bg-gradient-to-r from-amber-500 to-orange-500 hover:from-amber-600 hover:to-orange-600 text-stone-950 font-bold px-4 py-2.5 rounded-xl text-xs sm:text-sm transition whitespace-nowrap self-stretch sm:self-auto text-center"
+          className="bg-emerald-600 hover:bg-emerald-500 text-white font-semibold px-4 py-2.5 rounded-xl text-xs sm:text-sm transition whitespace-nowrap self-stretch sm:self-auto text-center shadow-xs"
         >
           Inspect 40 Validation Checks
         </Link>
@@ -634,63 +634,63 @@ export default function DashboardPage() {
 
       {/* Free Watermarked Drafts & Document Center */}
       <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-        <div className="bg-white p-6 rounded-3xl border border-stone-200 shadow-xs space-y-4">
+        <div className="bg-white p-6 rounded-3xl border border-slate-200 shadow-2xs space-y-4">
           <div className="flex items-center space-x-3">
-            <div className="w-10 h-10 rounded-xl bg-stone-100 text-stone-800 flex items-center justify-center font-bold">
+            <div className="w-10 h-10 rounded-xl bg-slate-100 text-slate-700 flex items-center justify-center font-bold">
               <FileText className="w-5 h-5" />
             </div>
             <div>
-              <h3 className="font-bold text-stone-950 text-base">Annual FRS 105 Accounts (PDF)</h3>
-              <p className="text-xs text-stone-500">Balance sheet, P&L, footnotes, and director sign-off</p>
+              <h3 className="font-bold text-slate-950 text-base">Annual FRS 105 Accounts (PDF)</h3>
+              <p className="text-xs text-slate-500">Balance sheet, P&L, footnotes, and director sign-off</p>
             </div>
           </div>
-          <p className="text-xs text-stone-600 leading-relaxed">
+          <p className="text-xs text-slate-600 leading-relaxed">
             Download your free watermarked PDF copy before submission. Review exact numbers with co-directors or stakeholders without paying a penny.
           </p>
           <div className="pt-2 flex items-center space-x-3">
             <a
               href="/api/documents/accounts-pdf?draft=true"
               target="_blank"
-              className="inline-flex items-center space-x-1.5 text-xs font-semibold text-stone-900 hover:text-amber-700 bg-stone-100 hover:bg-stone-200 px-3.5 py-2 rounded-xl transition"
+              className="inline-flex items-center space-x-1.5 text-xs font-semibold text-slate-900 hover:text-emerald-700 bg-slate-100 hover:bg-slate-200 px-3.5 py-2 rounded-xl transition"
             >
-              <FileDown className="w-3.5 h-3.5 text-stone-500" />
+              <FileDown className="w-3.5 h-3.5 text-slate-500" />
               <span>Download Draft Accounts</span>
             </a>
             <a
               href="/api/documents/ixbrl?draft=true"
               target="_blank"
-              className="inline-flex items-center space-x-1 text-xs font-medium text-stone-600 hover:text-stone-900 px-2 py-2 transition"
+              className="inline-flex items-center space-x-1 text-xs font-medium text-slate-600 hover:text-slate-900 px-2 py-2 transition"
             >
               <span>View iXBRL Code</span>
             </a>
           </div>
         </div>
 
-        <div className="bg-white p-6 rounded-3xl border border-stone-200 shadow-xs space-y-4">
+        <div className="bg-white p-6 rounded-3xl border border-slate-200 shadow-2xs space-y-4">
           <div className="flex items-center space-x-3">
-            <div className="w-10 h-10 rounded-xl bg-amber-50 text-amber-800 flex items-center justify-center font-bold">
+            <div className="w-10 h-10 rounded-xl bg-emerald-50 text-emerald-800 border border-emerald-200/60 flex items-center justify-center font-bold">
               <FileText className="w-5 h-5" />
             </div>
             <div>
-              <h3 className="font-bold text-stone-950 text-base">HMRC CT600 Form & CT600A (PDF)</h3>
-              <p className="text-xs text-stone-500">Official HMRC box layout with s455 loan schedule</p>
+              <h3 className="font-bold text-slate-950 text-base">HMRC CT600 Form & CT600A (PDF)</h3>
+              <p className="text-xs text-slate-500">Official HMRC box layout with s455 loan schedule</p>
             </div>
           </div>
-          <p className="text-xs text-stone-600 leading-relaxed">
+          <p className="text-xs text-slate-600 leading-relaxed">
             Recreates the official HMRC return: Box 145 (Turnover), Box 235 (Profits), Box 440 (Tax @ 19%), and CT600A director loan schedule.
           </p>
           <div className="pt-2 flex items-center space-x-3">
             <a
               href="/api/documents/ct600-pdf?draft=true"
               target="_blank"
-              className="inline-flex items-center space-x-1.5 text-xs font-semibold text-amber-900 hover:text-amber-950 bg-amber-50 hover:bg-amber-100 px-3.5 py-2 rounded-xl transition border border-amber-200"
+              className="inline-flex items-center space-x-1.5 text-xs font-semibold text-emerald-900 hover:text-emerald-950 bg-emerald-50 hover:bg-emerald-100 px-3.5 py-2 rounded-xl transition border border-emerald-200"
             >
               <FileDown className="w-3.5 h-3.5" />
               <span>Download Draft CT600</span>
             </a>
             <Link
               href={`/filings/${latestFiling?.id || 'drop-logicx'}/documents`}
-              className="inline-flex items-center space-x-1 text-xs font-medium text-stone-600 hover:text-stone-900 px-2 py-2 transition"
+              className="inline-flex items-center space-x-1 text-xs font-medium text-slate-600 hover:text-slate-900 px-2 py-2 transition"
             >
               <span>Document Center</span>
             </Link>
@@ -700,19 +700,19 @@ export default function DashboardPage() {
 
       {/* Connect Company Modal */}
       {isConnectModalOpen && (
-        <div className="fixed inset-0 z-50 bg-[#1C1917]/70 backdrop-blur-xs flex items-center justify-center p-4">
-          <div className="bg-white rounded-3xl max-w-md w-full border border-stone-200 shadow-2xl p-6 space-y-5 animate-in fade-in-50 zoom-in-95">
+        <div className="fixed inset-0 z-50 bg-slate-950/70 backdrop-blur-xs flex items-center justify-center p-4">
+          <div className="bg-white rounded-3xl max-w-md w-full border border-slate-200 shadow-2xl p-6 space-y-5 animate-in fade-in-50 zoom-in-95">
             <div className="flex items-start justify-between">
               <div>
-                <h3 className="text-lg font-bold text-stone-900 tracking-tight">Connect another UK Company</h3>
-                <p className="text-xs text-stone-500 mt-0.5">
+                <h3 className="text-lg font-bold text-slate-900 tracking-tight">Connect another UK Company</h3>
+                <p className="text-xs text-slate-500 mt-0.5">
                   Enter the 8-digit Company Registration Number (CRN) to sync with Companies House.
                 </p>
               </div>
               <button
                 type="button"
                 onClick={() => setIsConnectModalOpen(false)}
-                className="text-stone-400 hover:text-stone-600 p-1 rounded-lg"
+                className="text-slate-400 hover:text-slate-600 p-1 rounded-lg"
               >
                 <X className="w-5 h-5" />
               </button>
@@ -726,7 +726,7 @@ export default function DashboardPage() {
 
             <form onSubmit={handleConnectCompany} className="space-y-4">
               <div>
-                <label className="block text-xs font-semibold text-stone-700 mb-1">
+                <label className="block text-xs font-semibold text-slate-700 mb-1">
                   Company Registration Number (CRN)
                 </label>
                 <input
@@ -734,7 +734,7 @@ export default function DashboardPage() {
                   placeholder="e.g. 12345678"
                   value={searchCrn}
                   onChange={(e) => setSearchCrn(e.target.value)}
-                  className="w-full px-4 py-2.5 rounded-xl border border-stone-300 text-sm focus:outline-none focus:border-amber-500 font-mono"
+                  className="w-full px-4 py-2.5 rounded-xl border border-slate-300 text-sm focus:outline-none focus:border-emerald-600 focus:ring-1 focus:ring-emerald-600 font-mono"
                   required
                 />
               </div>
@@ -743,14 +743,14 @@ export default function DashboardPage() {
                 <button
                   type="button"
                   onClick={() => setIsConnectModalOpen(false)}
-                  className="px-4 py-2 rounded-xl text-xs font-semibold text-stone-600 hover:bg-stone-100"
+                  className="px-4 py-2 rounded-xl text-xs font-semibold text-slate-600 hover:bg-slate-100"
                 >
                   Cancel
                 </button>
                 <button
                   type="submit"
                   disabled={isConnecting}
-                  className="bg-gradient-to-r from-amber-500 to-orange-500 hover:from-amber-600 hover:to-orange-600 text-stone-950 font-bold px-4 py-2 rounded-xl text-xs flex items-center space-x-1.5 transition disabled:opacity-50"
+                  className="bg-emerald-600 hover:bg-emerald-500 text-white font-semibold px-4 py-2 rounded-xl text-xs flex items-center space-x-1.5 transition disabled:opacity-50 shadow-xs"
                 >
                   {isConnecting && <Loader2 className="w-3.5 h-3.5 animate-spin" />}
                   <span>Connect Entity</span>

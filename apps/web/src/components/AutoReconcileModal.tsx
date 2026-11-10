@@ -81,12 +81,12 @@ export function AutoReconcileModal({
             </p>
             <div className="grid grid-cols-2 gap-2 pt-1 font-mono text-xs">
               <div className="bg-white/90 p-2 rounded-lg border border-amber-100">
-                <span className="text-stone-500 text-[10px] block font-sans">Net Assets (A)</span>
-                <span className="font-bold text-stone-900">£{(totalAssetsPence / 100).toLocaleString(undefined, { minimumFractionDigits: 2 })}</span>
+                <span className="text-slate-500 text-[10px] block font-sans">Net Assets (A)</span>
+                <span className="font-bold text-slate-900">£{(totalAssetsPence / 100).toLocaleString(undefined, { minimumFractionDigits: 2 })}</span>
               </div>
               <div className="bg-white/90 p-2 rounded-lg border border-amber-100">
-                <span className="text-stone-500 text-[10px] block font-sans">Shareholders' Funds (B)</span>
-                <span className="font-bold text-stone-900">£{(totalFundsPence / 100).toLocaleString(undefined, { minimumFractionDigits: 2 })}</span>
+                <span className="text-slate-500 text-[10px] block font-sans">Shareholders' Funds (B)</span>
+                <span className="font-bold text-slate-900">£{(totalFundsPence / 100).toLocaleString(undefined, { minimumFractionDigits: 2 })}</span>
               </div>
             </div>
           </div>

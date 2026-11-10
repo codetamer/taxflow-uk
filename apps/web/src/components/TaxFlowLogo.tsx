@@ -27,12 +27,12 @@ export function TaxFlowLogo({
   const dim = typeof size === 'number' ? { icon: size, height: size } : (iconDimensions[size] || iconDimensions.md);
 
   const isDark = theme === 'dark';
-  const textColor = isDark ? 'text-white' : 'text-stone-950';
-  const flowColor = isDark ? 'text-amber-400' : 'text-orange-600';
-  const badgeBg = isDark ? 'bg-stone-800/90 border-stone-700 text-amber-400' : 'bg-stone-100 border-stone-200 text-orange-600';
-  const taglineColor = isDark ? 'text-stone-400' : 'text-stone-500';
+  const textColor = isDark ? 'text-white' : 'text-slate-900';
+  const flowColor = isDark ? 'text-emerald-400' : 'text-emerald-600';
+  const badgeBg = isDark ? 'bg-emerald-950/60 border-emerald-500/40 text-emerald-300' : 'bg-emerald-50 border-emerald-200 text-emerald-700';
+  const taglineColor = isDark ? 'text-slate-400' : 'text-slate-500';
 
-  // Concept 5: The Ledger Chevron & Ascending Pillar (Kinetic Balance)
+  // Concept: The Ledger Chevron & Ascending Pillar (Kinetic Balance)
   const IconMark = () => (
     <svg
       width={dim.icon}
@@ -45,8 +45,8 @@ export function TaxFlowLogo({
     >
       <defs>
         <linearGradient id="tf_grad_bar1" x1="0%" y1="0%" x2="100%" y2="100%">
-          <stop offset="0%" stop-color="#F59E0B" />
-          <stop offset="100%" stop-color="#EA580C" />
+          <stop offset="0%" stopColor="#10B981" />
+          <stop offset="100%" stopColor="#059669" />
         </linearGradient>
       </defs>
 
@@ -55,8 +55,8 @@ export function TaxFlowLogo({
         width="76"
         height="76"
         rx="20"
-        fill={isDark ? '#292524' : '#F5F5F4'}
-        stroke={isDark ? '#44403C' : '#E7E5E4'}
+        fill={isDark ? '#1E293B' : '#F1F5F9'}
+        stroke={isDark ? '#334155' : '#E2E8F0'}
         strokeWidth="2"
       />
 
@@ -64,15 +64,15 @@ export function TaxFlowLogo({
       <rect x="11" y="16" width="54" height="10" rx="5" fill="url(#tf_grad_bar1)" />
 
       {/* Tier 2: Deductions Bar (Offset Ledger Pillar) */}
-      <rect x="22" y="32" width="43" height="10" rx="5" fill="#F59E0B" opacity="0.9" />
+      <rect x="22" y="32" width="43" height="10" rx="5" fill="#10B981" opacity="0.9" />
 
       {/* Tier 3: Retained Earnings / Core Profit */}
-      <rect x="22" y="48" width="28" height="10" rx="5" fill="#D97706" opacity="0.75" />
+      <rect x="22" y="48" width="28" height="10" rx="5" fill="#059669" opacity="0.8" />
 
       {/* Kinetic Forward Chevron (Growth & Balance) */}
       <path
         d="M58 48 L66 53 L58 58"
-        stroke="#F59E0B"
+        stroke="#10B981"
         strokeWidth="3.5"
         strokeLinecap="round"
         strokeLinejoin="round"

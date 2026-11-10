@@ -608,16 +608,16 @@ export default function ShieldDashboardPage() {
             <Info className="w-4 h-4 text-amber-700" />
             <span>Why Does This Diagnostic Screen Exist?</span>
           </h3>
-          <p className="text-xs text-stone-800 leading-relaxed max-w-3xl">
+          <p className="text-xs text-slate-700 leading-relaxed max-w-3xl">
             Government computer systems at Companies House and HMRC reject filings for simple mathematical rounding errors, missing legal declarations, or illegal dividends. TaxFlow checks all 40 rules <strong>before</strong> you submit, saving you weeks of stressful rejection notices.
           </p>
         </div>
         <button
           type="button"
           onClick={() => openGlossary('balance-sheet-symmetry')}
-          className="inline-flex items-center space-x-1.5 text-xs font-semibold text-amber-900 bg-white hover:bg-amber-100/60 border border-amber-300 px-3.5 py-2 rounded-xl transition shrink-0"
+          className="inline-flex items-center space-x-1.5 text-xs font-semibold text-slate-700 bg-white hover:bg-slate-50 border border-slate-200 px-3.5 py-2 rounded-xl transition shrink-0 shadow-2xs"
         >
-          <BookOpen className="w-3.5 h-3.5 text-amber-700" />
+          <BookOpen className="w-3.5 h-3.5 text-slate-500" />
           <span>Search Tax Glossary</span>
         </button>
       </div>
@@ -626,9 +626,9 @@ export default function ShieldDashboardPage() {
       <div className="bg-slate-900 text-white p-5 sm:p-6 rounded-3xl border border-slate-800 shadow-sm space-y-3">
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
           <div className="flex items-center space-x-2.5">
-            <Sparkles className="w-4 h-4 text-indigo-400" />
+            <Sparkles className="w-4 h-4 text-emerald-400" />
             <div>
-              <h2 className="text-xs font-bold uppercase tracking-wider text-indigo-200">
+              <h2 className="text-xs font-bold uppercase tracking-wider text-emerald-200">
                 Error Defense Simulator (Demo / Reviewer Testing)
               </h2>
               <p className="text-[11px] text-slate-400">
@@ -639,7 +639,7 @@ export default function ShieldDashboardPage() {
           <button
             type="button"
             onClick={() => setIsSimDrawerOpen(!isSimDrawerOpen)}
-            className="px-3 py-1.5 rounded-xl bg-slate-800 hover:bg-slate-700 text-indigo-300 hover:text-white text-xs font-semibold border border-slate-700 transition self-start sm:self-auto"
+            className="px-3 py-1.5 rounded-xl bg-slate-800 hover:bg-slate-700 text-emerald-300 hover:text-white text-xs font-semibold border border-slate-700 transition self-start sm:self-auto"
           >
             {isSimDrawerOpen ? 'Hide Simulation Chips' : '⚡ Open Fault Injector'}
           </button>
@@ -853,7 +853,7 @@ export default function ShieldDashboardPage() {
             <button
               type="button"
               onClick={toggleAllCategories}
-              className="text-xs font-semibold text-indigo-600 hover:text-indigo-800 transition whitespace-nowrap"
+              className="text-xs font-semibold text-emerald-700 hover:text-emerald-800 transition whitespace-nowrap"
             >
               {collapsedCategories.size > 0 ? 'Expand All Categories' : 'Collapse Passing Categories'}
             </button>

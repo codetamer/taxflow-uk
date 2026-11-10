@@ -6,7 +6,7 @@
   --ink: #0f172a;
   --surface: #ffffff;
   --surface-subtle: #f8fafc;
-  --canvas: #faf9f6;
+  --canvas: #f8fafc;
   --muted: #64748b;
   --line: #e2e8f0;
   --line-strong: #cbd5e1;
@@ -16,7 +16,7 @@
   --amber-subtle: #fffbeb;
   --crimson: #dc2626;
   --crimson-subtle: #fef2f2;
-  --navy: #0b1528;
+  --navy: #0f172a;
 }
 
 @layer base {

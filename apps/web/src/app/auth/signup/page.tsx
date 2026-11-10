@@ -10,7 +10,7 @@ export default function SignupPage() {
   return (
     <Suspense fallback={
       <div className="min-h-[70vh] flex items-center justify-center">
-        <div className="w-8 h-8 rounded-full border-2 border-amber-500 border-t-transparent animate-spin" />
+        <div className="w-8 h-8 rounded-full border-2 border-emerald-600 border-t-transparent animate-spin" />
       </div>
     }>
       <SignupForm />
@@ -62,10 +62,10 @@ function SignupForm() {
         {/* Header */}
         <div className="flex flex-col items-center text-center space-y-3">
           <TaxFlowLogo variant="icon-only" theme="light" size={48} />
-          <h1 className="text-2xl font-bold tracking-tight text-stone-950">
+          <h1 className="text-2xl font-bold tracking-tight text-slate-950">
             Create Director Account
           </h1>
-          <p className="text-xs text-stone-500">
+          <p className="text-xs text-slate-500">
             Start filing annual accounts with 40-point pre-flight assurance
           </p>
         </div>
@@ -80,17 +80,17 @@ function SignupForm() {
 
         {/* Reviewer Quick Access Banner */}
         {process.env.NEXT_PUBLIC_REVIEWER_MODE !== 'false' && (
-          <div className="bg-amber-50 border border-amber-200 rounded-3xl p-5 text-center space-y-3">
-            <div className="flex items-center justify-center space-x-2 text-xs font-bold text-amber-900">
-              <Sparkles className="w-4 h-4 text-amber-600" />
+          <div className="bg-slate-50 border border-slate-200 rounded-3xl p-5 text-center space-y-3 shadow-2xs">
+            <div className="flex items-center justify-center space-x-2 text-xs font-bold text-slate-900">
+              <Sparkles className="w-4 h-4 text-emerald-600" />
               <span>Reviewer Mode Active</span>
             </div>
-            <p className="text-xs text-stone-600">
+            <p className="text-xs text-slate-600">
               Authentication is bypassed for inspection. You can enter the dashboard directly without creating an account.
             </p>
             <Link
               href="/dashboard"
-              className="inline-flex items-center justify-center space-x-2 w-full bg-gradient-to-r from-amber-500 to-orange-500 hover:from-amber-400 hover:to-orange-400 text-stone-950 font-bold py-2.5 rounded-xl text-xs transition shadow-xs"
+              className="inline-flex items-center justify-center space-x-2 w-full bg-emerald-600 hover:bg-emerald-700 text-white font-bold py-2.5 rounded-xl text-xs transition shadow-xs"
             >
               <span>Enter Studio Directly →</span>
             </Link>
@@ -98,67 +98,67 @@ function SignupForm() {
         )}
 
         {/* Form Card */}
-        <div className="bg-white rounded-3xl p-7 border border-stone-200/90 shadow-sm space-y-6">
+        <div className="bg-white rounded-3xl p-7 border border-slate-200/90 shadow-sm space-y-6">
           <form onSubmit={handleSubmit} className="space-y-4">
             <div>
-              <label className="block text-xs font-bold text-stone-700 mb-1.5">
+              <label className="block text-xs font-bold text-slate-700 mb-1.5">
                 Full Director Name
               </label>
               <div className="relative">
-                <User className="w-4 h-4 text-stone-400 absolute left-3.5 top-1/2 -translate-y-1/2" />
+                <User className="w-4 h-4 text-slate-400 absolute left-3.5 top-1/2 -translate-y-1/2" />
                 <input
                   type="text"
                   required
                   placeholder="e.g. Muhammad Saif Raza"
                   value={fullName}
                   onChange={(e) => setFullName(e.target.value)}
-                  className="w-full pl-10 pr-4 py-2.5 bg-white border border-stone-300 rounded-xl text-xs font-medium focus:outline-none focus:ring-2 focus:ring-amber-500 shadow-2xs"
+                  className="w-full pl-10 pr-4 py-2.5 bg-white border border-slate-300 rounded-xl text-xs font-medium focus:outline-none focus:ring-2 focus:ring-slate-950 shadow-2xs"
                 />
               </div>
             </div>
 
             <div>
-              <label className="block text-xs font-bold text-stone-700 mb-1.5">
+              <label className="block text-xs font-bold text-slate-700 mb-1.5">
                 Work Email Address
               </label>
               <div className="relative">
-                <Mail className="w-4 h-4 text-stone-400 absolute left-3.5 top-1/2 -translate-y-1/2" />
+                <Mail className="w-4 h-4 text-slate-400 absolute left-3.5 top-1/2 -translate-y-1/2" />
                 <input
                   type="email"
                   required
                   placeholder="director@company.co.uk"
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
-                  className="w-full pl-10 pr-4 py-2.5 bg-white border border-stone-300 rounded-xl text-xs font-medium focus:outline-none focus:ring-2 focus:ring-amber-500 shadow-2xs"
+                  className="w-full pl-10 pr-4 py-2.5 bg-white border border-slate-300 rounded-xl text-xs font-medium focus:outline-none focus:ring-2 focus:ring-slate-950 shadow-2xs"
                 />
               </div>
             </div>
 
             <div>
-              <label className="block text-xs font-bold text-stone-700 mb-1.5">
+              <label className="block text-xs font-bold text-slate-700 mb-1.5">
                 Company Registration Number (CRN)
-                <span className="text-[10px] text-stone-400 font-normal ml-1">(Optional)</span>
+                <span className="text-[10px] text-slate-400 font-normal ml-1">(Optional)</span>
               </label>
               <div className="relative">
-                <Building2 className="w-4 h-4 text-stone-400 absolute left-3.5 top-1/2 -translate-y-1/2" />
+                <Building2 className="w-4 h-4 text-slate-400 absolute left-3.5 top-1/2 -translate-y-1/2" />
                 <input
                   type="text"
                   placeholder="e.g. 15152081"
                   value={crn}
                   onChange={(e) => setCrn(e.target.value)}
-                  className="w-full pl-10 pr-4 py-2.5 bg-white border border-stone-300 rounded-xl text-xs font-mono font-medium focus:outline-none focus:ring-2 focus:ring-amber-500 shadow-2xs"
+                  className="w-full pl-10 pr-4 py-2.5 bg-white border border-slate-300 rounded-xl text-xs font-mono font-medium focus:outline-none focus:ring-2 focus:ring-slate-950 shadow-2xs"
                 />
               </div>
-              <p className="text-[11px] text-stone-400 mt-1">Can be found on your incorporation certificate</p>
+              <p className="text-[11px] text-slate-400 mt-1">Can be found on your incorporation certificate</p>
             </div>
 
             <div>
-              <label className="block text-xs font-bold text-stone-700 mb-1.5">
+              <label className="block text-xs font-bold text-slate-700 mb-1.5">
                 Password
-                <span className="text-[10px] text-stone-400 font-normal ml-1">(Min. 8 characters)</span>
+                <span className="text-[10px] text-slate-400 font-normal ml-1">(Min. 8 characters)</span>
               </label>
               <div className="relative">
-                <Lock className="w-4 h-4 text-stone-400 absolute left-3.5 top-1/2 -translate-y-1/2" />
+                <Lock className="w-4 h-4 text-slate-400 absolute left-3.5 top-1/2 -translate-y-1/2" />
                 <input
                   type="password"
                   required
@@ -166,7 +166,7 @@ function SignupForm() {
                   placeholder="••••••••••••"
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
-                  className="w-full pl-10 pr-4 py-2.5 bg-white border border-stone-300 rounded-xl text-xs font-medium focus:outline-none focus:ring-2 focus:ring-amber-500 shadow-2xs"
+                  className="w-full pl-10 pr-4 py-2.5 bg-white border border-slate-300 rounded-xl text-xs font-medium focus:outline-none focus:ring-2 focus:ring-slate-950 shadow-2xs"
                 />
               </div>
             </div>
@@ -174,7 +174,7 @@ function SignupForm() {
             <button
               type="submit"
               disabled={isLoading}
-              className="w-full inline-flex items-center justify-center space-x-2 bg-gradient-to-r from-amber-500 to-orange-500 hover:from-amber-400 hover:to-orange-400 text-stone-950 font-bold py-3 rounded-xl text-xs transition shadow-xs disabled:opacity-50"
+              className="w-full inline-flex items-center justify-center space-x-2 bg-emerald-600 hover:bg-emerald-700 text-white font-bold py-3 rounded-xl text-xs transition shadow-xs disabled:opacity-50"
             >
               <span>{isLoading ? 'Creating Account...' : 'Register & Open Dashboard'}</span>
               <ArrowRight className="w-3.5 h-3.5" />
@@ -182,13 +182,13 @@ function SignupForm() {
           </form>
 
           {/* Trust points */}
-          <div className="pt-4 border-t border-stone-100 text-[11px] text-stone-500 space-y-1.5">
+          <div className="pt-4 border-t border-slate-100 text-[11px] text-slate-500 space-y-1.5">
             <div className="flex items-center space-x-2">
-              <CheckCircle2 className="w-3.5 h-3.5 text-amber-600 shrink-0" />
+              <CheckCircle2 className="w-3.5 h-3.5 text-emerald-600 shrink-0" />
               <span>Free draft documents before £49 filing fee</span>
             </div>
             <div className="flex items-center space-x-2">
-              <CheckCircle2 className="w-3.5 h-3.5 text-amber-600 shrink-0" />
+              <CheckCircle2 className="w-3.5 h-3.5 text-emerald-600 shrink-0" />
               <span>Zero gateway rejections guaranteed</span>
             </div>
           </div>
