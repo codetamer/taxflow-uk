@@ -166,11 +166,12 @@ export default function DashboardPage() {
     periodEnd: '30 Sep 2026',
     turnover: '£100,000.00',
     operatingProfit: '£31,900.00',
-    taxPayable: '£6,061.00',
+    taxableProfit: '£20,000.00',
+    taxPayable: '£3,800.00',
     effectiveRate: '19.00%',
-    netProfit: '£25,839.00',
-    retainedEarnings: '£31,039.00',
-    netAssets: '£31,139.00',
+    netProfit: '£28,100.00',
+    retainedEarnings: '£33,300.00',
+    netAssets: '£33,400.00',
     accountsDueDate: '30 Jun 2027',
     taxDueDate: '01 Jul 2027',
     ct600DueDate: '30 Sep 2027',
@@ -186,7 +187,7 @@ export default function DashboardPage() {
       periodEnd: filingMetrics.periodEnd,
       status: customStatus || latestFiling?.status || 'DRAFT',
       turnover: 100000,
-      taxPayable: 6061,
+      taxPayable: 3800,
       irmark: 'C14N-SHA1: 4a7c89f2e3b1... (Certified Ready)',
       submissionDate: latestFiling?.submittedAt || undefined,
       correlationId: latestFiling?.correlationId || 'HMRC-SUB-2026-99824',
@@ -584,8 +585,8 @@ export default function DashboardPage() {
             <p className="text-xs font-medium text-stone-500">
               <TermExplainer termId="disallowable-expenses" label="Total Taxable Profits" />
             </p>
-            <p className="text-2xl font-bold text-stone-950 font-mono">{filingMetrics.operatingProfit}</p>
-            <p className="text-[11px] text-stone-500">Box 235 after add-backs</p>
+            <p className="text-2xl font-bold text-stone-950 font-mono">{filingMetrics.taxableProfit}</p>
+            <p className="text-[11px] text-stone-500">Box 375 after AIA relief</p>
           </div>
 
           <div className="bg-white p-5 rounded-2xl border border-stone-200 shadow-xs space-y-1">

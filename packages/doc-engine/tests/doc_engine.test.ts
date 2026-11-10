@@ -180,6 +180,7 @@ test('generateFrs105Ixbrl embeds all core FRS 105 P&L and Balance Sheet tags', (
   assert.ok(ixbrl.includes('name="uk-gaap:CreditorsDueWithinOneYear"'));
   assert.ok(ixbrl.includes('name="uk-gaap:NetCurrentAssetsLiabilities"'));
   assert.ok(ixbrl.includes('name="uk-gaap:TotalAssetsLessCurrentLiabilities"'));
+  assert.ok(ixbrl.includes('name="uk-gaap:NetAssetsLiabilities"'));
   assert.ok(ixbrl.includes('name="uk-gaap:ShareholderFunds"'));
   assert.ok(ixbrl.includes('name="uk-gaap:CalledUpShareCapital"'));
   assert.ok(ixbrl.includes('name="uk-gaap:ProfitLossAccountReserve"'));

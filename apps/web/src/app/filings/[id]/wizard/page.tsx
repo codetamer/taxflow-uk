@@ -582,10 +582,9 @@ function WizardContent() {
     return loans
       .filter((l) => (l.advanceAmount || 0) > 0)
       .map((loan) => {
-        const isRepaidInWindow =
-          (loan.repaidAmount || 0) >= (loan.advanceAmount || 0) &&
-          (!loan.repaidDate || !paymentDueDate || loan.repaidDate <= paymentDueDate);
-        const outstanding = isRepaidInWindow ? 0 : Math.max(0, (loan.advanceAmount || 0) - (loan.repaidAmount || 0));
+        const isRepaidAfterDueDate = Boolean(loan.repaidDate && paymentDueDate && loan.repaidDate > paymentDueDate);
+        const effectiveRepaidInWindow = isRepaidAfterDueDate ? 0 : (Number(loan.repaidAmount) || 0);
+        const outstanding = Math.max(0, (Number(loan.advanceAmount) || 0) - effectiveRepaidInWindow);
         return {
           id: loan.id,
           madeOn: loan.advanceDate || form.periodEnd || '2026-05-01',

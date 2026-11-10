@@ -290,7 +290,7 @@ export async function generateAccountsPdf(
         'Tax on profit',
         '',
         formatPounds(data.taxOnProfitPence ? -data.taxOnProfitPence : 0),
-        formatPounds(py?.taxOnProfitPence ? -py.taxOnProfitPence : -606100)
+        formatPounds(py?.taxOnProfitPence ? -py.taxOnProfitPence : -380000)
       ]
     },
     {
@@ -298,7 +298,7 @@ export async function generateAccountsPdf(
         'Profit / (loss) for the financial year',
         '',
         formatPounds(data.profitOrLossPence),
-        formatPounds(py?.profitOrLossPence ?? 2583900)
+        formatPounds(py?.profitOrLossPence ?? 2810000)
       ],
       isTotal: true,
       bold: true

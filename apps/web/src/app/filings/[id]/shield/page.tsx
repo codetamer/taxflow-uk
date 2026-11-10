@@ -3,7 +3,7 @@
 import { useState, useMemo, useEffect } from 'react';
 import Link from 'next/link';
 import { useParams } from 'next/navigation';
-import { mainPoolWdaRatePct } from '@taxflow/ct-engine';
+import { mainPoolWdaRatePct, ctPaymentDueDate } from '@taxflow/ct-engine';
 import {
   ShieldCheck,
   ShieldAlert,
@@ -273,6 +273,7 @@ export default function ShieldDashboardPage() {
 
       const periodStart = f.periodStart || '2025-10-01';
       const periodEnd = f.periodEnd || '2026-09-30';
+      const paymentDueDate = periodEnd ? ctPaymentDueDate(periodEnd) : '2027-07-01';
 
       const turnoverPence = isDormant
         ? Math.round((Number(f.turnover) || 0) * 100)
@@ -343,7 +344,9 @@ export default function ShieldDashboardPage() {
         .map((l: any, idx: number) => {
           const adv = Number(l.advanceAmount) || 0;
           const rep = Number(l.repaidAmount) || 0;
-          const outstanding = Math.max(0, adv - rep);
+          const isRepaidAfterDueDate = Boolean(l.repaidDate && paymentDueDate && l.repaidDate > paymentDueDate);
+          const effectiveRepayment = isRepaidAfterDueDate ? 0 : rep;
+          const outstanding = Math.max(0, adv - effectiveRepayment);
           return {
             id: l.id || `loan_${idx}`,
             madeOn: l.advanceDate || periodStart,
@@ -354,7 +357,9 @@ export default function ShieldDashboardPage() {
       const s455TaxPence = rawLoans.reduce((total: number, loan: any) => {
         const adv = Number(loan.advanceAmount) || 0;
         const rep = Number(loan.repaidAmount) || 0;
-        const outstanding = Math.max(0, adv - rep);
+        const isRepaidAfterDueDate = Boolean(loan.repaidDate && paymentDueDate && loan.repaidDate > paymentDueDate);
+        const effectiveRepayment = isRepaidAfterDueDate ? 0 : rep;
+        const outstanding = Math.max(0, adv - effectiveRepayment);
         if (outstanding <= 0) return total;
         const ratePct = loan.advanceDate && loan.advanceDate >= '2026-04-06' ? 35.75 : 33.75;
         return total + Math.round(outstanding * ratePct);
@@ -377,7 +382,7 @@ export default function ShieldDashboardPage() {
           periodEnd,
           priorPeriodEnd: f.priorPeriodEnd || (f.crn === '15152081' ? '2025-09-30' : undefined),
           daysInYearBasis: 365,
-          paymentDueDate: '2027-07-01',
+          paymentDueDate: paymentDueDate,
           accountsApprovalDate: '2026-10-15',
           directorDeclarationName: f.directorName || 'Muhammad Saif Raza',
           isDirectorApproved: f.isDirectorApproved ?? true

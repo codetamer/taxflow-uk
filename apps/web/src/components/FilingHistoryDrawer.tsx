@@ -62,7 +62,7 @@ export function FilingHistoryDrawer({
   };
 
   const turnoverVal = isDormant ? (filing.turnover ?? 0) : (filing.turnover ?? 100000);
-  const taxPayableVal = isDormant ? (filing.taxPayable ?? 0) : (filing.taxPayable ?? 6061);
+  const taxPayableVal = isDormant ? (filing.taxPayable ?? 0) : (filing.taxPayable ?? 3800);
 
   return (
     <div className="fixed inset-0 z-50 overflow-hidden animate-in fade-in duration-200">

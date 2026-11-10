@@ -9,20 +9,20 @@ export const MOCK_REVIEW_FILING = {
   directorLegalDeclaration: true,
   isPaid: true,
   paymentReference: 'CT-2026-15152081',
-  paidAmountPence: 606100,
+  paidAmountPence: 380000,
   trialBalanceJson: JSON.stringify({
     turnoverPence: 10000000,
     costOfSalesPence: 2000000,
     otherChargesPence: 4810000
   }),
   taxAdjustmentsJson: JSON.stringify({
-    disallowablePence: 100000,
+    disallowablePence: 310000,
     capitalAllowancesPence: 1500000
   }),
   calculationResultJson: JSON.stringify({
     turnoverPence: 10000000,
-    taxableProfitPence: 3190000,
-    taxPayablePence: 606100,
+    taxableProfitPence: 2000000,
+    taxPayablePence: 380000,
     effectiveRate: 0.19
   }),
   shieldResultJson: JSON.stringify({

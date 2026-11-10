@@ -239,7 +239,7 @@ export function generateFrs105Ixbrl(input: ShieldInput, options: IxbrlOptions = 
       </tr>
       <tr class="total">
         <td><strong>Net Assets (Liabilities)</strong></td>
-        <td class="num"><ix:nonFraction name="uk-gaap:ShareholderFunds" contextRef="ctx_current_instant" unitRef="unit_gbp" decimals="0" format="ixt:numdotdecimal">${fmtPounds(netAssetsPence)}</ix:nonFraction></td>
+        <td class="num"><ix:nonFraction name="uk-gaap:NetAssetsLiabilities" contextRef="ctx_current_instant" unitRef="unit_gbp" decimals="0" format="ixt:numdotdecimal">${fmtPounds(netAssetsPence)}</ix:nonFraction></td>
       </tr>
       <tr>
         <td colspan="2" style="padding-top:15px;"><strong>Capital and Reserves</strong></td>
@@ -254,7 +254,7 @@ export function generateFrs105Ixbrl(input: ShieldInput, options: IxbrlOptions = 
       </tr>
       <tr class="total">
         <td><strong>Total Shareholders' Funds</strong></td>
-        <td class="num"><strong>£${fmtPounds(totalShareholdersFundsPence)}</strong></td>
+        <td class="num"><strong><ix:nonFraction name="uk-gaap:ShareholderFunds" contextRef="ctx_current_instant" unitRef="unit_gbp" decimals="0" format="ixt:numdotdecimal">${fmtPounds(totalShareholdersFundsPence)}</ix:nonFraction></strong></td>
       </tr>
     </tbody>
   </table>

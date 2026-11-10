@@ -28,7 +28,7 @@ import {
   Calendar,
   Landmark
 } from 'lucide-react';
-import { computePeriod } from '@taxflow/ct-engine';
+import { computePeriod, ctPaymentDueDate } from '@taxflow/ct-engine';
 import { TermExplainer } from '@/components/TermExplainer';
 import { PlainEnglishBanner } from '@/components/PlainEnglishBanner';
 import { GlossaryModal } from '@/components/GlossaryModal';
@@ -151,6 +151,7 @@ export default function DocumentsPage() {
   const directorName = f.directorName || filingData?.directorName || 'Muhammad Saif Raza';
   const periodStart = f.periodStart || filingData?.periodStart || '2025-10-01';
   const periodEnd = f.periodEnd || filingData?.periodEnd || '2026-09-30';
+  const paymentDueDate = periodEnd ? ctPaymentDueDate(periodEnd) : '2027-07-01';
   const approvalDate = f.directorApprovalDate || '2026-10-15';
   const archetype: 'TRADING' | 'PROPERTY' | 'DORMANT' | 'MIXED' = f.companyType || 'TRADING';
 
@@ -216,7 +217,9 @@ export default function DocumentsPage() {
       const directorLoansList = rawLoans.map((loan: any) => {
         const adv = Number(loan.advanceAmount) || 0;
         const rep = Number(loan.repaidAmount) || 0;
-        const outstanding = Math.max(0, adv - rep);
+        const isRepaidAfterDueDate = Boolean(loan.repaidDate && paymentDueDate && loan.repaidDate > paymentDueDate);
+        const effectiveRepayment = isRepaidAfterDueDate ? 0 : rep;
+        const outstanding = Math.max(0, adv - effectiveRepayment);
         return {
           id: loan.id,
           madeOn: loan.advanceDate || periodStart,
@@ -254,7 +257,9 @@ export default function DocumentsPage() {
     : rawLoans.reduce((total: number, loan: any) => {
         const adv = Number(loan.advanceAmount) || 0;
         const rep = Number(loan.repaidAmount) || 0;
-        const outstanding = Math.max(0, adv - rep);
+        const isRepaidAfterDueDate = Boolean(loan.repaidDate && paymentDueDate && loan.repaidDate > paymentDueDate);
+        const effectiveRepayment = isRepaidAfterDueDate ? 0 : rep;
+        const outstanding = Math.max(0, adv - effectiveRepayment);
         if (outstanding <= 0) return total;
         const ratePct = loan.advanceDate && loan.advanceDate >= '2026-04-06' ? 35.75 : 33.75;
         return total + Math.round((outstanding * ratePct) / 100);
@@ -279,8 +284,8 @@ export default function DocumentsPage() {
     turnover: isDormant ? 0 : 100000,
     costOfSales: isDormant ? 0 : 20000,
     otherCharges: isDormant ? 0 : 48100,
-    tax: isDormant ? 0 : 6061,
-    netProfit: isDormant ? 0 : 25839,
+    tax: isDormant ? 0 : 3800,
+    netProfit: isDormant ? 0 : 28100,
     fixedAssets: isDormant ? 0 : 15000,
     debtors: isDormant ? 0 : 10000,
     cash: isDormant ? 100 : 33400,

@@ -53,11 +53,14 @@ export function DirectorLoansSchedule({
 
   // Compute individual loan stats
   const computedLines = loans.map((loan) => {
+    const isRepaidAfterDueDate = Boolean(
+      loan.repaidDate && paymentDueDate && loan.repaidDate > paymentDueDate
+    );
+    const effectiveRepaidInWindow = isRepaidAfterDueDate ? 0 : (Number(loan.repaidAmount) || 0);
+    const outstanding = Math.max(0, (Number(loan.advanceAmount) || 0) - effectiveRepaidInWindow);
     const isRepaidInWindow =
-      loan.repaidAmount >= loan.advanceAmount &&
-      (!loan.repaidDate || !paymentDueDate || loan.repaidDate <= paymentDueDate);
+      (Number(loan.repaidAmount) || 0) >= (Number(loan.advanceAmount) || 0) && !isRepaidAfterDueDate;
 
-    const outstanding = isRepaidInWindow ? 0 : Math.max(0, loan.advanceAmount - (loan.repaidAmount || 0));
     const ratePct = loan.advanceDate && loan.advanceDate >= '2026-04-06' ? 35.75 : 33.75;
     const taxPence = Math.round(outstanding * 100 * (ratePct / 100));
 
@@ -66,7 +69,8 @@ export function DirectorLoansSchedule({
       outstanding,
       ratePct,
       taxPence,
-      isRepaidInWindow
+      isRepaidInWindow,
+      isRepaidAfterDueDate
     };
   });
 
@@ -178,6 +182,11 @@ export function DirectorLoansSchedule({
                       onChange={(e) => handleUpdateLoan(line.id, { repaidDate: e.target.value })}
                       className="w-full min-w-[135px] bg-slate-50 border border-slate-200 rounded-lg px-2 py-1 text-xs focus:ring-1 focus:ring-slate-900 focus:bg-white font-mono"
                     />
+                    {line.isRepaidAfterDueDate && (
+                      <span className="text-[10px] text-amber-700 font-semibold block mt-0.5">
+                        Repaid post-due date
+                      </span>
+                    )}
                   </td>
                   <td className="py-2.5 px-3">
                     <input
@@ -235,7 +244,7 @@ export function DirectorLoansSchedule({
         <div className="p-3 rounded-xl bg-amber-50/90 border border-amber-200 text-amber-900 text-xs flex items-start space-x-2">
           <Info className="w-4 h-4 text-amber-700 flex-shrink-0 mt-0.5" />
           <p className="text-[11px] leading-relaxed">
-            <span className="font-semibold">Section 458 Repayment Relief:</span> If any outstanding loan balance is repaid within 9 months and 1 day of your accounting period end ({paymentDueDate}), the s455 tax is relieved and not payable to HMRC.
+            <span className="font-semibold">Section 458 Repayment Relief:</span> If any outstanding loan balance is repaid within 9 months and 1 day of your accounting period end ({paymentDueDate}), the s455 tax is relieved and not payable to HMRC. Repayments made after {paymentDueDate} remain chargeable for this period and can be reclaimed under s458 in the subsequent return.
           </p>
         </div>
       )}

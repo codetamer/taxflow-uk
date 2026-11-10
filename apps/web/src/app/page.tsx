@@ -526,23 +526,6 @@ export default function HomePage() {
         onClose={() => setIsGlossaryOpen(false)}
         initialTermId={initialGlossaryTerm}
       />
-
-      {/* Minimal Trust Footer */}
-      <footer className="border-t border-stone-200/90 pt-8 pb-4 text-xs text-stone-500">
-        <div className="flex flex-col sm:flex-row items-center justify-between gap-4">
-          <div className="flex items-center space-x-2">
-            <span className="font-bold text-stone-800">TaxFlow UK</span>
-            <span>•</span>
-            <span>FRS 105 (Jan 2026 Taxonomy) &amp; HMRC CT600 v3.1 Compliant</span>
-          </div>
-          <div className="flex flex-wrap items-center gap-4 text-stone-600">
-            <Link href="/filings/drop-logicx/shield" className="hover:text-stone-900 transition">40-Point Shield</Link>
-            <Link href="/filings/drop-logicx/documents" className="hover:text-stone-900 transition">Statutory Document Studio</Link>
-            <Link href="/glossary" className="hover:text-stone-900 transition">Director's Compliance Guide</Link>
-            <Link href="/admin" className="hover:text-amber-700 font-medium transition">Admin Telemetry</Link>
-          </div>
-        </div>
-      </footer>
     </div>
   );
 }
