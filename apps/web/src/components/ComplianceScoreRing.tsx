@@ -1,96 +1,141 @@
 'use client';
 
 import React from 'react';
-import { ShieldCheck, ShieldAlert, Check } from 'lucide-react';
+import { Check } from 'lucide-react';
 
-interface ComplianceScoreRingProps {
+export interface ComplianceScoreRingProps {
   totalChecks?: number;
   passedCount: number;
   fatalCount: number;
-  warnCount: number;
-  size?: 'sm' | 'md' | 'lg';
+  warnCount?: number;
+  size?: 'xs' | 'sm' | 'md' | 'lg';
+  showLabel?: boolean;
+  theme?: 'light' | 'dark';
 }
 
 export function ComplianceScoreRing({
   totalChecks = 40,
   passedCount,
   fatalCount,
-  warnCount,
-  size = 'md'
+  warnCount = 0,
+  size = 'md',
+  showLabel = false,
+  theme = 'light'
 }: ComplianceScoreRingProps) {
   const isAllPassed = fatalCount === 0;
-  const radius = size === 'sm' ? 18 : size === 'lg' ? 44 : 28;
-  const strokeWidth = size === 'sm' ? 3.5 : size === 'lg' ? 6 : 4.5;
-  const circumference = 2 * Math.PI * radius;
-  const passRatio = Math.min(1, Math.max(0, passedCount / totalChecks));
-  const strokeDashoffset = circumference - passRatio * circumference;
 
+  // Symmetrical Geometry
+  const radius = size === 'xs' ? 14 : size === 'sm' ? 18 : size === 'lg' ? 36 : 24;
+  const strokeWidth = size === 'xs' ? 3 : size === 'sm' ? 3.5 : size === 'lg' ? 5 : 4;
+  const circumference = 2 * Math.PI * radius;
+  const passRatio = totalChecks > 0 ? Math.min(1, Math.max(0, passedCount / totalChecks)) : 1;
+  const strokeDashoffset = circumference - passRatio * circumference;
   const svgDimensions = (radius + strokeWidth) * 2;
 
-  return (
-    <div className="flex items-center space-x-3">
-      <div className="relative inline-flex items-center justify-center">
-        <svg
-          width={svgDimensions}
-          height={svgDimensions}
-          className="transform -rotate-90 transition-all duration-500 ease-out"
-        >
-          {/* Background circle track */}
-          <circle
-            cx={radius + strokeWidth}
-            cy={radius + strokeWidth}
-            r={radius}
-            className="text-slate-100"
-            strokeWidth={strokeWidth}
-            stroke="currentColor"
-            fill="transparent"
-          />
+  // High-contrast, theme-aware palette
+  const trackColor = theme === 'dark' ? 'text-slate-700/60' : 'text-slate-200/80';
+  const progressColor = isAllPassed
+    ? 'text-emerald-500'
+    : fatalCount > 0
+    ? 'text-rose-500'
+    : 'text-amber-500';
 
-          {/* Progress stroke */}
-          <circle
-            cx={radius + strokeWidth}
-            cy={radius + strokeWidth}
-            r={radius}
-            className={isAllPassed ? 'text-emerald-500' : 'text-amber-500'}
-            strokeWidth={strokeWidth}
-            strokeDasharray={circumference}
-            strokeDashoffset={strokeDashoffset}
-            strokeLinecap="round"
-            stroke="currentColor"
-            fill="transparent"
-            style={{ transition: 'stroke-dashoffset 0.6s cubic-bezier(0.16, 1, 0.3, 1)' }}
-          />
-        </svg>
+  const ringElement = (
+    <div className="relative inline-flex items-center justify-center shrink-0">
+      <svg
+        width={svgDimensions}
+        height={svgDimensions}
+        className="transform -rotate-90 transition-all duration-500 ease-out"
+        aria-hidden="true"
+      >
+        {/* Background Track */}
+        <circle
+          cx={radius + strokeWidth}
+          cy={radius + strokeWidth}
+          r={radius}
+          className={trackColor}
+          strokeWidth={strokeWidth}
+          stroke="currentColor"
+          fill="transparent"
+        />
 
-        {/* Center Indicator */}
-        <div className="absolute inset-0 flex items-center justify-center">
-          {isAllPassed ? (
-            <Check className={`${size === 'sm' ? 'w-3 h-3' : 'w-4 h-4'} text-emerald-600 stroke-[3]`} />
-          ) : (
-            <span className={`font-mono font-bold ${size === 'sm' ? 'text-[9px]' : 'text-xs'} text-amber-700`}>
-              {fatalCount}
-            </span>
-          )}
-        </div>
+        {/* Progress Fill */}
+        <circle
+          cx={radius + strokeWidth}
+          cy={radius + strokeWidth}
+          r={radius}
+          className={progressColor}
+          strokeWidth={strokeWidth}
+          strokeDasharray={circumference}
+          strokeDashoffset={strokeDashoffset}
+          strokeLinecap="round"
+          stroke="currentColor"
+          fill="transparent"
+          style={{ transition: 'stroke-dashoffset 0.6s cubic-bezier(0.16, 1, 0.3, 1)' }}
+        />
+      </svg>
+
+      {/* Symmetrical Center Indicator */}
+      <div className="absolute inset-0 flex items-center justify-center select-none pointer-events-none">
+        {isAllPassed ? (
+          <Check
+            className={`${
+              size === 'xs' ? 'w-2.5 h-2.5' : size === 'sm' ? 'w-3 h-3' : size === 'lg' ? 'w-5 h-5' : 'w-4 h-4'
+            } text-emerald-500 stroke-[3]`}
+          />
+        ) : (
+          <span
+            className={`font-mono font-bold leading-none ${
+              size === 'xs'
+                ? 'text-[8px]'
+                : size === 'sm'
+                ? 'text-[10px]'
+                : size === 'lg'
+                ? 'text-sm'
+                : 'text-xs'
+            } ${
+              fatalCount > 0
+                ? theme === 'dark'
+                  ? 'text-rose-400'
+                  : 'text-rose-600'
+                : theme === 'dark'
+                ? 'text-amber-400'
+                : 'text-amber-600'
+            }`}
+          >
+            {fatalCount}
+          </span>
+        )}
       </div>
+    </div>
+  );
 
-      <div>
-        <div className="flex items-center space-x-1.5 font-semibold text-xs text-slate-900">
-          <span>{passedCount}/{totalChecks} Gateway Rules Verified</span>
+  if (!showLabel) {
+    return ringElement;
+  }
+
+  return (
+    <div className="flex items-center space-x-3.5">
+      {ringElement}
+      <div className="space-y-0.5 min-w-0">
+        <div className="flex items-center space-x-2">
+          <span className={`text-xs font-bold font-mono ${theme === 'dark' ? 'text-white' : 'text-slate-900'}`}>
+            {passedCount}/{totalChecks} Checks Verified
+          </span>
           {isAllPassed ? (
-            <span className="px-1.5 py-0.2 rounded text-[10px] bg-emerald-100 text-emerald-800 font-bold">
-              PASSED
+            <span className="px-2 py-0.5 rounded-full text-[10px] bg-emerald-500/10 text-emerald-500 border border-emerald-500/20 font-bold uppercase tracking-wider">
+              Ready
             </span>
           ) : (
-            <span className="px-1.5 py-0.2 rounded text-[10px] bg-red-100 text-red-800 font-bold">
-              {fatalCount} FATAL
+            <span className="px-2 py-0.5 rounded-full text-[10px] bg-rose-500/10 text-rose-500 border border-rose-500/20 font-bold uppercase tracking-wider">
+              {fatalCount} {fatalCount === 1 ? 'Error' : 'Errors'}
             </span>
           )}
         </div>
-        <p className="text-[11px] text-slate-500">
+        <p className={`text-[11px] ${theme === 'dark' ? 'text-slate-400' : 'text-slate-500'}`}>
           {isAllPassed
-            ? 'Automated statutory mathematical verification across all accounts boxes.'
-            : `${fatalCount} error${fatalCount > 1 ? 's' : ''} must be resolved before submission.`}
+            ? 'Fully verified against statutory gateway schemas.'
+            : `${fatalCount} blocking issue${fatalCount > 1 ? 's' : ''} to resolve.`}
         </p>
       </div>
     </div>

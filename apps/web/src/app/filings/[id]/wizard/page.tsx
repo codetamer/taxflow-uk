@@ -2456,6 +2456,8 @@ function WizardContent() {
                   fatalCount={fatalShieldErrors.length}
                   warnCount={warningShieldItems.length}
                   size="md"
+                  showLabel={true}
+                  theme="light"
                 />
               </div>
 
@@ -2764,37 +2766,45 @@ function WizardContent() {
 
         {/* Right Column: Live Audit Rail (4 cols, sticky) */}
         <div className="lg:col-span-4 space-y-4 lg:sticky lg:top-24">
-          {/* Shield Health Card with ComplianceScoreRing */}
-          <div className="bg-white rounded-2xl border border-slate-200/90 p-5 shadow-xs space-y-3">
+          {/* Symmetrical Pre-Flight Compliance Card */}
+          <div className="bg-white rounded-2xl border border-slate-200/90 p-5 shadow-xs space-y-4">
             <div className="flex items-center justify-between">
               <span className="text-xs font-bold text-slate-900 flex items-center space-x-1.5">
                 <ShieldCheck className={`w-4 h-4 ${fatalShieldErrors.length === 0 ? 'text-emerald-600' : 'text-amber-600'}`} />
-                <span>Pre-Flight Compliance Status</span>
+                <span>Pre-Flight Compliance</span>
               </span>
-              <span className={`text-[10px] font-mono font-bold px-2 py-0.5 rounded-full ${
-                fatalShieldErrors.length === 0 ? 'bg-emerald-100 text-emerald-800' : 'bg-amber-100 text-amber-800'
+              <span className={`text-[10px] font-mono font-bold px-2.5 py-0.5 rounded-full border ${
+                fatalShieldErrors.length === 0
+                  ? 'bg-emerald-50 text-emerald-700 border-emerald-200'
+                  : 'bg-amber-50 text-amber-800 border-amber-200'
               }`}>
-                {fatalShieldErrors.length === 0 ? 'Ready' : `${fatalShieldErrors.length} to Fix`}
+                {fatalShieldErrors.length === 0 ? '40 / 40 Ready' : `${fatalShieldErrors.length} to Fix`}
               </span>
             </div>
 
-            <div className="flex items-center space-x-3 py-1">
+            {/* Symmetrical Hero Meter */}
+            <div className="p-3.5 rounded-xl bg-slate-50 border border-slate-200/80 flex items-center space-x-3.5">
               <ComplianceScoreRing
                 totalChecks={liveShieldReport?.totalRulesEvaluated || 40}
-                passedCount={
-                  liveShieldReport
-                    ? liveShieldReport.passedCount
-                    : 40
-                }
+                passedCount={liveShieldReport ? liveShieldReport.passedCount : 40}
                 fatalCount={fatalShieldErrors.length}
                 warnCount={warningShieldItems.length}
-                size="sm"
+                size="md"
               />
-              <div className="text-xs">
-                <p className="font-semibold text-slate-900">
-                  {fatalShieldErrors.length === 0 ? 'All 40 Checks Clear' : `${fatalShieldErrors.length} Fatal Errors`}
-                </p>
-                <p className="text-[11px] text-slate-500">
+              <div className="space-y-0.5 min-w-0 flex-1">
+                <div className="flex items-center justify-between gap-1">
+                  <span className="font-bold text-xs text-slate-900">
+                    {fatalShieldErrors.length === 0
+                      ? 'All 40 Checks Clear'
+                      : `${liveShieldReport ? liveShieldReport.passedCount : 38} of 40 Passing`}
+                  </span>
+                  {fatalShieldErrors.length > 0 && (
+                    <span className="text-[10px] font-bold text-rose-600 bg-rose-50 border border-rose-200 px-1.5 py-0.2 rounded font-mono shrink-0">
+                      {fatalShieldErrors.length} Fatal
+                    </span>
+                  )}
+                </div>
+                <p className="text-[11px] text-slate-500 leading-snug">
                   {fatalShieldErrors.length > 0
                     ? `${fatalShieldErrors.length} blocking issue${fatalShieldErrors.length > 1 ? 's' : ''} to resolve`
                     : warningShieldItems.length > 0
@@ -2805,18 +2815,19 @@ function WizardContent() {
             </div>
 
             <div className="pt-2 border-t border-slate-100 flex items-center justify-between text-xs">
-              <span className="text-slate-600">Gateway Readiness:</span>
-              <span className={`font-bold ${canTransmit ? 'text-emerald-600' : 'text-amber-600'}`}>
-                {canTransmit ? 'Ready to Submit' : 'Items Pending'}
+              <span className="text-slate-500 font-medium">Gateway Dispatch:</span>
+              <span className={`font-bold inline-flex items-center gap-1.5 ${canTransmit ? 'text-emerald-700' : 'text-amber-700'}`}>
+                <span className={`w-1.5 h-1.5 rounded-full ${canTransmit ? 'bg-emerald-500' : 'bg-amber-500'}`} />
+                <span>{canTransmit ? 'Ready to Submit' : 'Items Pending'}</span>
               </span>
             </div>
 
             <Link
               href={`/filings/${filingId}/shield`}
-              className="text-[11px] font-semibold text-emerald-700 hover:text-emerald-800 flex items-center justify-between pt-1"
+              className="group text-[11px] font-semibold text-emerald-700 hover:text-emerald-800 flex items-center justify-between pt-0.5 transition"
             >
               <span>Inspect all 40 compliance rules</span>
-              <ArrowRight className="w-3 h-3" />
+              <ArrowRight className="w-3 h-3 transform group-hover:translate-x-0.5 transition-transform" />
             </Link>
           </div>
 

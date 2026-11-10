@@ -540,82 +540,104 @@ export default function ShieldDashboardPage() {
 
   return (
     <div className="space-y-8 max-w-6xl mx-auto py-2">
-      {/* Cockpit Status Banner */}
-      <div className="bg-slate-950 text-white rounded-3xl p-6 sm:p-8 border border-slate-800 shadow-sm flex flex-col md:flex-row md:items-center justify-between gap-6">
-        <div className="space-y-2.5">
-          <div className="flex items-center space-x-3">
-            <span className="w-10 h-10 rounded-2xl bg-emerald-500/20 text-emerald-400 flex items-center justify-center font-bold">
-              <ShieldCheck className="w-5 h-5" />
-            </span>
-            <div>
-              <div className="flex items-center space-x-2">
-                <h1 className="text-2xl font-bold tracking-tight">40-Point Pre-Flight Rejection Shield</h1>
-                <span className="bg-slate-800 text-slate-300 font-mono text-[11px] px-2 py-0.5 rounded-full border border-slate-700">
-                  GovTalk &amp; Schema Verified
+      {/* Symmetrical Sovereign Cockpit Status Banner */}
+      <div className="bg-slate-900 text-white rounded-3xl p-6 sm:p-8 border border-slate-800 shadow-xl">
+        <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-6">
+          {/* Left: Identity & Purpose */}
+          <div className="flex items-start sm:items-center space-x-4">
+            <div className="w-12 h-12 rounded-2xl bg-emerald-500/10 border border-emerald-500/20 text-emerald-400 flex items-center justify-center font-bold shrink-0 shadow-inner">
+              <ShieldCheck className="w-6 h-6" />
+            </div>
+            <div className="space-y-1">
+              <div className="flex flex-wrap items-center gap-2">
+                <h1 className="text-xl sm:text-2xl font-bold tracking-tight text-white">
+                  40-Point Pre-Flight Rejection Shield
+                </h1>
+                <span className="inline-flex items-center space-x-1.5 bg-slate-800 text-slate-300 font-mono text-[10px] px-2.5 py-0.5 rounded-full border border-slate-700 font-medium">
+                  <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse" />
+                  <span>GovTalk &amp; Schema Verified</span>
                 </span>
               </div>
-              <p className="text-xs text-slate-400">
-                Automated pre-flight defense verifying all 40 mathematical and regulatory rules before submission.
-              </p>
-            </div>
-          </div>
-        </div>
-
-        {/* Live Gateway Gate Badge & Score Ring */}
-        <div className="flex flex-col sm:flex-row items-start sm:items-center gap-4 self-start md:self-auto">
-          <div className="bg-slate-900/90 border border-slate-800 p-3 rounded-2xl flex items-center space-x-3">
-            <ComplianceScoreRing
-              totalChecks={report.totalRulesEvaluated}
-              passedCount={report.passedCount}
-              fatalCount={fatalErrors.length}
-              warnCount={warnings.length}
-              size="md"
-            />
-            <div className="text-left">
-              <p className="text-xs font-bold text-white font-mono">
-                {report.passedCount} / {report.totalRulesEvaluated} Checks
-              </p>
-              <p className="text-[10px] text-slate-400">
-                {fatalErrors.length === 0 ? 'All Rules Verified' : `${fatalErrors.length} Fatal Blockers`}
+              <p className="text-xs text-slate-400 max-w-xl leading-relaxed">
+                Automated statutory defense verifying mathematical parity, legal declarations, and schema rules across all returns.
               </p>
             </div>
           </div>
 
-          <div className={`p-4 rounded-2xl border flex items-center space-x-3 ${
-            report.passed
-              ? 'bg-emerald-950/40 border-emerald-800/80 text-emerald-300'
-              : 'bg-red-950/40 border-red-800/80 text-red-300'
-          }`}>
-            <div className={`w-8 h-8 rounded-xl flex items-center justify-center ${
-              report.passed ? 'bg-emerald-500 text-slate-950' : 'bg-red-500 text-white'
+          {/* Right: Symmetrical Inspection Pods */}
+          <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-3 shrink-0">
+            {/* Metric Pod 1: Rules Gauge */}
+            <div className="bg-slate-800/80 border border-slate-700/80 rounded-2xl px-4 py-3 flex items-center space-x-3.5 shadow-2xs">
+              <ComplianceScoreRing
+                totalChecks={report.totalRulesEvaluated}
+                passedCount={report.passedCount}
+                fatalCount={fatalErrors.length}
+                warnCount={warnings.length}
+                size="md"
+                theme="dark"
+              />
+              <div className="min-w-0">
+                <div className="flex items-center space-x-2">
+                  <span className="text-sm font-bold font-mono text-white">
+                    {report.passedCount} / {report.totalRulesEvaluated}
+                  </span>
+                  <span className={`text-[10px] font-bold px-2 py-0.5 rounded-full border ${
+                    report.passed
+                      ? 'bg-emerald-500/10 text-emerald-400 border-emerald-500/20'
+                      : 'bg-rose-500/10 text-rose-400 border-rose-500/20'
+                  }`}>
+                    {report.passed ? 'PASSED' : `${fatalErrors.length} FATAL`}
+                  </span>
+                </div>
+                <p className="text-[11px] text-slate-400 mt-0.5">
+                  {report.passed ? 'All Rules Verified' : `${fatalErrors.length} Issue${fatalErrors.length > 1 ? 's' : ''} to Resolve`}
+                </p>
+              </div>
+            </div>
+
+            {/* Metric Pod 2: Gateway Gate Status */}
+            <div className={`rounded-2xl px-4 py-3 border flex items-center space-x-3.5 transition shadow-2xs ${
+              report.passed
+                ? 'bg-emerald-950/30 border-emerald-800/50 text-emerald-300'
+                : 'bg-rose-950/30 border-rose-800/50 text-rose-300'
             }`}>
-              {report.passed ? <Unlock className="w-4 h-4" /> : <Lock className="w-4 h-4" />}
-            </div>
-            <div>
-              <p className="text-[11px] uppercase tracking-wider text-slate-400 font-semibold">Government Gateway Status</p>
-              <p className="text-sm font-bold font-mono">
-                {report.passed ? 'UNLOCKED (0 FATAL ERRORS)' : `BLOCKED (${fatalErrors.length} FATAL ERROR)`}
-              </p>
+              <div className={`w-9 h-9 rounded-xl flex items-center justify-center shrink-0 ${
+                report.passed ? 'bg-emerald-500 text-slate-950 shadow-xs' : 'bg-rose-500 text-white shadow-xs'
+              }`}>
+                {report.passed ? <Unlock className="w-4 h-4" /> : <Lock className="w-4 h-4" />}
+              </div>
+              <div className="min-w-0">
+                <span className="text-[10px] font-semibold uppercase tracking-wider text-slate-400 block">
+                  Government Gateway Status
+                </span>
+                <span className="text-xs font-bold font-mono tracking-tight block mt-0.5">
+                  {report.passed ? 'UNLOCKED · Ready' : `BLOCKED · ${fatalErrors.length} Fatal Error${fatalErrors.length > 1 ? 's' : ''}`}
+                </span>
+              </div>
             </div>
           </div>
         </div>
       </div>
 
-      {/* Human Guidance Card */}
-      <div className="bg-amber-50/80 border border-amber-200/90 rounded-2xl p-5 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-        <div className="space-y-1">
-          <h3 className="text-xs font-bold text-amber-950 uppercase tracking-wider flex items-center space-x-1.5">
-            <Info className="w-4 h-4 text-amber-700" />
-            <span>Why Does This Diagnostic Screen Exist?</span>
-          </h3>
-          <p className="text-xs text-slate-700 leading-relaxed max-w-3xl">
-            Government computer systems at Companies House and HMRC reject filings for simple mathematical rounding errors, missing legal declarations, or illegal dividends. TaxFlow checks all 40 rules <strong>before</strong> you submit, saving you weeks of stressful rejection notices.
-          </p>
+      {/* Human Guidance Banner */}
+      <div className="bg-white border border-slate-200/90 rounded-2xl p-5 shadow-2xs flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+        <div className="flex items-start space-x-3.5">
+          <div className="w-8 h-8 rounded-xl bg-slate-100 text-slate-600 flex items-center justify-center shrink-0 mt-0.5">
+            <Info className="w-4 h-4 text-emerald-600" />
+          </div>
+          <div className="space-y-0.5">
+            <h3 className="text-xs font-bold text-slate-900 uppercase tracking-wider">
+              Diagnostic Pre-Flight Assurance
+            </h3>
+            <p className="text-xs text-slate-600 leading-relaxed max-w-3xl">
+              Automated gateways at Companies House and HMRC reject submissions for penny imbalances, missing legal disclosures, or illegal dividends. The Shield validates all 40 statutory checks <strong>before</strong> dispatch, guaranteeing zero gateway rejection notices.
+            </p>
+          </div>
         </div>
         <button
           type="button"
           onClick={() => openGlossary('balance-sheet-symmetry')}
-          className="inline-flex items-center space-x-1.5 text-xs font-semibold text-slate-700 bg-white hover:bg-slate-50 border border-slate-200 px-3.5 py-2 rounded-xl transition shrink-0 shadow-2xs"
+          className="inline-flex items-center space-x-1.5 text-xs font-semibold text-slate-700 bg-white hover:bg-slate-50 border border-slate-200 px-3.5 py-2 rounded-xl transition shrink-0 shadow-2xs self-start sm:self-auto"
         >
           <BookOpen className="w-3.5 h-3.5 text-slate-500" />
           <span>Search Tax Glossary</span>
@@ -726,51 +748,51 @@ export default function ShieldDashboardPage() {
         )}
       </div>
 
-      {/* Summary Scorecard */}
-      <div className="grid grid-cols-1 sm:grid-cols-4 gap-4">
-        <div className="bg-white p-5 rounded-2xl border border-slate-200 shadow-xs flex items-center justify-between">
-          <div>
-            <p className="text-xs text-slate-500 font-medium">Rules Evaluated</p>
-            <p className="text-2xl font-bold text-slate-950 font-mono">{report.totalRulesEvaluated}</p>
+      {/* Symmetrical Summary Scorecard */}
+      <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
+        <div className="bg-white p-5 rounded-2xl border border-slate-200/90 shadow-2xs flex items-center justify-between">
+          <div className="space-y-1">
+            <p className="text-[11px] font-semibold uppercase tracking-wider text-slate-500">Rules Evaluated</p>
+            <p className="text-2xl font-black text-slate-950 font-mono tracking-tight">{report.totalRulesEvaluated}</p>
           </div>
-          <span className="w-10 h-10 rounded-xl bg-slate-100 text-slate-700 flex items-center justify-center font-bold">
+          <span className="w-11 h-11 rounded-2xl bg-slate-100 text-slate-700 flex items-center justify-center font-bold">
             <ShieldCheck className="w-5 h-5" />
           </span>
         </div>
 
-        <div className="bg-white p-5 rounded-2xl border border-slate-200 shadow-xs flex items-center justify-between">
-          <div>
-            <p className="text-xs text-slate-500 font-medium">Passed Checks</p>
-            <p className="text-2xl font-bold text-emerald-700 font-mono">{report.passedCount}</p>
+        <div className="bg-white p-5 rounded-2xl border border-slate-200/90 shadow-2xs flex items-center justify-between">
+          <div className="space-y-1">
+            <p className="text-[11px] font-semibold uppercase tracking-wider text-slate-500">Passed Checks</p>
+            <p className="text-2xl font-black text-emerald-700 font-mono tracking-tight">{report.passedCount}</p>
           </div>
-          <span className="w-10 h-10 rounded-xl bg-emerald-50 text-emerald-700 flex items-center justify-center font-bold">
+          <span className="w-11 h-11 rounded-2xl bg-emerald-50 text-emerald-700 border border-emerald-100 flex items-center justify-center font-bold">
             <CheckCircle2 className="w-5 h-5" />
           </span>
         </div>
 
-        <div className="bg-white p-5 rounded-2xl border border-slate-200 shadow-xs flex items-center justify-between">
-          <div>
-            <p className="text-xs text-slate-500 font-medium">Fatal Failures</p>
-            <p className={`text-2xl font-bold font-mono ${fatalErrors.length > 0 ? 'text-red-600' : 'text-slate-400'}`}>
+        <div className="bg-white p-5 rounded-2xl border border-slate-200/90 shadow-2xs flex items-center justify-between">
+          <div className="space-y-1">
+            <p className="text-[11px] font-semibold uppercase tracking-wider text-slate-500">Fatal Errors</p>
+            <p className={`text-2xl font-black font-mono tracking-tight ${fatalErrors.length > 0 ? 'text-rose-600' : 'text-slate-400'}`}>
               {fatalErrors.length}
             </p>
           </div>
-          <span className={`w-10 h-10 rounded-xl flex items-center justify-center font-bold ${
-            fatalErrors.length > 0 ? 'bg-red-50 text-red-600' : 'bg-slate-50 text-slate-400'
+          <span className={`w-11 h-11 rounded-2xl flex items-center justify-center font-bold border ${
+            fatalErrors.length > 0 ? 'bg-rose-50 text-rose-600 border-rose-100' : 'bg-slate-50 text-slate-400 border-slate-100'
           }`}>
             <XCircle className="w-5 h-5" />
           </span>
         </div>
 
-        <div className="bg-white p-5 rounded-2xl border border-slate-200 shadow-xs flex items-center justify-between">
-          <div>
-            <p className="text-xs text-slate-500 font-medium">Advisory Warnings</p>
-            <p className={`text-2xl font-bold font-mono ${warnings.length > 0 ? 'text-amber-600' : 'text-slate-400'}`}>
+        <div className="bg-white p-5 rounded-2xl border border-slate-200/90 shadow-2xs flex items-center justify-between">
+          <div className="space-y-1">
+            <p className="text-[11px] font-semibold uppercase tracking-wider text-slate-500">Advisory Notes</p>
+            <p className={`text-2xl font-black font-mono tracking-tight ${warnings.length > 0 ? 'text-amber-600' : 'text-slate-400'}`}>
               {warnings.length}
             </p>
           </div>
-          <span className={`w-10 h-10 rounded-xl flex items-center justify-center font-bold ${
-            warnings.length > 0 ? 'bg-amber-50 text-amber-600' : 'bg-slate-50 text-slate-400'
+          <span className={`w-11 h-11 rounded-2xl flex items-center justify-center font-bold border ${
+            warnings.length > 0 ? 'bg-amber-50 text-amber-600 border-amber-100' : 'bg-slate-50 text-slate-400 border-slate-100'
           }`}>
             <AlertTriangle className="w-5 h-5" />
           </span>
@@ -822,11 +844,11 @@ export default function ShieldDashboardPage() {
       {/* Filter and Search Controls */}
       <div className="space-y-3 pt-2">
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
-          <div className="flex items-center space-x-1.5 bg-slate-100 p-1 rounded-xl">
+          <div className="flex items-center space-x-1.5 bg-slate-100 p-1 rounded-xl border border-slate-200/80">
             <button
               onClick={() => setStatusFilter('all')}
               className={`px-3 py-1.5 rounded-lg text-xs font-semibold transition ${
-                statusFilter === 'all' ? 'bg-white text-slate-950 shadow-xs' : 'text-slate-600 hover:text-slate-950'
+                statusFilter === 'all' ? 'bg-slate-900 text-white shadow-xs' : 'text-slate-600 hover:text-slate-950'
               }`}
             >
               All Checks ({report.totalRulesEvaluated})
@@ -834,7 +856,7 @@ export default function ShieldDashboardPage() {
             <button
               onClick={() => setStatusFilter('fail')}
               className={`px-3 py-1.5 rounded-lg text-xs font-semibold transition ${
-                statusFilter === 'fail' ? 'bg-white text-slate-950 shadow-xs' : 'text-slate-600 hover:text-slate-950'
+                statusFilter === 'fail' ? 'bg-slate-900 text-white shadow-xs' : 'text-slate-600 hover:text-slate-950'
               }`}
             >
               Issues Only ({fatalErrors.length + warnings.length})
@@ -842,7 +864,7 @@ export default function ShieldDashboardPage() {
             <button
               onClick={() => setStatusFilter('fatal')}
               className={`px-3 py-1.5 rounded-lg text-xs font-semibold transition ${
-                statusFilter === 'fatal' ? 'bg-white text-red-700 shadow-xs' : 'text-slate-600 hover:text-slate-950'
+                statusFilter === 'fatal' ? 'bg-rose-600 text-white shadow-xs' : 'text-slate-600 hover:text-rose-600'
               }`}
             >
               Fatal ({fatalErrors.length})
@@ -864,7 +886,7 @@ export default function ShieldDashboardPage() {
                 placeholder="Search checks by name or code (e.g. BFS-01)..."
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
-                className="w-full bg-white border border-slate-200 rounded-xl pl-9 pr-3 py-2 text-xs text-slate-900 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-slate-900 shadow-2xs"
+                className="w-full bg-white border border-slate-200 rounded-xl pl-9 pr-3 py-2 text-xs text-slate-900 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-emerald-500 shadow-2xs"
               />
             </div>
           </div>
@@ -877,7 +899,7 @@ export default function ShieldDashboardPage() {
             onClick={() => setSelectedCategory('ALL')}
             className={`px-3 py-1.5 rounded-xl whitespace-nowrap font-semibold transition ${
               selectedCategory === 'ALL'
-                ? 'bg-slate-950 text-white shadow-xs'
+                ? 'bg-slate-900 text-white shadow-xs'
                 : 'bg-white text-slate-600 border border-slate-200 hover:bg-slate-50'
             }`}
           >
@@ -893,7 +915,7 @@ export default function ShieldDashboardPage() {
                 onClick={() => setSelectedCategory(isSelected ? 'ALL' : cat)}
                 className={`px-3 py-1.5 rounded-xl whitespace-nowrap text-xs font-semibold transition ${
                   isSelected
-                    ? 'bg-emerald-700 text-white shadow-xs'
+                    ? 'bg-slate-900 text-white shadow-xs'
                     : 'bg-white text-slate-700 border border-slate-200 hover:bg-slate-50'
                 }`}
               >
@@ -921,7 +943,11 @@ export default function ShieldDashboardPage() {
               >
                 <div className="flex items-center space-x-3.5">
                   <span className={`p-1.5 rounded-lg border transition ${
-                    isCollapsed ? 'bg-slate-100 text-slate-500 border-slate-200' : 'bg-emerald-100 text-emerald-800 border-emerald-200'
+                    isCollapsed
+                      ? 'bg-slate-100 text-slate-500 border-slate-200'
+                      : isCategoryAllPass
+                      ? 'bg-emerald-100 text-emerald-800 border-emerald-200'
+                      : 'bg-rose-100 text-rose-800 border-rose-200'
                   }`}>
                     {isCollapsed ? <ChevronRight className="w-4 h-4" /> : <ChevronDown className="w-4 h-4" />}
                   </span>
@@ -1028,10 +1054,10 @@ export default function ShieldDashboardPage() {
                               {!isPass && (
                                 <Link
                                   href={getWizardFixLink(rule.category)}
-                                  className="text-[11px] font-bold text-slate-900 hover:text-white bg-slate-100 hover:bg-slate-900 border border-slate-200 px-2.5 py-1 rounded-lg transition flex items-center space-x-1"
+                                  className="text-[11px] font-bold text-slate-900 hover:text-white bg-slate-100 hover:bg-slate-900 border border-slate-200 px-2.5 py-1 rounded-lg transition flex items-center space-x-1 shadow-2xs"
                                 >
                                   <span>Fix</span>
-                                  <ArrowRight className="w-3 h-3 text-amber-500" />
+                                  <ArrowRight className="w-3 h-3 text-emerald-600" />
                                 </Link>
                               )}
                               <button
