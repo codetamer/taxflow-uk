@@ -79,7 +79,7 @@ export function FilingHistoryDrawer({
           <div className="bg-slate-900 text-white p-6 space-y-3">
             <div className="flex items-center justify-between">
               <div className="flex items-center space-x-2">
-                <Building2 className="w-5 h-5 text-amber-400" />
+                <Building2 className="w-5 h-5 text-emerald-400" />
                 <span className="font-mono text-xs uppercase tracking-wider text-slate-400">
                   CRN: {filing.crn}
                 </span>

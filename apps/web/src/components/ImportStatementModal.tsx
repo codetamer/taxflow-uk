@@ -146,7 +146,7 @@ export function ImportStatementModal({
         {/* Header */}
         <div className="bg-slate-900 text-white px-6 py-5 flex items-center justify-between">
           <div className="flex items-center space-x-3">
-            <div className="p-2 rounded-xl bg-blue-500/20 text-blue-400 border border-blue-500/30">
+            <div className="p-2 rounded-xl bg-emerald-500/10 text-emerald-400 border border-emerald-500/20">
               <UploadCloud className="w-5 h-5" />
             </div>
             <div>
@@ -177,7 +177,7 @@ export function ImportStatementModal({
               onClick={() => fileInputRef.current?.click()}
               className={`border-2 border-dashed rounded-2xl p-8 text-center cursor-pointer transition ${
                 dragActive 
-                  ? 'border-blue-500 bg-blue-50/50 scale-[1.01]' 
+                  ? 'border-emerald-500 bg-emerald-50/50 scale-[1.01]' 
                   : 'border-slate-300 hover:border-slate-400 bg-slate-50/50 hover:bg-slate-50'
               }`}
             >
@@ -190,9 +190,9 @@ export function ImportStatementModal({
               />
               <div className="mx-auto w-12 h-12 rounded-full bg-white shadow-sm border border-slate-200 flex items-center justify-center text-slate-600 mb-3">
                 {loading ? (
-                  <Loader2 className="w-6 h-6 animate-spin text-blue-600" />
+                  <Loader2 className="w-6 h-6 animate-spin text-emerald-600" />
                 ) : (
-                  <UploadCloud className="w-6 h-6 text-blue-600" />
+                  <UploadCloud className="w-6 h-6 text-emerald-600" />
                 )}
               </div>
               <p className="text-sm font-semibold text-slate-800">

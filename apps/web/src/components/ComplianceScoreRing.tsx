@@ -1,7 +1,7 @@
 'use client';
 
 import React from 'react';
-import { Check } from 'lucide-react';
+import { Check, AlertTriangle, AlertCircle } from 'lucide-react';
 
 export interface ComplianceScoreRingProps {
   totalChecks?: number;
@@ -83,28 +83,18 @@ export function ComplianceScoreRing({
               size === 'xs' ? 'w-2.5 h-2.5' : size === 'sm' ? 'w-3 h-3' : size === 'lg' ? 'w-5 h-5' : 'w-4 h-4'
             } text-emerald-500 stroke-[3]`}
           />
+        ) : fatalCount > 0 ? (
+          <AlertTriangle
+            className={`${
+              size === 'xs' ? 'w-2.5 h-2.5' : size === 'sm' ? 'w-3 h-3' : size === 'lg' ? 'w-4.5 h-4.5' : 'w-3.5 h-3.5'
+            } ${theme === 'dark' ? 'text-rose-400' : 'text-rose-600'} stroke-[2.5]`}
+          />
         ) : (
-          <span
-            className={`font-mono font-bold leading-none ${
-              size === 'xs'
-                ? 'text-[8px]'
-                : size === 'sm'
-                ? 'text-[10px]'
-                : size === 'lg'
-                ? 'text-sm'
-                : 'text-xs'
-            } ${
-              fatalCount > 0
-                ? theme === 'dark'
-                  ? 'text-rose-400'
-                  : 'text-rose-600'
-                : theme === 'dark'
-                ? 'text-amber-400'
-                : 'text-amber-600'
-            }`}
-          >
-            {fatalCount}
-          </span>
+          <AlertCircle
+            className={`${
+              size === 'xs' ? 'w-2.5 h-2.5' : size === 'sm' ? 'w-3 h-3' : size === 'lg' ? 'w-4.5 h-4.5' : 'w-3.5 h-3.5'
+            } ${theme === 'dark' ? 'text-amber-400' : 'text-amber-600'} stroke-[2.5]`}
+          />
         )}
       </div>
     </div>

@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import {
@@ -32,6 +32,7 @@ import { PlainEnglishBanner } from '@/components/PlainEnglishBanner';
 import { GlossaryModal } from '@/components/GlossaryModal';
 import { FilingHistoryDrawer } from '@/components/FilingHistoryDrawer';
 import { CustomDatesModal } from '@/components/CustomDatesModal';
+import { ComplianceScoreRing } from '@/components/ComplianceScoreRing';
 
 interface ConnectedCompany {
   id: string;
@@ -66,6 +67,22 @@ export default function DashboardPage() {
   const [searchCrn, setSearchCrn] = useState<string>('');
   const [isConnecting, setIsConnecting] = useState<boolean>(false);
   const [connectError, setConnectError] = useState<string | null>(null);
+
+  const companyDropdownRef = useRef<HTMLDivElement>(null);
+  const filingDropdownRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    function handleClickOutside(event: MouseEvent) {
+      if (companyDropdownRef.current && !companyDropdownRef.current.contains(event.target as Node)) {
+        setIsCompanyDropdownOpen(false);
+      }
+      if (filingDropdownRef.current && !filingDropdownRef.current.contains(event.target as Node)) {
+        setIsFilingDropdownOpen(false);
+      }
+    }
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => document.removeEventListener('mousedown', handleClickOutside);
+  }, []);
 
   const openGlossary = (termId: string) => {
     setInitialGlossaryTerm(termId);
@@ -236,7 +253,7 @@ export default function DashboardPage() {
               <Building2 className="w-6 h-6 text-emerald-400" />
             </div>
 
-            <div className="relative">
+            <div className="relative" ref={companyDropdownRef}>
               {/* Company Switcher Dropdown Trigger */}
               <div className="flex items-center space-x-2">
                 <button
@@ -328,7 +345,7 @@ export default function DashboardPage() {
         {/* Phase 2: Split-Button Filing Dropdown & Guide Action */}
         <div className="flex flex-wrap items-center gap-2.5 self-start lg:self-auto relative">
           {/* Split-Button Action Dropdown (Start Filing ▾) */}
-          <div className="relative inline-flex items-center rounded-xl shadow-xs">
+          <div className="relative inline-flex items-center rounded-xl shadow-xs" ref={filingDropdownRef}>
             <Link
               href={`/filings/${latestFiling?.id || 'drop-logicx'}/wizard?crn=${activeCompany.crn}&name=${encodeURIComponent(activeCompany.name)}&mode=dual`}
               className="inline-flex items-center space-x-2 bg-emerald-600 hover:bg-emerald-700 text-white font-semibold px-4 py-2.5 rounded-l-xl text-sm transition"
@@ -577,7 +594,7 @@ export default function DashboardPage() {
             <p className="text-xs font-medium text-slate-500">
               <TermExplainer termId="ct600" label="Turnover (Box 145)" />
             </p>
-            <p className="text-2xl font-bold text-slate-950 font-mono">{filingMetrics.turnover}</p>
+            <p className="text-2xl font-bold text-slate-950 font-mono tabular-nums">{filingMetrics.turnover}</p>
             <p className="text-[11px] text-slate-500">100% Micro-entity trade</p>
           </div>
 
@@ -585,7 +602,7 @@ export default function DashboardPage() {
             <p className="text-xs font-medium text-slate-500">
               <TermExplainer termId="disallowable-expenses" label="Total Taxable Profits" />
             </p>
-            <p className="text-2xl font-bold text-slate-950 font-mono">{filingMetrics.taxableProfit}</p>
+            <p className="text-2xl font-bold text-slate-950 font-mono tabular-nums">{filingMetrics.taxableProfit}</p>
             <p className="text-[11px] text-slate-500">Box 375 after AIA relief</p>
           </div>
 
@@ -593,7 +610,7 @@ export default function DashboardPage() {
             <p className="text-xs font-medium text-slate-500">
               <TermExplainer termId="ct600" label="Corporation Tax (19%)" />
             </p>
-            <p className="text-2xl font-bold text-slate-950 font-mono">{filingMetrics.taxPayable}</p>
+            <p className="text-2xl font-bold text-slate-950 font-mono tabular-nums">{filingMetrics.taxPayable}</p>
             <p className="text-[11px] text-emerald-700 font-medium">Small Profits Rate (19%)</p>
           </div>
 
@@ -601,7 +618,7 @@ export default function DashboardPage() {
             <p className="text-xs font-medium text-slate-500">
               <TermExplainer termId="distributable-reserves" label="Distributable Reserves" />
             </p>
-            <p className="text-2xl font-bold text-slate-950 font-mono">{filingMetrics.retainedEarnings}</p>
+            <p className="text-2xl font-bold text-slate-950 font-mono tabular-nums">{filingMetrics.retainedEarnings}</p>
             <p className="text-[11px] text-slate-500">Available for dividends</p>
           </div>
         </div>
@@ -609,19 +626,25 @@ export default function DashboardPage() {
 
       {/* Pre-Flight Shield Radar Banner */}
       <div className="bg-slate-900 text-white rounded-3xl p-6 sm:p-7 border border-slate-800 shadow-sm flex flex-col md:flex-row items-start md:items-center justify-between gap-6">
-        <div className="space-y-2">
-          <div className="flex items-center space-x-2.5">
-            <span className="w-8 h-8 rounded-xl bg-emerald-500/10 text-emerald-400 border border-emerald-500/20 flex items-center justify-center">
-              <ShieldCheck className="w-5 h-5" />
-            </span>
-            <h3 className="text-lg font-bold">40-Point Pre-Flight Rejection Shield</h3>
-            <span className="bg-emerald-400/10 text-emerald-300 text-xs px-2.5 py-0.5 rounded-full font-mono font-bold border border-emerald-400/20">
-              PASSED 40 / 40
-            </span>
+        <div className="flex items-center space-x-4">
+          <ComplianceScoreRing
+            passedCount={40}
+            fatalCount={0}
+            warnCount={0}
+            size="md"
+            theme="dark"
+          />
+          <div className="space-y-1">
+            <div className="flex items-center space-x-2.5">
+              <h3 className="text-lg font-bold">40-Point Pre-Flight Rejection Shield</h3>
+              <span className="bg-emerald-400/10 text-emerald-300 text-xs px-2.5 py-0.5 rounded-full font-mono font-bold border border-emerald-400/20">
+                PASSED 40 / 40
+              </span>
+            </div>
+            <p className="text-xs sm:text-sm text-slate-300 max-w-2xl leading-relaxed">
+              Every balance sheet equation balances to 0p. Companies Act 2006 s477 audit exemption is declared. Director loan schedule complies with CTA 2010 s455. Zero gateway errors.
+            </p>
           </div>
-          <p className="text-xs sm:text-sm text-slate-300 max-w-2xl leading-relaxed">
-            Every balance sheet equation balances to 0p. Companies Act 2006 s477 audit exemption is declared. Director loan schedule complies with CTA 2010 s455. Zero gateway errors.
-          </p>
         </div>
 
         <Link

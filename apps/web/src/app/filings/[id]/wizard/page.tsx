@@ -2114,7 +2114,7 @@ function WizardContent() {
                                       ...prev,
                                       openingRetainedEarnings: Math.round(priorYearData.figures.profitAndLossReservePence / 100)
                                     }))}
-                                    className="text-[10px] text-blue-600 hover:underline font-mono"
+                                    className="text-[10px] text-emerald-700 hover:text-emerald-800 hover:underline font-mono font-semibold"
                                   >
                                     (Sync PY: £{Math.round(priorYearData.figures.profitAndLossReservePence / 100).toLocaleString()})
                                   </button>

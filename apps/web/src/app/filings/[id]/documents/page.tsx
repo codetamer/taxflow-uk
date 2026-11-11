@@ -472,7 +472,7 @@ export default function DocumentsPage() {
               onClick={() => setActiveTab('signing')}
               className={`px-3.5 py-2 rounded-xl font-semibold text-xs transition flex items-center space-x-2 ${
                 activeTab === 'signing'
-                  ? 'bg-white text-emerald-800 shadow-xs'
+                  ? 'bg-white text-slate-950 shadow-xs'
                   : 'text-slate-600 hover:text-slate-950'
               }`}
             >
@@ -486,9 +486,9 @@ export default function DocumentsPage() {
             <a
               href={`/api/documents/accounts-pdf?draft=${isWatermarked}&filingId=${filingId}`}
               target="_blank"
-              className="inline-flex items-center space-x-1.5 bg-emerald-700 hover:bg-emerald-800 text-white font-bold px-3.5 py-2 rounded-xl text-xs shadow-xs transition"
+              className="inline-flex items-center space-x-1.5 bg-emerald-600 hover:bg-emerald-500 text-white font-semibold px-3.5 py-2 rounded-xl text-xs shadow-xs transition"
             >
-              <Download className="w-3.5 h-3.5 text-emerald-200" />
+              <Download className="w-3.5 h-3.5 text-emerald-100" />
               <span>{isDormant ? 'Accounts AA02 PDF' : 'Accounts PDF'}</span>
             </a>
             <a

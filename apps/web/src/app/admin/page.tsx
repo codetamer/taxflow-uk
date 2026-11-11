@@ -300,7 +300,7 @@ export default function AdminCockpitPage() {
         <div className="bg-white p-6 rounded-2xl border border-slate-200/90 shadow-sm space-y-2">
           <div className="flex items-center justify-between text-slate-500">
             <span className="text-xs font-semibold uppercase tracking-wider">Registered Directors</span>
-            <div className="w-8 h-8 rounded-lg bg-blue-50 text-blue-700 flex items-center justify-center">
+            <div className="w-8 h-8 rounded-lg bg-slate-100 text-slate-700 flex items-center justify-center">
               <Users className="w-4 h-4" />
             </div>
           </div>
@@ -425,7 +425,7 @@ export default function AdminCockpitPage() {
                     <td className="py-3.5 px-4 font-semibold text-slate-900">
                       <span className={`inline-flex items-center px-2 py-0.5 rounded-md font-mono text-[10px] ${
                         sub.gatewayType === 'HMRC_CT600'
-                          ? 'bg-blue-50 text-blue-700 border border-blue-200'
+                          ? 'bg-slate-100 text-slate-800 border border-slate-200'
                           : 'bg-emerald-50 text-emerald-800 border border-emerald-200'
                       }`}>
                         {sub.gatewayType === 'HMRC_CT600' ? 'HMRC CT600' : 'Companies House'}
